@@ -1,0 +1,889 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="4113" viewBox="0 0 1600 4113">
+<title>SUN_MULTITIME file format</title>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7a4fc4"/></marker></defs>
+<rect x="0" y="0" width="1600" height="4113" fill="#ffffff"/>
+<text x="40.0" y="50.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="28" font-weight="bold" text-anchor="start" fill="#1d2430">SUN_MULTITIME / SUN_MULTITIME64 data file format</text>
+<text x="40.0" y="76.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#5b6472">Reverse-engineered from SunAcc42.c / SunAcc42.h (SunAcc v4.2.7.2, 4/17/2019) and the sample file test1.multi (518,492 bytes).</text>
+<text x="40.0" y="96.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#5b6472">test1.multi starts with bytes FF FF FF F4, so it is the 64-bit variant (SUN_MULTITIME64). The 64-bit layout is drawn as the main layout; the 32-bit differences are shown next to it.</text>
+<rect x="40.0" y="108.0" width="16.0" height="16.0" rx="2" fill="#dbe8fb" stroke="#3a6fc4" stroke-width="1.2"/>
+<text x="62.0" y="121.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">File header</text>
+<rect x="169.4" y="108.0" width="16.0" height="16.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="191.4" y="121.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">Parameter map</text>
+<rect x="313.6" y="108.0" width="16.0" height="16.0" rx="2" fill="#fdf0cf" stroke="#c18a14" stroke-width="1.2"/>
+<text x="335.6" y="121.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">Comment block</text>
+<rect x="457.8" y="108.0" width="16.0" height="16.0" rx="2" fill="#eceef1" stroke="#8a929c" stroke-width="1.2"/>
+<text x="479.8" y="121.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">Reserved / padding</text>
+<rect x="639.0" y="108.0" width="16.0" height="16.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="661.0" y="121.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">Block header</text>
+<rect x="775.8" y="108.0" width="16.0" height="16.0" rx="2" fill="#d8f1f3" stroke="#2b8a93" stroke-width="1.2"/>
+<text x="797.8" y="121.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">Time / index array</text>
+<rect x="957.0" y="108.0" width="16.0" height="16.0" rx="2" fill="#fbe1e6" stroke="#c0435c" stroke-width="1.2"/>
+<text x="979.0" y="121.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">Data array</text>
+<text x="1089.0" y="121.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#5b6472">BE = big-endian    u32/i64 = unsigned/signed 32/64-bit integer</text>
+<text x="40.0" y="154.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">1. Overall file layout</text>
+<line x1="40.0" y1="162.0" x2="1560.0" y2="162.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="40.0" y="184.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#5b6472">Top bar: the sample file, with real offsets (not to scale). Bottom bar: a typical file that contains data. Parameter data is a linked list of blocks per parameter. Blocks for different parameters are interleaved in the order they were written.</text>
+<rect x="40.0" y="220.0" width="200.2" height="56.0" rx="2" fill="#dbe8fb" stroke="#3a6fc4" stroke-width="1.2"/>
+<text x="140.1" y="245.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">FILE HEADER</text>
+<text x="140.1" y="262.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">264 B</text>
+<text x="42.0" y="215.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">0x000</text>
+<rect x="240.2" y="220.0" width="228.8" height="56.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="354.6" y="245.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">PARAMETER MAP</text>
+<text x="354.6" y="262.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">5 entries, 252 B</text>
+<text x="242.2" y="215.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">0x108</text>
+<rect x="469.0" y="220.0" width="314.6" height="56.0" rx="2" fill="#fdf0cf" stroke="#c18a14" stroke-width="1.2"/>
+<text x="626.3" y="245.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">COMMENT TEXT</text>
+<text x="626.3" y="262.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">661 B ([events], [coef])</text>
+<text x="471.0" y="215.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">0x204</text>
+<rect x="783.6" y="220.0" width="686.4" height="56.0" rx="2" fill="#eceef1" stroke="#8a929c" stroke-width="1.2"/>
+<text x="1126.8" y="245.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">ZERO FILL TO EOF</text>
+<text x="1126.8" y="262.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">517,315 B: leftover of the reserved comment space (99.8% of the file)</text>
+<text x="785.6" y="215.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">0x499</text>
+<text x="1476.0" y="244.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">EOF</text>
+<text x="1476.0" y="260.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#5b6472">0x7E95C</text>
+<text x="40.0" y="294.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#c0435c">test1.multi: every map entry has blockPtr = 0, so the file contains NO data blocks. Because parameter 0's blockPtr is 0, the reader treats everything from the end of the map to EOF</text>
+<text x="40.0" y="311.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#c0435c">(517,976 B) as the comment block (SunAcc42.c:1194-1197). The file size is 264 + 5 x 1038 + commentBlockSZ, with commentBlockSZ = 513,038 (inferred): the reserved comment area was copied down to the end of the map at close and the tail was left in place.</text>
+<rect x="40.0" y="341.0" width="144.0" height="46.0" rx="2" fill="#dbe8fb" stroke="#3a6fc4" stroke-width="1.2"/>
+<text x="112.0" y="361.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">HEADER</text>
+<text x="112.0" y="378.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">264 B</text>
+<text x="42.0" y="336.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">0</text>
+<rect x="184.0" y="341.0" width="208.0" height="46.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="288.0" y="361.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">MAP</text>
+<text x="288.0" y="378.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">N variable entries</text>
+<text x="186.0" y="336.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">264</text>
+<rect x="392.0" y="341.0" width="192.0" height="46.0" rx="2" fill="#fdf0cf" stroke="#c18a14" stroke-width="1.2"/>
+<text x="488.0" y="361.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">COMMENT</text>
+<text x="488.0" y="378.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">INI-style text</text>
+<text x="394.0" y="336.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">end of map</text>
+<rect x="584.0" y="341.0" width="160.0" height="46.0" rx="2" fill="#eceef1" stroke="#8a929c" stroke-width="1.2"/>
+<text x="664.0" y="361.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">(GAP)</text>
+<text x="664.0" y="378.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">unreclaimed reserve</text>
+<rect x="744.0" y="341.0" width="144.0" height="46.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="816.0" y="361.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">BLK p0#1</text>
+<text x="746.0" y="336.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">blockPtr[p0]</text>
+<rect x="888.0" y="341.0" width="144.0" height="46.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="960.0" y="361.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">BLK p1#1</text>
+<rect x="1032.0" y="341.0" width="144.0" height="46.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="1104.0" y="361.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">BLK p2#1</text>
+<rect x="1176.0" y="341.0" width="144.0" height="46.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="1248.0" y="361.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">BLK p0#2</text>
+<text x="1248.0" y="378.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">appended</text>
+<rect x="1320.0" y="341.0" width="144.0" height="46.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="1392.0" y="361.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">BLK p1#2</text>
+<text x="1392.0" y="378.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">appended</text>
+<rect x="1464.0" y="341.0" width="96.0" height="46.0" rx="2" fill="#ffffff" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="1512.0" y="361.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">...</text>
+<path d="M816.0,387 C816.0,421 1248.0,421 1248.0,391" fill="none" stroke="#7a4fc4" stroke-width="1.4" marker-end="url(#arr)"/>
+<path d="M960.0,387 C960.0,411 1392.0,411 1392.0,391" fill="none" stroke="#7a4fc4" stroke-width="1.4" marker-end="url(#arr)" stroke-dasharray="5,3"/>
+<text x="1032.0" y="439.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle" fill="#7a4fc4">linked (absolute offset of the next block for the same parameter; 0 = end of chain)</text>
+<text x="40.0" y="465.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">How the writer creates this: createSunFile() writes a 264-byte zero header, reserves nItems x 1038 bytes for the map (filled with 0x20) and commentBlockSZ bytes for comments (filled with 0x00), and writes data blocks after that.</text>
+<text x="40.0" y="482.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">closeSunFile() copies the comment block down to the end of the real map. Only SUN_MULTITIME (32-bit) is packed (gap removed), and only when the gap is larger than 8 KB and no appends were recorded. MULTITIME64 and _SRT files keep the gap.</text>
+<text x="40.0" y="516.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">2. File header: 264 bytes at offset 0 (SunAcc42.h struct SunHeader). Every integer is BE.</text>
+<line x1="40.0" y1="524.0" x2="1560.0" y2="524.0" stroke="#c9ced6" stroke-width="1"/>
+<rect x="40.0" y="546.0" width="976.0" height="23.0" rx="3" fill="#2f3b4d" stroke="#2f3b4d" stroke-width="1.2"/>
+<text x="46.0" y="561.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Off</text>
+<text x="106.0" y="561.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Size</text>
+<text x="152.0" y="561.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Type</text>
+<text x="222.0" y="561.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Field</text>
+<text x="362.0" y="561.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Meaning (MULTITIME use)</text>
+<text x="832.0" y="561.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">test1.multi</text>
+<rect x="40.0" y="569.0" width="976.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="584.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x000</text>
+<text x="106.0" y="584.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="584.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32</text>
+<text x="222.0" y="584.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">fileSig</text>
+<text x="362.0" y="584.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Format signature, see table at right. Stays 0 until every map entry is written.</text>
+<text x="832.0" y="584.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">FF FF FF F4</text>
+<text x="46.0" y="605.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x004</text>
+<text x="106.0" y="605.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="605.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 BE</text>
+<text x="222.0" y="605.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">refTime[0]</text>
+<text x="362.0" y="605.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Reference year (stored, but ignored by the time math)</text>
+<text x="832.0" y="605.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">2010</text>
+<rect x="40.0" y="611.0" width="976.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="626.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x008</text>
+<text x="106.0" y="626.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="626.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 BE</text>
+<text x="222.0" y="626.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">refTime[1]</text>
+<text x="362.0" y="626.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Reference Julian day (0 is read as 1)</text>
+<text x="832.0" y="626.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">175</text>
+<text x="46.0" y="647.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x00C</text>
+<text x="106.0" y="647.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="647.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 BE</text>
+<text x="222.0" y="647.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">refTime[2]</text>
+<text x="362.0" y="647.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Hour</text>
+<text x="832.0" y="647.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0</text>
+<rect x="40.0" y="653.0" width="976.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="668.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x010</text>
+<text x="106.0" y="668.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="668.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 BE</text>
+<text x="222.0" y="668.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">refTime[3]</text>
+<text x="362.0" y="668.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Minute</text>
+<text x="832.0" y="668.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0</text>
+<text x="46.0" y="689.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x014</text>
+<text x="106.0" y="689.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="689.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 BE</text>
+<text x="222.0" y="689.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">refTime[4]</text>
+<text x="362.0" y="689.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Second</text>
+<text x="832.0" y="689.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">50</text>
+<rect x="40.0" y="695.0" width="976.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="710.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x018</text>
+<text x="106.0" y="710.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="710.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 BE</text>
+<text x="222.0" y="710.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">refTime[5]</text>
+<text x="362.0" y="710.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Millisecond. Relative time 0 is this moment, unless a FILE_REF event overrides it.</text>
+<text x="832.0" y="710.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">513</text>
+<text x="46.0" y="731.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x01C</text>
+<text x="106.0" y="731.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="731.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 BE</text>
+<text x="222.0" y="731.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">items</text>
+<text x="362.0" y="731.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Number of parameters / map entries. Stays 0 until the map is complete.</text>
+<text x="832.0" y="731.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">5</text>
+<rect x="40.0" y="737.0" width="976.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="752.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x020</text>
+<text x="106.0" y="752.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="752.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 BE</text>
+<text x="222.0" y="752.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">blockPoints[0]</text>
+<text x="362.0" y="752.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Set equal to [1] on close. [0] != [1] means the file is still being written (live).</text>
+<text x="832.0" y="752.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">1</text>
+<text x="46.0" y="773.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x024</text>
+<text x="106.0" y="773.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="773.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 BE</text>
+<text x="222.0" y="773.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">blockPoints[1]</text>
+<text x="362.0" y="773.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Update counter: +1 per append or showFileUpdated() call</text>
+<text x="832.0" y="773.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">1</text>
+<rect x="40.0" y="779.0" width="976.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="794.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x028</text>
+<text x="106.0" y="794.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="152.0" y="794.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">f32 BE</text>
+<text x="222.0" y="794.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">cutoff</text>
+<text x="362.0" y="794.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Engine cutoff time</text>
+<text x="832.0" y="794.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0</text>
+<text x="46.0" y="815.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x02C</text>
+<text x="106.0" y="815.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">80</text>
+<text x="152.0" y="815.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">char[]</text>
+<text x="222.0" y="815.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">title</text>
+<text x="362.0" y="815.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Fixed-width text, NUL padded, not necessarily NUL terminated</text>
+<text x="832.0" y="815.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"Weather - Weather"</text>
+<rect x="40.0" y="821.0" width="976.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="836.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x07C</text>
+<text x="106.0" y="836.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">80</text>
+<text x="152.0" y="836.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">char[]</text>
+<text x="222.0" y="836.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">comment</text>
+<text x="362.0" y="836.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Header comment</text>
+<text x="832.0" y="836.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">""</text>
+<text x="46.0" y="857.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x0CC</text>
+<text x="106.0" y="857.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">12</text>
+<text x="152.0" y="857.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">char[]</text>
+<text x="222.0" y="857.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">serialNum</text>
+<text x="362.0" y="857.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Engine serial number</text>
+<text x="832.0" y="857.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"Weather"</text>
+<rect x="40.0" y="863.0" width="976.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="878.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x0D8</text>
+<text x="106.0" y="878.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">12</text>
+<text x="152.0" y="878.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">char[]</text>
+<text x="222.0" y="878.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">testStand</text>
+<text x="362.0" y="878.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Test stand</text>
+<text x="832.0" y="878.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"Hangar AE"</text>
+<text x="46.0" y="899.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x0E4</text>
+<text x="106.0" y="899.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">12</text>
+<text x="152.0" y="899.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">char[]</text>
+<text x="222.0" y="899.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">testPosition</text>
+<text x="362.0" y="899.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Test position</text>
+<text x="832.0" y="899.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">""</text>
+<rect x="40.0" y="905.0" width="976.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="920.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x0F0</text>
+<text x="106.0" y="920.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">12</text>
+<text x="152.0" y="920.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">char[]</text>
+<text x="222.0" y="920.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">testType</text>
+<text x="362.0" y="920.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Test type</text>
+<text x="832.0" y="920.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"Weather"</text>
+<text x="46.0" y="941.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x0FC</text>
+<text x="106.0" y="941.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">12</text>
+<text x="152.0" y="941.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">char[]</text>
+<text x="222.0" y="941.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">testNumber</text>
+<text x="362.0" y="941.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Test number</text>
+<text x="832.0" y="941.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"Daily"</text>
+<rect x="40.0" y="947.0" width="976.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="962.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x108</text>
+<text x="106.0" y="962.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430"></text>
+<text x="152.0" y="962.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430"></text>
+<text x="222.0" y="962.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">(end)</text>
+<text x="362.0" y="962.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">The parameter map starts at offset 264, a value hard-coded in several places</text>
+<text x="832.0" y="962.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430"></text>
+<line x1="40.0" y1="968.0" x2="1016.0" y2="968.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="1046.0" y="540.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">Signature (bytes on disk)</text>
+<rect x="1046.0" y="546.0" width="304.0" height="23.0" rx="3" fill="#2f3b4d" stroke="#2f3b4d" stroke-width="1.2"/>
+<text x="1052.0" y="561.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Bytes</text>
+<text x="1160.0" y="561.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Format</text>
+<rect x="1046.0" y="569.0" width="304.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="1052.0" y="584.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">FF FF FF F2</text>
+<text x="1160.0" y="584.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">SUN_MULTITIME (32-bit offsets)</text>
+<text x="1052.0" y="605.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">FF FF FF F4</text>
+<text x="1160.0" y="605.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">SUN_MULTITIME64  &lt;- test1</text>
+<rect x="1046.0" y="611.0" width="304.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="1052.0" y="626.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">FF FF FF F5</text>
+<text x="1160.0" y="626.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">SUN_MULTITIME_SRT</text>
+<text x="1052.0" y="647.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">FF FF FF F6</text>
+<text x="1160.0" y="647.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">SUN_MULTITIME64_SRT</text>
+<rect x="1046.0" y="653.0" width="304.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="1052.0" y="668.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">00 00 00 00</text>
+<text x="1160.0" y="668.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">write in progress</text>
+<line x1="1046.0" y1="674.0" x2="1350.0" y2="674.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="1046.0" y="692.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#5b6472">The C constants are platform-specific</text>
+<text x="1046.0" y="708.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#5b6472">(0xF4FFFFFF on little-endian hosts), but the</text>
+<text x="1046.0" y="724.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#5b6472">bytes on disk are always FF FF FF Fx (effectively BE).</text>
+<text x="1046.0" y="740.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#5b6472">_SRT = server-backed real time. On open it is</text>
+<text x="1046.0" y="756.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#5b6472">handled as plain MULTITIME(64), and</text>
+<text x="1046.0" y="772.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#5b6472">closeSrtFile() rewrites the signature to the plain form.</text>
+<text x="1046.0" y="798.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">Live-file (real-time) handshake</text>
+<text x="1046.0" y="816.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">1. Header written with sig = 0 and items = 0.</text>
+<text x="1046.0" y="832.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">2. When the last map entry is written,</text>
+<text x="1046.0" y="848.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">   items and then sig are written, and the file</text>
+<text x="1046.0" y="864.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">   becomes readable.</text>
+<text x="1046.0" y="880.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">3. Each append: link the previous block,</text>
+<text x="1046.0" y="896.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">   blockPoints[1]++ (unless MANUAL_UPDATE).</text>
+<text x="1046.0" y="912.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4. Close: blockPoints[0] = blockPoints[1].</text>
+<text x="1046.0" y="928.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Readers poll with refreshSunFile(), which re-reads</text>
+<text x="1046.0" y="944.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">bytes 0-39 and compares sig, refTime, items, counters.</text>
+<text x="40.0" y="1002.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">3. Parameter map: N variable-length entries packed from offset 264 (format of struct VarNomenMap)</text>
+<line x1="40.0" y1="1010.0" x2="1560.0" y2="1010.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="40.0" y="1032.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#5b6472">Each string has a 1-byte length prefix (0-255), with no NUL and no padding. The example is test1.multi entry 0, at offsets 264-314.</text>
+<rect x="40.0" y="1068.0" width="45.6" height="52.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="62.8" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">06</text>
+<text x="62.8" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">len</text>
+<text x="42.0" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">264</text>
+<rect x="85.6" y="1068.0" width="159.6" height="52.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="165.4" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">WndDir</text>
+<text x="165.4" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">name1 (primary)</text>
+<text x="87.6" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">265</text>
+<rect x="245.2" y="1068.0" width="45.6" height="52.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="268.0" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">06</text>
+<text x="268.0" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">len</text>
+<text x="247.2" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">271</text>
+<rect x="290.8" y="1068.0" width="159.6" height="52.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="370.6" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">WndDir</text>
+<text x="370.6" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">name2 (alternate)</text>
+<text x="292.8" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">272</text>
+<rect x="450.4" y="1068.0" width="45.6" height="52.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="473.2" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">0E</text>
+<text x="473.2" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">len</text>
+<text x="452.4" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">278</text>
+<rect x="496.0" y="1068.0" width="243.2" height="52.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="617.6" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">Wind Direction</text>
+<text x="617.6" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">description</text>
+<text x="498.0" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">279</text>
+<rect x="739.2" y="1068.0" width="45.6" height="52.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="762.0" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">07</text>
+<text x="762.0" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">len</text>
+<text x="741.2" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">293</text>
+<rect x="784.8" y="1068.0" width="167.2" height="52.0" rx="2" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="868.4" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">Degrees</text>
+<text x="868.4" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">units</text>
+<text x="786.8" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">294</text>
+<rect x="952.0" y="1068.0" width="129.2" height="52.0" rx="2" fill="#fff7d6" stroke="#c18a14" stroke-width="1.2"/>
+<text x="1016.6" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">"d8"</text>
+<text x="1016.6" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">type ID (2 ASCII chars)</text>
+<text x="954.0" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">301</text>
+<rect x="1081.2" y="1068.0" width="136.8" height="52.0" rx="2" fill="#e6f0ff" stroke="#3a6fc4" stroke-width="1.2"/>
+<text x="1149.6" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">00000001</text>
+<text x="1149.6" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">seqNum u32 BE</text>
+<text x="1083.2" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">303</text>
+<rect x="1218.0" y="1068.0" width="342.0" height="52.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="1389.0" y="1091.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">00 00 00 00 00 00 00 00</text>
+<text x="1389.0" y="1108.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">blockPtr: i64 BE offset of first block (0 = no data)</text>
+<text x="1220.0" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">307</text>
+<text x="1560.0" y="1063.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="end" fill="#5b6472">315</text>
+<text x="40.0" y="1142.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">32-bit SUN_MULTITIME: blockPtr is 2 x u32 BE (blockPtr[0] = first block, blockPtr[1] always 0), so the entry length is the same. Entry size = 4 + sum(string lengths) + 2 + 4 + 8, at most 1038 bytes, which is also the space the writer reserves per entry.</text>
+<text x="40.0" y="1182.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">seqNum bit layout:</text>
+<rect x="180.0" y="1166.0" width="91.4" height="40.0" rx="2" fill="#ffe3c2" stroke="#c18a14" stroke-width="1.2"/>
+<text x="225.7" y="1183.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">1</text>
+<text x="225.7" y="1200.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">bit 31: rate flag</text>
+<text x="182.0" y="1161.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">31</text>
+<rect x="271.4" y="1166.0" width="243.8" height="40.0" rx="2" fill="#ffe3c2" stroke="#c18a14" stroke-width="1.2"/>
+<text x="393.3" y="1183.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">rate (Hz)</text>
+<text x="393.3" y="1200.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">bits 30..16, 0-32767</text>
+<text x="273.4" y="1161.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">30</text>
+<rect x="515.2" y="1166.0" width="304.8" height="40.0" rx="2" fill="#e6f0ff" stroke="#3a6fc4" stroke-width="1.2"/>
+<text x="667.6" y="1183.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">sequence number</text>
+<text x="667.6" y="1200.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">bits 15..0 (0xFFFF = invalid)</text>
+<text x="517.2" y="1161.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">15</text>
+<text x="840.0" y="1180.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">If bit 31 is set, rate = (seqNum &gt;&gt; 16) &amp; 0x7FFF (PACK_RATE macro).</text>
+<text x="840.0" y="1196.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">A [rates] comment section can also set a rate. Both set bit 31 (enables makeFullRate).</text>
+<text x="40.0" y="1226.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">test1.multi map entries (decoded):</text>
+<rect x="40.0" y="1234.0" width="930.0" height="23.0" rx="3" fill="#2f3b4d" stroke="#2f3b4d" stroke-width="1.2"/>
+<text x="46.0" y="1249.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">#</text>
+<text x="76.0" y="1249.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Offset</text>
+<text x="146.0" y="1249.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Len</text>
+<text x="196.0" y="1249.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">name1</text>
+<text x="306.0" y="1249.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">name2</text>
+<text x="416.0" y="1249.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">description</text>
+<text x="616.0" y="1249.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">units</text>
+<text x="706.0" y="1249.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">type</text>
+<text x="766.0" y="1249.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">seqNum</text>
+<text x="876.0" y="1249.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">blockPtr</text>
+<rect x="40.0" y="1257.0" width="930.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="1272.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0</text>
+<text x="76.0" y="1272.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">264</text>
+<text x="146.0" y="1272.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">51</text>
+<text x="196.0" y="1272.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">WndDir</text>
+<text x="306.0" y="1272.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">WndDir</text>
+<text x="416.0" y="1272.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Wind Direction</text>
+<text x="616.0" y="1272.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Degrees</text>
+<text x="706.0" y="1272.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">d8</text>
+<text x="766.0" y="1272.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x00000001</text>
+<text x="876.0" y="1272.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0</text>
+<text x="46.0" y="1293.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">1</text>
+<text x="76.0" y="1293.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">315</text>
+<text x="146.0" y="1293.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">43</text>
+<text x="196.0" y="1293.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">WndSpd</text>
+<text x="306.0" y="1293.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">WndSpd</text>
+<text x="416.0" y="1293.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Wind Speed</text>
+<text x="616.0" y="1293.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">MPH</text>
+<text x="706.0" y="1293.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">d8</text>
+<text x="766.0" y="1293.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x00000001</text>
+<text x="876.0" y="1293.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0</text>
+<rect x="40.0" y="1299.0" width="930.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="1314.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">2</text>
+<text x="76.0" y="1314.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">358</text>
+<text x="146.0" y="1314.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">52</text>
+<text x="196.0" y="1314.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">OutTemp</text>
+<text x="306.0" y="1314.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">OutTemp</text>
+<text x="416.0" y="1314.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Outside Temperature</text>
+<text x="616.0" y="1314.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">F</text>
+<text x="706.0" y="1314.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">d8</text>
+<text x="766.0" y="1314.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x00000001</text>
+<text x="876.0" y="1314.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0</text>
+<text x="46.0" y="1335.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">3</text>
+<text x="76.0" y="1335.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">410</text>
+<text x="146.0" y="1335.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">49</text>
+<text x="196.0" y="1335.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">OutHum</text>
+<text x="306.0" y="1335.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">OutHum</text>
+<text x="416.0" y="1335.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Outside Humidity</text>
+<text x="616.0" y="1335.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">%RH</text>
+<text x="706.0" y="1335.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">d8</text>
+<text x="766.0" y="1335.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x00000001</text>
+<text x="876.0" y="1335.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0</text>
+<rect x="40.0" y="1341.0" width="930.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="1356.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="76.0" y="1356.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">459</text>
+<text x="146.0" y="1356.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">57</text>
+<text x="196.0" y="1356.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">BarPress</text>
+<text x="306.0" y="1356.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">BarPress</text>
+<text x="416.0" y="1356.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Barametric Pressure</text>
+<text x="616.0" y="1356.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">mBar</text>
+<text x="706.0" y="1356.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">d8</text>
+<text x="766.0" y="1356.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0x00000001</text>
+<text x="876.0" y="1356.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0</text>
+<line x1="40.0" y1="1362.0" x2="970.0" y2="1362.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="40.0" y="1396.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">4. Comment block: free text from the end of the map up to blockPtr of parameter 0 (or EOF)</text>
+<line x1="40.0" y1="1404.0" x2="1560.0" y2="1404.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="40.0" y="1426.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#5b6472">INI-like sections found with strstr(). The DLL parses only [events], [rates] and [extendednomen]. Other sections, such as [coef] in test1.multi, belong to the application and the DLL ignores them.</text>
+<rect x="40.0" y="1448.0" width="810.0" height="23.0" rx="3" fill="#2f3b4d" stroke="#2f3b4d" stroke-width="1.2"/>
+<text x="46.0" y="1463.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Section</text>
+<text x="166.0" y="1463.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Record syntax</text>
+<text x="436.0" y="1463.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Effect in SunAcc</text>
+<rect x="40.0" y="1471.0" width="810.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="1486.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">[events]</text>
+<text x="166.0" y="1486.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">NAME=day/ms.us   or   NAME=hh:mm:ss...</text>
+<text x="436.0" y="1486.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">File events (max 4096). If the day is not 1-366, '(invalid)' is appended to the name.</text>
+<text x="46.0" y="1507.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430"></text>
+<text x="166.0" y="1507.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">FILE_REF=...</text>
+<text x="436.0" y="1507.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Overrides the header reference time (relative t = 0)</text>
+<rect x="40.0" y="1513.0" width="810.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="1528.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430"></text>
+<text x="166.0" y="1528.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">EOF=...</text>
+<text x="436.0" y="1528.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Last value is held until this time on reads</text>
+<text x="46.0" y="1549.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">[rates]</text>
+<text x="166.0" y="1549.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">mapIndex,name,rate   (index&lt;0: by name)</text>
+<text x="436.0" y="1549.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Sets parameter rate and seqNum bit 31</text>
+<rect x="40.0" y="1555.0" width="810.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="1570.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">[extendednomen]</text>
+<text x="166.0" y="1570.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">mapIndex,name,description</text>
+<text x="436.0" y="1570.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Third name and second description per parameter</text>
+<text x="46.0" y="1591.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">[anything else]</text>
+<text x="166.0" y="1591.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">free text</text>
+<text x="436.0" y="1591.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Ignored (for example [coef] MSID=/COEF= lines)</text>
+<line x1="40.0" y1="1597.0" x2="850.0" y2="1597.0" stroke="#c9ced6" stroke-width="1"/>
+<rect x="880.0" y="1448.0" width="680.0" height="288.0" rx="4" fill="#fffaf0" stroke="#c18a14" stroke-width="1.2"/>
+<text x="890.0" y="1466.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">test1.multi comment text (offset 516-1176):</text>
+<text x="890.0" y="1484.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">[events]</text>
+<text x="890.0" y="1499.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">EOF=175/0.0</text>
+<text x="890.0" y="1514.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">ALIGN=175/0.0</text>
+<text x="890.0" y="1529.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">[coef]</text>
+<text x="890.0" y="1544.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">MSID=WndDir</text>
+<text x="890.0" y="1559.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">COEF=6;0.000000;1.000000;0.000000;0.000000;0.000000;0.000000</text>
+<text x="890.0" y="1574.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">MSID=WndSpd</text>
+<text x="890.0" y="1589.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">COEF=6;0.000000;1.000000;0.000000;0.000000;0.000000;0.000000</text>
+<text x="890.0" y="1604.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">MSID=OutTemp</text>
+<text x="890.0" y="1619.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">COEF=6;0.000000;1.000000;0.000000;0.000000;0.000000;0.000000</text>
+<text x="890.0" y="1634.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">MSID=OutHum</text>
+<text x="890.0" y="1649.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">COEF=6;0.000000;1.000000;0.000000;0.000000;0.000000;0.000000</text>
+<text x="890.0" y="1664.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">MSID=BarPress</text>
+<text x="890.0" y="1679.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">COEF=6;0.000000;1.000000;0.000000;0.000000;0.000000;0.000000</text>
+<text x="890.0" y="1694.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">&lt;125 spaces&gt;</text>
+<text x="890.0" y="1709.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="normal" text-anchor="start" fill="#1d2430">&lt;125 spaces&gt;</text>
+<text x="890.0" y="1728.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#5b6472" font-style="italic">...then 517,315 zero bytes to EOF (the reader treats them as comment too).</text>
+<text x="40.0" y="1770.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">5. Parameter data: a singly linked chain of blocks per parameter (none are present in test1.multi)</text>
+<line x1="40.0" y1="1778.0" x2="1560.0" y2="1778.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="40.0" y="1800.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#5b6472">map.blockPtr gives the first block. Each block header's 'linked' field gives the absolute offset of the next block for the same parameter.</text>
+<text x="40.0" y="1818.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#5b6472">Appending data writes a new block at EOF and patches the previous block's link (at blockAddr + 4), or the map blockPtr if the parameter had no data yet.</text>
+<rect x="40.0" y="1880.0" width="150.0" height="60.0" rx="4" fill="#dcf2df" stroke="#3c9a4f" stroke-width="1.2"/>
+<text x="115.0" y="1905.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1d2430">map entry k</text>
+<text x="115.0" y="1924.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="middle" fill="#1d2430">blockPtr</text>
+<rect x="260.0" y="1880.0" width="90.0" height="60.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="305.0" y="1905.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">pidHeader</text>
+<text x="305.0" y="1922.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#5b6472">40 B (32-bit: 36)</text>
+<rect x="350.0" y="1880.0" width="55.0" height="60.0" rx="2" fill="#f4effc" stroke="#7a4fc4" stroke-width="1.2" stroke-dasharray="4,2"/>
+<text x="377.5" y="1905.0" font-family="Consolas, 'Courier New', monospace" font-size="11.5" font-weight="bold" text-anchor="middle" fill="#1d2430">nomen</text>
+<text x="377.5" y="1922.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#5b6472">&lt;=255 B</text>
+<rect x="405.0" y="1880.0" width="105.0" height="60.0" rx="2" fill="#d8f1f3" stroke="#2b8a93" stroke-width="1.2"/>
+<text x="457.5" y="1905.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">time[points]</text>
+<text x="457.5" y="1922.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#5b6472">or LZH(time)</text>
+<rect x="510.0" y="1880.0" width="120.0" height="60.0" rx="2" fill="#fbe1e6" stroke="#c0435c" stroke-width="1.2"/>
+<text x="570.0" y="1905.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">data[points]</text>
+<text x="570.0" y="1922.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#5b6472">or LZH(data)</text>
+<text x="260.0" y="1872.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#7a4fc4">block 1 (first): carries index nomen if nomenSize&gt;0</text>
+<rect x="720.0" y="1880.0" width="90.0" height="60.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="765.0" y="1905.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">pidHeader</text>
+<text x="765.0" y="1922.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#5b6472">40 B (32-bit: 36)</text>
+<rect x="810.0" y="1880.0" width="105.0" height="60.0" rx="2" fill="#d8f1f3" stroke="#2b8a93" stroke-width="1.2"/>
+<text x="862.5" y="1905.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">time[points]</text>
+<text x="862.5" y="1922.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#5b6472">or LZH(time)</text>
+<rect x="915.0" y="1880.0" width="175.0" height="60.0" rx="2" fill="#fbe1e6" stroke="#c0435c" stroke-width="1.2"/>
+<text x="1002.5" y="1905.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">data[points]</text>
+<text x="1002.5" y="1922.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#5b6472">or LZH(data)</text>
+<text x="720.0" y="1872.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#7a4fc4">block 2 (appended)</text>
+<rect x="1180.0" y="1880.0" width="90.0" height="60.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="1225.0" y="1905.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">pidHeader</text>
+<text x="1225.0" y="1922.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#5b6472">40 B (32-bit: 36)</text>
+<rect x="1270.0" y="1880.0" width="105.0" height="60.0" rx="2" fill="#d8f1f3" stroke="#2b8a93" stroke-width="1.2"/>
+<text x="1322.5" y="1905.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">time[points]</text>
+<text x="1322.5" y="1922.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#5b6472">or LZH(time)</text>
+<rect x="1375.0" y="1880.0" width="175.0" height="60.0" rx="2" fill="#fbe1e6" stroke="#c0435c" stroke-width="1.2"/>
+<text x="1462.5" y="1905.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">data[points]</text>
+<text x="1462.5" y="1922.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#5b6472">or LZH(data)</text>
+<text x="1180.0" y="1872.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#7a4fc4">block n (last): linked = 0</text>
+<line x1="190.0" y1="1910.0" x2="256.0" y2="1910.0" stroke="#7a4fc4" stroke-width="1.6" marker-end="url(#arr)"/>
+<path d="M300,1940 C300,1985 760,1985 760,1945" fill="none" stroke="#7a4fc4" stroke-width="1.6" marker-end="url(#arr)"/>
+<text x="530.0" y="2000.0" font-family="Consolas, 'Courier New', monospace" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#7a4fc4">pidHeader.linked</text>
+<path d="M760,1940 C760,1985 1220,1985 1220,1945" fill="none" stroke="#7a4fc4" stroke-width="1.6" marker-end="url(#arr)"/>
+<text x="990.0" y="2000.0" font-family="Consolas, 'Courier New', monospace" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#7a4fc4">pidHeader.linked</text>
+<text x="1280.0" y="1962.0" font-family="Consolas, 'Courier New', monospace" font-size="11.5" font-weight="bold" text-anchor="start" fill="#c0435c">linked = 0: end of chain</text>
+<text x="40.0" y="2026.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">Uncompressed (compressed = 0): time array, then data array, as raw values. The reader seeks to dataStart + points*iSz + startPoint*dSz, so it can read a sub-range without reading the whole block.</text>
+<text x="40.0" y="2043.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">Compressed (compressed = 1): an LZH stream of TimeLzhSize bytes followed directly by an LZH stream of DataLzhSize bytes (ar002 / -lh5-, 8 KB dictionary). Time values are delta-coded before compression (except u4). Any read decodes from the start of the block.</text>
+<text x="40.0" y="2060.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">nomenSize &gt; 0 (first block only): 'name,units,description' CSV text for the time/index axis. It is stored without a NUL. points = number of samples. The type of each time value is set by indexType, and the type of each data value by the map type ID.</text>
+<text x="40.0" y="2094.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">6. Block header (pidHeader64 / pidHeader). Each field is read and written separately (no struct padding on disk) and is always BE.</text>
+<line x1="40.0" y1="2102.0" x2="1560.0" y2="2102.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="40.0" y="2136.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">SUN_MULTITIME64  (40 bytes)</text>
+<text x="300.0" y="2136.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#5b6472">iT = indexType (u8)   nS = nomenSize (u8)   cp = compressed (u8, 0/1)   BE = bigEndian (u8, 0/1)</text>
+<rect x="40.0" y="2162.0" width="139.6" height="50.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="109.8" y="2184.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">points</text>
+<text x="109.8" y="2201.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">u32</text>
+<text x="42.0" y="2157.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">0</text>
+<rect x="179.6" y="2162.0" width="279.2" height="50.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="319.2" y="2184.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">linked</text>
+<text x="319.2" y="2201.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">i64 next block</text>
+<text x="181.6" y="2157.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">4</text>
+<rect x="458.9" y="2162.0" width="139.6" height="50.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="528.7" y="2184.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">TimeLzhSize</text>
+<text x="528.7" y="2201.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">u32</text>
+<text x="460.9" y="2157.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">12</text>
+<rect x="598.5" y="2162.0" width="139.6" height="50.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="668.3" y="2184.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">DataLzhSize</text>
+<text x="668.3" y="2201.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">u32</text>
+<text x="600.5" y="2157.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">16</text>
+<rect x="738.1" y="2162.0" width="55.8" height="50.0" rx="2" fill="#fff7d6" stroke="#c18a14" stroke-width="1.2"/>
+<text x="766.0" y="2184.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">iT</text>
+<text x="740.1" y="2157.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">20</text>
+<rect x="794.0" y="2162.0" width="55.8" height="50.0" rx="2" fill="#fff7d6" stroke="#c18a14" stroke-width="1.2"/>
+<text x="821.9" y="2184.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">nS</text>
+<text x="796.0" y="2157.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">21</text>
+<rect x="849.8" y="2162.0" width="55.8" height="50.0" rx="2" fill="#fff7d6" stroke="#c18a14" stroke-width="1.2"/>
+<text x="877.7" y="2184.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">cp</text>
+<text x="851.8" y="2157.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">22</text>
+<rect x="905.7" y="2162.0" width="55.8" height="50.0" rx="2" fill="#fff7d6" stroke="#c18a14" stroke-width="1.2"/>
+<text x="933.6" y="2184.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">BE</text>
+<text x="907.7" y="2157.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">23</text>
+<rect x="961.5" y="2162.0" width="279.2" height="50.0" rx="2" fill="#d8f1f3" stroke="#2b8a93" stroke-width="1.2"/>
+<text x="1101.1" y="2184.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">firstTime</text>
+<text x="1101.1" y="2201.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">8-byte slot (per indexType)</text>
+<text x="963.5" y="2157.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">24</text>
+<rect x="1240.8" y="2162.0" width="279.2" height="50.0" rx="2" fill="#d8f1f3" stroke="#2b8a93" stroke-width="1.2"/>
+<text x="1380.4" y="2184.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">lastTime</text>
+<text x="1380.4" y="2201.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">8-byte slot (per indexType)</text>
+<text x="1242.8" y="2157.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">32</text>
+<text x="1526.0" y="2192.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">40</text>
+<text x="40.0" y="2236.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">SUN_MULTITIME  (36 bytes)</text>
+<rect x="40.0" y="2262.0" width="138.9" height="50.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="109.5" y="2284.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">points</text>
+<text x="109.5" y="2301.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">u32</text>
+<text x="42.0" y="2257.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">0</text>
+<rect x="178.9" y="2262.0" width="138.9" height="50.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="248.4" y="2284.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">linked</text>
+<text x="248.4" y="2301.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">u32</text>
+<text x="180.9" y="2257.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">4</text>
+<rect x="317.8" y="2262.0" width="138.9" height="50.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="387.3" y="2284.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">TimeLzhSize</text>
+<text x="387.3" y="2301.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">u32</text>
+<text x="319.8" y="2257.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">8</text>
+<rect x="456.7" y="2262.0" width="138.9" height="50.0" rx="2" fill="#ece3fb" stroke="#7a4fc4" stroke-width="1.2"/>
+<text x="526.2" y="2284.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">DataLzhSize</text>
+<text x="526.2" y="2301.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">u32</text>
+<text x="458.7" y="2257.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">12</text>
+<rect x="595.6" y="2262.0" width="55.6" height="50.0" rx="2" fill="#fff7d6" stroke="#c18a14" stroke-width="1.2"/>
+<text x="623.4" y="2284.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">iT</text>
+<text x="597.6" y="2257.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">16</text>
+<rect x="651.2" y="2262.0" width="55.6" height="50.0" rx="2" fill="#fff7d6" stroke="#c18a14" stroke-width="1.2"/>
+<text x="679.0" y="2284.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">nS</text>
+<text x="653.2" y="2257.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">17</text>
+<rect x="706.7" y="2262.0" width="55.6" height="50.0" rx="2" fill="#fff7d6" stroke="#c18a14" stroke-width="1.2"/>
+<text x="734.5" y="2284.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">cp</text>
+<text x="708.7" y="2257.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">18</text>
+<rect x="762.3" y="2262.0" width="55.6" height="50.0" rx="2" fill="#fff7d6" stroke="#c18a14" stroke-width="1.2"/>
+<text x="790.1" y="2284.0" font-family="Consolas, 'Courier New', monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#1d2430">BE</text>
+<text x="764.3" y="2257.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">19</text>
+<rect x="817.9" y="2262.0" width="277.8" height="50.0" rx="2" fill="#d8f1f3" stroke="#2b8a93" stroke-width="1.2"/>
+<text x="956.8" y="2284.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">firstTime</text>
+<text x="956.8" y="2301.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">8 bytes</text>
+<text x="819.9" y="2257.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">20</text>
+<rect x="1095.7" y="2262.0" width="277.8" height="50.0" rx="2" fill="#d8f1f3" stroke="#2b8a93" stroke-width="1.2"/>
+<text x="1234.6" y="2284.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#1d2430">lastTime</text>
+<text x="1234.6" y="2301.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#5b6472">8 bytes</text>
+<text x="1097.7" y="2257.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">28</text>
+<text x="1379.5" y="2292.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">36</text>
+<text x="40.0" y="2332.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">bigEndian (byte 23/19) sets the byte order of the time and data ARRAYS only. The writer defaults to host order; the ORIENT_BIG_END / ORIENT_LITTLE_END / ORIENT_NATIVE options override it.</text>
+<text x="40.0" y="2349.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">For 'v1' (variable-size) blocks, TimeLzhSize (and DataLzhSize when uncompressed) holds the blob size in bytes. The single time stamp is never compressed, even when compressed = 1.</text>
+<text x="40.0" y="2366.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">An in-memory field, blkBaseGMT (the TimeTag of firstTime), is NOT stored on disk. The reader rebuilds it, and packed-time decoding uses it as the base day.</text>
+<text x="40.0" y="2417.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">7. Index (time) encodings and data value types</text>
+<line x1="40.0" y1="2425.0" x2="1560.0" y2="2425.0" stroke="#c9ced6" stroke-width="1"/>
+<rect x="40.0" y="2447.0" width="1179.0" height="23.0" rx="3" fill="#2f3b4d" stroke="#2f3b4d" stroke-width="1.2"/>
+<text x="46.0" y="2462.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">indexType</text>
+<text x="154.0" y="2462.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Written from</text>
+<text x="250.0" y="2462.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Element on disk</text>
+<text x="580.0" y="2462.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">firstTime / lastTime slot</text>
+<text x="830.0" y="2462.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Delta-coded if compressed</text>
+<text x="1020.0" y="2462.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Time base</text>
+<rect x="40.0" y="2470.0" width="1179.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="2485.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">1  DT_FLOAT</text>
+<text x="154.0" y="2485.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"f4"</text>
+<text x="250.0" y="2485.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">f32 relative seconds</text>
+<text x="580.0" y="2485.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">f32 in first 4 bytes</text>
+<text x="830.0" y="2485.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">yes (f32 deltas)</text>
+<text x="1020.0" y="2485.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">file ref (relative)</text>
+<text x="46.0" y="2506.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">2  DT_DOUBLE</text>
+<text x="154.0" y="2506.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"d8"</text>
+<text x="250.0" y="2506.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">f64 relative seconds</text>
+<text x="580.0" y="2506.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">f64</text>
+<text x="830.0" y="2506.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">yes (f64 deltas)</text>
+<text x="1020.0" y="2506.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">file ref (relative)</text>
+<rect x="40.0" y="2512.0" width="1179.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="2527.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">6  DT_ULONGINT</text>
+<text x="154.0" y="2527.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"u4"</text>
+<text x="250.0" y="2527.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 milliseconds since file reference</text>
+<text x="580.0" y="2527.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32 ms in first 4 bytes</text>
+<text x="830.0" y="2527.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">never</text>
+<text x="1020.0" y="2527.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">file ref; max 49.7 days</text>
+<text x="46.0" y="2548.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">7  DT_TIMETAG</text>
+<text x="154.0" y="2548.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"t8"</text>
+<text x="250.0" y="2548.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">{u32 ms-of-day, u16 us, i16 JulianDay} each field swapped</text>
+<text x="580.0" y="2548.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">TimeTag (same layout)</text>
+<text x="830.0" y="2548.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">yes, per field</text>
+<text x="1020.0" y="2548.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">absolute GMT</text>
+<rect x="40.0" y="2554.0" width="1179.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="2569.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">9  DT_PACKEDTIME</text>
+<text x="154.0" y="2569.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"t8"+PACK</text>
+<text x="250.0" y="2569.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u32: bits 31-27 rel. day (vs block firstTime), 26-0 ms</text>
+<text x="580.0" y="2569.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">full TimeTag</text>
+<text x="830.0" y="2569.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">yes (u32 deltas)</text>
+<text x="1020.0" y="2569.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">abs; us dropped</text>
+<line x1="40.0" y1="2575.0" x2="1219.0" y2="2575.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="40.0" y="2593.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">Data value types (ASCII ID in map entry; size = 2nd char - '0')</text>
+<rect x="40.0" y="2601.0" width="390.0" height="23.0" rx="3" fill="#2f3b4d" stroke="#2f3b4d" stroke-width="1.2"/>
+<text x="46.0" y="2616.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Type ID</text>
+<text x="126.0" y="2616.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">DT code</text>
+<text x="196.0" y="2616.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">C type</text>
+<text x="356.0" y="2616.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Size</text>
+<rect x="40.0" y="2624.0" width="390.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="2639.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">f4</text>
+<text x="126.0" y="2639.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">1</text>
+<text x="196.0" y="2639.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">float</text>
+<text x="356.0" y="2639.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="46.0" y="2660.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">d8</text>
+<text x="126.0" y="2660.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">2</text>
+<text x="196.0" y="2660.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">double</text>
+<text x="356.0" y="2660.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">8</text>
+<rect x="40.0" y="2666.0" width="390.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="2681.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">i2</text>
+<text x="126.0" y="2681.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">3</text>
+<text x="196.0" y="2681.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">int16</text>
+<text x="356.0" y="2681.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">2</text>
+<text x="46.0" y="2702.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">i4</text>
+<text x="126.0" y="2702.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<text x="196.0" y="2702.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">int32</text>
+<text x="356.0" y="2702.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<rect x="40.0" y="2708.0" width="390.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="2723.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u2</text>
+<text x="126.0" y="2723.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">5</text>
+<text x="196.0" y="2723.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">uint16</text>
+<text x="356.0" y="2723.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">2</text>
+<text x="46.0" y="2744.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u4</text>
+<text x="126.0" y="2744.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">6</text>
+<text x="196.0" y="2744.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">uint32</text>
+<text x="356.0" y="2744.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<rect x="40.0" y="2750.0" width="390.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="46.0" y="2765.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">t8</text>
+<text x="126.0" y="2765.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">7</text>
+<text x="196.0" y="2765.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">TimeTag</text>
+<text x="356.0" y="2765.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">8</text>
+<line x1="40.0" y1="2771.0" x2="430.0" y2="2771.0" stroke="#c9ced6" stroke-width="1"/>
+<rect x="440.0" y="2601.0" width="390.0" height="23.0" rx="3" fill="#2f3b4d" stroke="#2f3b4d" stroke-width="1.2"/>
+<text x="446.0" y="2616.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Type ID</text>
+<text x="526.0" y="2616.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">DT code</text>
+<text x="596.0" y="2616.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">C type</text>
+<text x="756.0" y="2616.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#ffffff">Size</text>
+<rect x="440.0" y="2624.0" width="390.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="446.0" y="2639.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">b1</text>
+<text x="526.0" y="2639.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">8</text>
+<text x="596.0" y="2639.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">uint8</text>
+<text x="756.0" y="2639.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">1</text>
+<text x="446.0" y="2660.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">p4</text>
+<text x="526.0" y="2660.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">9</text>
+<text x="596.0" y="2660.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">packed time</text>
+<text x="756.0" y="2660.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">4</text>
+<rect x="440.0" y="2666.0" width="390.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="446.0" y="2681.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">v1</text>
+<text x="526.0" y="2681.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">10</text>
+<text x="596.0" y="2681.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">variable blob</text>
+<text x="756.0" y="2681.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">per block</text>
+<text x="446.0" y="2702.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">u8</text>
+<text x="526.0" y="2702.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">11</text>
+<text x="596.0" y="2702.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">uint64</text>
+<text x="756.0" y="2702.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">8</text>
+<rect x="440.0" y="2708.0" width="390.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
+<text x="446.0" y="2723.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">i8</text>
+<text x="526.0" y="2723.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">12</text>
+<text x="596.0" y="2723.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">int64</text>
+<text x="756.0" y="2723.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">8</text>
+<text x="446.0" y="2744.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">(img)</text>
+<text x="526.0" y="2744.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">0</text>
+<text x="596.0" y="2744.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">image</text>
+<text x="756.0" y="2744.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">-</text>
+<line x1="440.0" y1="2750.0" x2="830.0" y2="2750.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="870.0" y="2593.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">Byte-order rules</text>
+<text x="870.0" y="2613.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Always BE: header integers and float, map length/seqNum/blockPtr, every pidHeader field</text>
+<text x="870.0" y="2630.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">   (including firstTime/lastTime; a TimeTag is swapped field by field).</text>
+<text x="870.0" y="2647.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Per-block flag: time and data arrays (bigEndian byte).</text>
+<text x="870.0" y="2664.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">A t8 value used as INDEX is swapped field by field. A t8 value used as DATA is reversed as one</text>
+<text x="870.0" y="2681.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">   8-byte unit. In a BE block the two have different byte layouts.</text>
+<text x="870.0" y="2698.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Map type IDs: the first char is lower-cased on read. The map uses ASCII IDs while pidHeader</text>
+<text x="870.0" y="2715.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">   uses numeric DT codes. indexType 9 is produced only by PACK_TIMETAG on a t8 index.</text>
+<text x="870.0" y="2732.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">A missing sample is stored as 0x80000001 (DROP_OUT) / FP_DROP_OUT for 4-byte types.</text>
+<text x="40.0" y="2805.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">8. Issues, limitations, security risks and idiosyncrasies</text>
+<line x1="40.0" y1="2813.0" x2="1560.0" y2="2813.0" stroke="#c9ced6" stroke-width="1"/>
+<text x="40.0" y="2835.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#5b6472">Line numbers refer to SunAcc42.c. For each defect, the 64-bit reader/writer functions duplicate the 32-bit code and share the same problem.</text>
+<text x="40.0" y="2865.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="bold" text-anchor="start" fill="#1d2430">SAMPLE FILE (test1.multi) OBSERVATIONS</text>
+<text x="40.0" y="2885.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">F1.</text>
+<text x="84.0" y="2885.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Signature FF FF FF F4 = SUN_MULTITIME64, not 32-bit SUN_MULTITIME. Reference = 2010 day 175 00:00:50.513, 5 parameters (all 'd8', seqNum 1, no rate flag), blockPoints 1/1 (closed, not live).</text>
+<text x="40.0" y="2904.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">F2.</text>
+<text x="84.0" y="2904.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Every map blockPtr is 0: the file holds NO data blocks. readSunParm() on any parameter returns ERR_TIMESLICE after re-reading the map pointer.</text>
+<text x="40.0" y="2923.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">F3.</text>
+<text x="84.0" y="2923.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">517,315 of 518,492 bytes (99.8%) are zero fill. The reader takes the whole region from offset 516 to EOF (517,976 B) as the comment block, because parameter 0 has no data block.</text>
+<text x="40.0" y="2942.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">F4.</text>
+<text x="84.0" y="2942.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">The [events] section has EOF=175/0.0 and ALIGN=175/0.0, both 50.513 s BEFORE the file reference time. The [coef] section (MSID/COEF records) belongs to the application and is not parsed by SunAcc.</text>
+<text x="84.0" y="2958.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">The comment text ends with two lines of 125 spaces each (reserved editing space).</text>
+<text x="40.0" y="2985.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="bold" text-anchor="start" fill="#c0435c">SECURITY RISKS / DEFECTS CONFIRMED IN THE CODE (exploitable with a crafted or corrupt file)</text>
+<text x="40.0" y="3005.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S1.</text>
+<text x="84.0" y="3005.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Static buffer overflows in the ar002 LZH decoder. read_pt_len(NT=19, TBIT=5) accepts a count n up to 31, plus up to 3 zero-run entries, and writes into pt_len[19]. read_c_len() accepts n up to 511</text>
+<text x="84.0" y="3021.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">and zero-runs up to 531 entries, and writes into c_len[510] (SunAcc42.c:9119-9225, arrays at 9034-9035). Any compressed block can therefore corrupt global memory. This is the same class of bug as the</text>
+<text x="84.0" y="3037.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">published gzip/LHA unlzh decoder flaws.</text>
+<text x="40.0" y="3056.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S2.</text>
+<text x="84.0" y="3056.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">32-bit size arithmetic on fields read from the file: malloc(pHead-&gt;points * bsize) (3439, 64-bit path ~4075), malloc(bufAllocSz * DataTypeSize) (3766) and the 64-bit equivalents can wrap.</text>
+<text x="84.0" y="3072.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">lzh_decode()/fread() then write points*iSz bytes into the short buffer (heap overflow). For 'v1' blocks, DataTypeSize = 4 + TimeLzhSize, which comes straight from the file. The element size</text>
+<text x="84.0" y="3088.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">(typeIDS[1] - '0') is never validated; e.g. ID 'f' + 0x00 gives 0xFFFFFFD0.</text>
+<text x="40.0" y="3107.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S3.</text>
+<text x="84.0" y="3107.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Out-of-bounds reads in STRNDUP(), which calls strlen() before applying maxlen. retrieveFileMap() passes sBuf[256], which is never NUL-terminated and is stale or uninitialized when a length byte is 0</text>
+<text x="84.0" y="3123.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">(920-935). openSunFile() passes the fixed char[80]/char[12] header fields (1155-1161). testNumber is the last member of the heap-allocated SunHeader, so a full 12-character value reads past the</text>
+<text x="84.0" y="3139.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">allocation.</text>
+<text x="40.0" y="3158.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S4.</text>
+<text x="84.0" y="3158.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">No validation of the header 'items' count or of fread() results in retrieveFileMap(). A large items value (in the millions, so calloc still succeeds) on a short file loops items times, allocating</text>
+<text x="84.0" y="3174.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">strings (DoS). refreshSunFile() reloads the map the same way.</text>
+<text x="40.0" y="3193.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S5.</text>
+<text x="84.0" y="3193.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">The 'linked' chain has no cycle or bounds check. A link that points back to an earlier block makes readMultiTimeParm(64) grow its address stack by 32 entries per pass until realloc fails (memory</text>
+<text x="84.0" y="3209.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">exhaustion).</text>
+<text x="40.0" y="3228.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S6.</text>
+<text x="84.0" y="3228.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Comment-block size is computed only from parameter 0's first blockPtr (1182-1201). If parameter 0 has no data, everything up to EOF, including other parameters' binary blocks, is parsed as comment</text>
+<text x="84.0" y="3244.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">text. If blockPtr &lt; commentOffset, the unsigned subtraction wraps (it is clamped to 64 MB). commentOffset comes from 32-bit ftell() even for 64-bit files.</text>
+<text x="40.0" y="3263.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S7.</text>
+<text x="84.0" y="3263.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Wrong byte-swap test for variable blocks. The reader tests typeIDS[1] != 'v' (always true) instead of typeIDS[0] (3817 and the 64-bit copy). When a block's bigEndian flag differs from the host, it</text>
+<text x="84.0" y="3279.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">byte-reverses the opaque 'v1' blob, or the FP_VARIABLE sentinel, as one unit. The writer never swaps 'v1' data.</text>
+<text x="40.0" y="3298.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S8.</text>
+<text x="84.0" y="3298.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">setCommentText() saves the file position in savePos64 for 64-bit files but restores it from the uninitialized 32-bit savePos (7689). This is an undefined-behavior read and a wrong position restore.</text>
+<text x="84.0" y="3314.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">It is currently masked because every library write path seeks before it writes.</text>
+<text x="40.0" y="3333.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S9.</text>
+<text x="84.0" y="3333.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">closeSunFile() packs a 32-bit file when blockPoints[1] == 0. Blocks appended with MANUAL_UPDATE, without a call to showFileUpdated(), leave the counter at 0. Packing then moves the data and fixes the</text>
+<text x="84.0" y="3349.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">map pointers, but not the absolute 'linked' offsets inside the block headers, so the chain is corrupted.</text>
+<text x="40.0" y="3368.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S10.</text>
+<text x="84.0" y="3368.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">createSunFile(): mapEstAdj = (writeMode &gt;&gt; 8) &amp;&amp; 0x0007 is computed after writeMode &amp;= 0x000F, so it is always 0 (logical &amp;&amp; instead of &amp;). The MAP20-MAP80 pre-allocation options documented in</text>
+<text x="84.0" y="3384.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">SunAcc42.h do nothing.</text>
+<text x="40.0" y="3403.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S11.</text>
+<text x="84.0" y="3403.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">closeSunFile() packing runs pBlk[0] -= packSpace without checking for 0 (8710); only pBlk[1] is guarded. A parameter added with no data (blockPtr 0) gets a wrapped pointer of about 0xFFFFxxxx. Reads</text>
+<text x="84.0" y="3419.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">then fail with ERR_LINK_HDR_RD instead of 'no data', and if it is parameter 0 the comment size wraps, so events are lost. This affects only packed 32-bit files (gap &gt; 8 KB, about 9+ parameters).</text>
+<text x="84.0" y="3435.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">test1.multi (64-bit, never packed) is not affected, although every one of its pointers is NULL.</text>
+<text x="40.0" y="3454.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">S12.</text>
+<text x="84.0" y="3454.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Not thread-safe or re-entrant: global accError/wrtError, global LZH decoder state, and strtok() in comment parsing. The TRUNCATE(a,b) macro ignores its arguments and uses the variable sPtr.</text>
+<text x="40.0" y="3481.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="bold" text-anchor="start" fill="#1d2430">POTENTIAL ISSUES (likely, not exercised here)</text>
+<text x="40.0" y="3501.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">P1.</text>
+<text x="84.0" y="3501.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">make_table() indexes count[bitlen[i]] (count[17]) without checking bitlen &lt;= 16. The pt_len escape loop can produce longer lengths, which would overflow a stack array.</text>
+<text x="40.0" y="3520.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">P2.</text>
+<text x="84.0" y="3520.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">A block with points = 0 gives malloc(0), but the reader still accesses time[0] and data[points-1] (points-1 wraps to 0xFFFFFFFF).</text>
+<text x="40.0" y="3539.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">P3.</text>
+<text x="84.0" y="3539.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">The two compressed streams are read back to back with no fseek() to the data stream. Correctness relies on the time decoder consuming exactly TimeLzhSize bytes, and a truncated stream is padded with</text>
+<text x="84.0" y="3555.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">zero bits instead of being reported as an error.</text>
+<text x="40.0" y="3574.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">P4.</text>
+<text x="84.0" y="3574.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">On a big-endian host, packed-time arrays use FLIP() (a no-op there) instead of flip(), so little-endian packed times are not swapped. Every other index type handles this case.</text>
+<text x="40.0" y="3593.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">P5.</text>
+<text x="84.0" y="3593.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">The reader finds a block header again by subtracting PHEAD(64)SIZE from the stored data start. This works only because nomen bytes appear in the first block alone, whose address comes from the map.</text>
+<text x="40.0" y="3612.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">P6.</text>
+<text x="84.0" y="3612.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">A live writer publishes a zeroed header first and patches it later. fflush() is skipped under MANUAL_UPDATE, so a polling reader can see a link or counter that points at an unflushed block.</text>
+<text x="40.0" y="3639.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="bold" text-anchor="start" fill="#1d2430">FORMAT LIMITATIONS</text>
+<text x="40.0" y="3659.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">L1.</text>
+<text x="84.0" y="3659.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">SUN_MULTITIME stores u32 offsets but seeks with fseek(long), which is effectively 2 GB on Windows. MULTITIME64 removes that limit for offsets, but block-internal sizes (points*iSz, startPoint*dSz)</text>
+<text x="84.0" y="3675.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">and the comment offset and size are still 32-bit.</text>
+<text x="40.0" y="3694.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">L2.</text>
+<text x="84.0" y="3694.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Time is returned as float32 relative seconds whatever the stored precision: about 7.8 ms resolution 1 day from the reference and about 2 s after 1 year. Float index deltas are themselves float32, so</text>
+<text x="84.0" y="3710.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">rounding error accumulates over long blocks.</text>
+<text x="40.0" y="3729.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">L3.</text>
+<text x="84.0" y="3729.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">No year arithmetic: TIME() assumes |day difference| &lt; 180 and 365-day years, and GMT() clamps offsets to +/-180 days and wraps day &gt; 365 with % 365, which mishandles leap years. The header year is</text>
+<text x="84.0" y="3745.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">ignored.</text>
+<text x="40.0" y="3764.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">L4.</text>
+<text x="84.0" y="3764.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">DT_ULONGINT index: milliseconds since the file reference, at most 49.7 days, and never delta-coded. DT_PACKEDTIME: a 5-bit relative day where a wrap is detected only when the day decreases, so a gap</text>
+<text x="84.0" y="3780.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">of 32 days or more inside one block is ambiguous. Microseconds are discarded.</text>
+<text x="40.0" y="3799.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">L5.</text>
+<text x="84.0" y="3799.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Map strings and the index nomen are at most 255 bytes each. Nomen is stored only in a parameter's first block. UPDATE mode can append data but cannot add parameters. Events are capped at 4096 and the</text>
+<text x="84.0" y="3815.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">comment block at 64 MB.</text>
+<text x="40.0" y="3834.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">L6.</text>
+<text x="84.0" y="3834.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Element size comes from a single ASCII digit, so types are limited to 1-9 bytes. Sub-range reads of compressed blocks must decompress from the start of the block.</text>
+<text x="40.0" y="3861.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="bold" text-anchor="start" fill="#1d2430">FORMAT IDIOSYNCRASIES</text>
+<text x="40.0" y="3881.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">I1.</text>
+<text x="84.0" y="3881.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Byte order is mixed: structural fields are always BE, while the arrays follow a per-block flag that defaults to host order. The signature is compared as a native u32 against platform-specific</text>
+<text x="84.0" y="3897.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">constants.</text>
+<text x="40.0" y="3916.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">I2.</text>
+<text x="84.0" y="3916.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Header fields are reused for other purposes. blockPoints[0..1] act as an update counter and an end-of-writing flag. TimeLzhSize/DataLzhSize hold the blob size for 'v1'. The top 16 bits of seqNum hold</text>
+<text x="84.0" y="3932.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">a rate flag and value. The firstTime/lastTime slots are 8 bytes read as float, u32, double or TimeTag depending on indexType.</text>
+<text x="40.0" y="3951.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">I3.</text>
+<text x="84.0" y="3951.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Type codes appear in two forms: ASCII IDs in the map ('d8', first char lower-cased on read) and numeric DT codes in pidHeader. 'p4' is a legal map data ID, but indexType 9 (packed time) is produced</text>
+<text x="84.0" y="3967.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">only by the PACK_TIMETAG option on a 't8' index.</text>
+<text x="40.0" y="3986.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">I4.</text>
+<text x="84.0" y="3986.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Disk space reserved by the writer (1038 B per map entry, filled with 0x20, plus commentBlockSZ filled with 0x00) is never reclaimed for MULTITIME64 or _SRT files. Readers see the leftover space as</text>
+<text x="84.0" y="4002.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">part of the comment block, as in test1.multi.</text>
+<text x="40.0" y="4021.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">I5.</text>
+<text x="84.0" y="4021.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Header text fields are fixed-width and need not be NUL-terminated. STRNDUP turns empty strings into a single space (" ").</text>
+<text x="40.0" y="4040.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">I6.</text>
+<text x="84.0" y="4040.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">A FILE_REF event in the comment text silently replaces the header reference time. An EOF event makes reads repeat the last value up to that time.</text>
+<text x="40.0" y="4089.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#5b6472" font-style="italic">Generated from SunAcc42.c/.h source analysis and a byte-level parse of test1.multi.</text>
+<desc>
+PLAIN-TEXT COPY OF SECTION 8 (issues, limitations, security risks, idiosyncrasies)
+
+SAMPLE FILE (test1.multi) OBSERVATIONS
+  F1. Signature FF FF FF F4 = SUN_MULTITIME64, not 32-bit SUN_MULTITIME. Reference = 2010 day 175 00:00:50.513, 5
+  parameters (all 'd8', seqNum 1, no rate flag), blockPoints 1/1 (closed, not live).
+  F2. Every map blockPtr is 0: the file holds NO data blocks. readSunParm() on any parameter returns ERR_TIMESLICE
+  after re-reading the map pointer.
+  F3. 517,315 of 518,492 bytes (99.8%) are zero fill. The reader takes the whole region from offset 516 to EOF
+  (517,976 B) as the comment block, because parameter 0 has no data block.
+  F4. The [events] section has EOF=175/0.0 and ALIGN=175/0.0, both 50.513 s BEFORE the file reference time. The [coef]
+  section (MSID/COEF records) belongs to the application and is not parsed by SunAcc. The comment text ends with two
+  lines of 125 spaces each (reserved editing space).
+
+SECURITY RISKS / DEFECTS CONFIRMED IN THE CODE (exploitable with a crafted or corrupt file)
+  S1. Static buffer overflows in the ar002 LZH decoder. read_pt_len(NT=19, TBIT=5) accepts a count n up to 31, plus up
+  to 3 zero-run entries, and writes into pt_len[19]. read_c_len() accepts n up to 511 and zero-runs up to 531 entries,
+  and writes into c_len[510] (SunAcc42.c:9119-9225, arrays at 9034-9035). Any compressed block can therefore corrupt
+  global memory. This is the same class of bug as the published gzip/LHA unlzh decoder flaws.
+  S2. 32-bit size arithmetic on fields read from the file: malloc(pHead-&gt;points * bsize) (3439, 64-bit path ~4075),
+  malloc(bufAllocSz * DataTypeSize) (3766) and the 64-bit equivalents can wrap. lzh_decode()/fread() then write
+  points*iSz bytes into the short buffer (heap overflow). For 'v1' blocks, DataTypeSize = 4 + TimeLzhSize, which comes
+  straight from the file. The element size (typeIDS[1] - '0') is never validated; e.g. ID 'f' + 0x00 gives 0xFFFFFFD0.
+  S3. Out-of-bounds reads in STRNDUP(), which calls strlen() before applying maxlen. retrieveFileMap() passes
+  sBuf[256], which is never NUL-terminated and is stale or uninitialized when a length byte is 0 (920-935).
+  openSunFile() passes the fixed char[80]/char[12] header fields (1155-1161). testNumber is the last member of the
+  heap-allocated SunHeader, so a full 12-character value reads past the allocation.
+  S4. No validation of the header 'items' count or of fread() results in retrieveFileMap(). A large items value (in
+  the millions, so calloc still succeeds) on a short file loops items times, allocating strings (DoS).
+  refreshSunFile() reloads the map the same way.
+  S5. The 'linked' chain has no cycle or bounds check. A link that points back to an earlier block makes
+  readMultiTimeParm(64) grow its address stack by 32 entries per pass until realloc fails (memory exhaustion).
+  S6. Comment-block size is computed only from parameter 0's first blockPtr (1182-1201). If parameter 0 has no data,
+  everything up to EOF, including other parameters' binary blocks, is parsed as comment text. If blockPtr &lt;
+  commentOffset, the unsigned subtraction wraps (it is clamped to 64 MB). commentOffset comes from 32-bit ftell() even
+  for 64-bit files.
+  S7. Wrong byte-swap test for variable blocks. The reader tests typeIDS[1] != 'v' (always true) instead of typeIDS[0]
+  (3817 and the 64-bit copy). When a block's bigEndian flag differs from the host, it byte-reverses the opaque 'v1'
+  blob, or the FP_VARIABLE sentinel, as one unit. The writer never swaps 'v1' data.
+  S8. setCommentText() saves the file position in savePos64 for 64-bit files but restores it from the uninitialized
+  32-bit savePos (7689). This is an undefined-behavior read and a wrong position restore. It is currently masked
+  because every library write path seeks before it writes.
+  S9. closeSunFile() packs a 32-bit file when blockPoints[1] == 0. Blocks appended with MANUAL_UPDATE, without a call
+  to showFileUpdated(), leave the counter at 0. Packing then moves the data and fixes the map pointers, but not the
+  absolute 'linked' offsets inside the block headers, so the chain is corrupted.
+  S10. createSunFile(): mapEstAdj = (writeMode &gt;&gt; 8) &amp;&amp; 0x0007 is computed after writeMode &amp;= 0x000F, so it is always
+  0 (logical &amp;&amp; instead of &amp;). The MAP20-MAP80 pre-allocation options documented in SunAcc42.h do nothing.
+  S11. closeSunFile() packing runs pBlk[0] -= packSpace without checking for 0 (8710); only pBlk[1] is guarded. A
+  parameter added with no data (blockPtr 0) gets a wrapped pointer of about 0xFFFFxxxx. Reads then fail with
+  ERR_LINK_HDR_RD instead of 'no data', and if it is parameter 0 the comment size wraps, so events are lost. This
+  affects only packed 32-bit files (gap &gt; 8 KB, about 9+ parameters). test1.multi (64-bit, never packed) is not
+  affected, although every one of its pointers is NULL.
+  S12. Not thread-safe or re-entrant: global accError/wrtError, global LZH decoder state, and strtok() in comment
+  parsing. The TRUNCATE(a,b) macro ignores its arguments and uses the variable sPtr.
+
+POTENTIAL ISSUES (likely, not exercised here)
+  P1. make_table() indexes count[bitlen[i]] (count[17]) without checking bitlen &lt;= 16. The pt_len escape loop can
+  produce longer lengths, which would overflow a stack array.
+  P2. A block with points = 0 gives malloc(0), but the reader still accesses time[0] and data[points-1] (points-1
+  wraps to 0xFFFFFFFF).
+  P3. The two compressed streams are read back to back with no fseek() to the data stream. Correctness relies on the
+  time decoder consuming exactly TimeLzhSize bytes, and a truncated stream is padded with zero bits instead of being
+  reported as an error.
+  P4. On a big-endian host, packed-time arrays use FLIP() (a no-op there) instead of flip(), so little-endian packed
+  times are not swapped. Every other index type handles this case.
+  P5. The reader finds a block header again by subtracting PHEAD(64)SIZE from the stored data start. This works only
+  because nomen bytes appear in the first block alone, whose address comes from the map.
+  P6. A live writer publishes a zeroed header first and patches it later. fflush() is skipped under MANUAL_UPDATE, so
+  a polling reader can see a link or counter that points at an unflushed block.
+
+FORMAT LIMITATIONS
+  L1. SUN_MULTITIME stores u32 offsets but seeks with fseek(long), which is effectively 2 GB on Windows. MULTITIME64
+  removes that limit for offsets, but block-internal sizes (points*iSz, startPoint*dSz) and the comment offset and
+  size are still 32-bit.
+  L2. Time is returned as float32 relative seconds whatever the stored precision: about 7.8 ms resolution 1 day from
+  the reference and about 2 s after 1 year. Float index deltas are themselves float32, so rounding error accumulates
+  over long blocks.
+  L3. No year arithmetic: TIME() assumes |day difference| &lt; 180 and 365-day years, and GMT() clamps offsets to +/-180
+  days and wraps day &gt; 365 with % 365, which mishandles leap years. The header year is ignored.
+  L4. DT_ULONGINT index: milliseconds since the file reference, at most 49.7 days, and never delta-coded.
+  DT_PACKEDTIME: a 5-bit relative day where a wrap is detected only when the day decreases, so a gap of 32 days or
+  more inside one block is ambiguous. Microseconds are discarded.
+  L5. Map strings and the index nomen are at most 255 bytes each. Nomen is stored only in a parameter's first block.
+  UPDATE mode can append data but cannot add parameters. Events are capped at 4096 and the comment block at 64 MB.
+  L6. Element size comes from a single ASCII digit, so types are limited to 1-9 bytes. Sub-range reads of compressed
+  blocks must decompress from the start of the block.
+
+FORMAT IDIOSYNCRASIES
+  I1. Byte order is mixed: structural fields are always BE, while the arrays follow a per-block flag that defaults to
+  host order. The signature is compared as a native u32 against platform-specific constants.
+  I2. Header fields are reused for other purposes. blockPoints[0..1] act as an update counter and an end-of-writing
+  flag. TimeLzhSize/DataLzhSize hold the blob size for 'v1'. The top 16 bits of seqNum hold a rate flag and value. The
+  firstTime/lastTime slots are 8 bytes read as float, u32, double or TimeTag depending on indexType.
+  I3. Type codes appear in two forms: ASCII IDs in the map ('d8', first char lower-cased on read) and numeric DT codes
+  in pidHeader. 'p4' is a legal map data ID, but indexType 9 (packed time) is produced only by the PACK_TIMETAG option
+  on a 't8' index.
+  I4. Disk space reserved by the writer (1038 B per map entry, filled with 0x20, plus commentBlockSZ filled with 0x00)
+  is never reclaimed for MULTITIME64 or _SRT files. Readers see the leftover space as part of the comment block, as in
+  test1.multi.
+  I5. Header text fields are fixed-width and need not be NUL-terminated. STRNDUP turns empty strings into a single
+  space (" ").
+  I6. A FILE_REF event in the comment text silently replaces the header reference time. An EOF event makes reads
+  repeat the last value up to that time.
+</desc>
+</svg>
