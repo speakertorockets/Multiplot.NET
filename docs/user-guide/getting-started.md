@@ -8,7 +8,8 @@ Multiplot.NET is a folder that you copy anywhere. It needs the .NET 10 Desktop R
 Multiplot.exe                 the application
 Multiplot.ini                 default settings (copied to your user folder on first start)
 ColorPrinter.wps            colour table used by SET COLOR PRINTERTABLE
-plugins\                    data-source plugins (optional)
+plugins\                    data-source plugins
+  Multiplot.Parquet\         bundled Apache Parquet plugin (Multiplot.Parquet.dll and its libraries)
 ```
 
 The first time Multiplot.NET starts, it creates the user folder `%USERPROFILE%\My Multiplot`. It copies
@@ -39,13 +40,14 @@ You can open data in any of these ways:
 
 * *File → Open* (Ctrl+O) opens one or more data files.
 * Drag files onto the window.
-* Pass them on the command line: `Multiplot.exe data.sun`.
+* Pass them on the command line: `Multiplot.exe data.sun` or `Multiplot.exe archive.parquet`.
 * Use the script command `OPEN file`.
 
 You can open these kinds of file:
 
-* **Data files**: SUN files (all SUN formats, including compressed and dynamic files), plus any
-  format that a loaded plugin supports.
+* **Data files**: SUN files (all SUN formats, including compressed and dynamic files), Apache
+  Parquet files (`.parquet`, read by the bundled plugin; see [Plugins](plugins.md)), plus any other
+  format that a loaded plugin supports. *File → Open* has a *Parquet Files* filter.
 * **Group files**: lists of data files that are loaded as one group.
 * **Filter files** (`.flt`).
 * **CSV/ASCII files**: these go through the [ASCII import](import-export.md).

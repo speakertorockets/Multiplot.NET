@@ -71,7 +71,7 @@ INT64 ticks or relative-seconds time column (see the user guide, *Plugins*). It 
 reader, with these differences:
 
 * GMT tags are built directly from the absolute time. A leap-year day 366 is therefore correct, while the SUN
-  reader can be one day off for `d8` time indexes.
+  reader can be one day off for `d8` time indexes (OQ-017). All differences are recorded as DEV-PLG-002.
 * The EOF hold point is added for every parameter. The SUN reader skips it for `f4`-indexed parameters.
 * Min/max cover the points returned. The SUN reader also counts the original value of a clamped trailing point.
 * *Rebuild data rate* (options 1001/1002) is not applied.

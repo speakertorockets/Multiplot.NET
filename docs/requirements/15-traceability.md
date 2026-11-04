@@ -31,7 +31,8 @@ Every source file of Multiplot.NET is mapped to the requirement areas it impleme
 | `Multiplot.Core/CommandIds.cs`, `ToolbarDefaults.cs` | command ids, default toolbar bands | FR-CFG-040, FR-UI-004 |
 | `Multiplot.Sun/*` | SUN reader/writer, LZH codec, comment blocks | 03 (all) |
 | `Multiplot.Plugins.Abstractions/*` | plugin contracts, data model, data types, error codes, time math | 04 FR-ACC-*, FR-PLG-*, FR-SUN-090, FR-TIM-* |
-| `Multiplot.DataAccess/DataAccessService.cs` | provider façade, plugin loading and blocking | 04 FR-ACC-*, FR-PLG-010..013 |
+| `Multiplot.DataAccess/DataAccessService.cs` | provider façade, plugin loading (including `Name\Name.dll` sub-folders) and blocking | 04 FR-ACC-*, FR-PLG-010..013 |
+| `Multiplot.Parquet/*` | bundled Apache Parquet data-source plugin | FR-PLG-033, DEV-PLG-002 |
 
 ## 15.3 Expressions, scripting, settings, import/export, rendering, UI
 
@@ -44,6 +45,8 @@ Every source file of Multiplot.NET is mapped to the requirement areas it impleme
 | `Multiplot.Rendering/*` | plot renderer, picture output | 08 FR-PLT-*, FR-TAB-*, FR-XPT-030 |
 | `Multiplot.App/*` | WPF shell, menus, toolbars, document area, dialogs | 08 FR-UI-*, DEV-UI-001..004 |
 | `samples/MinimalPlugin` | plugin SDK sample | FR-PLG-030 |
+| `tools/MultiToParquet/*` | `multi2parquet` MULTITIME(64) → Parquet converter | FR-XPT-050, OQ-016 |
+| `tests/Multiplot.Tests/EndToEnd/ParquetPluginTests.cs` | Parquet plugin integration tests | TST-PLG-002 |
 
 ## 15.4 Requirement → verification
 

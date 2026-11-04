@@ -18,7 +18,7 @@ analysing and plotting engineering test data. The document set is self-contained
 | 07 | [07-data-loading.md](07-data-loading.md) | Files, groups, time slices/references, events, filters, favorites | LOAD | done |
 | 08 | [08-plotting-ui.md](08-plotting-ui.md) | Main window, plot windows, styles, scaling, mouse, markers, tabular, dialogs | UI, PLT, MRK, TAB | done |
 | 09 | [09-settings-compat.md](09-settings-compat.md) | INI file, registry, command line, user folder | CFG | done |
-| 10 | [10-import-export.md](10-import-export.md) | ASCII import, ASCII/SUN export, images, data stats | IMP, XPT | done |
+| 10 | [10-import-export.md](10-import-export.md) | ASCII import, ASCII/SUN export, Parquet conversion, images, data stats | IMP, XPT | done |
 | 11 | [11-realtime.md](11-realtime.md) | Live files, refresh, AutoRun, streams, compact/discard | RT | done |
 | 12 | [12-wpf-deviations.md](12-wpf-deviations.md) | Design decisions: removed features, behaviour fixes, quirks that are kept | DEV | done |
 | 13 | [13-open-questions.md](13-open-questions.md) | Unresolved items needing an owner decision | OQ | done |
@@ -69,7 +69,7 @@ analysing and plotting engineering test data. The document set is self-contained
   | Chapter | Default verification |
   |---|---|
   | 03 SUN / LZH / TIM | TST-SUN-001, TST-SUN-010, TST-LZH-001..003, TST-TIM-001 |
-  | 04 ACC / PLG | TST-PLG-001 + unit tests of the façade |
+  | 04 ACC / PLG | TST-PLG-001, TST-PLG-002 + unit tests of the façade |
   | 05 SCR | TST-SCR-001 (one table-driven case per syntax form and error text in §5.6), TST-SCR-002, TST-SCR-010, TST-SCR-020 |
   | 06 EXP / FN | TST-EXP-001, TST-FN-001 |
   | 07 LOAD | TST-LOAD-001 + golden exports of WPD/favourites/markers fixtures |

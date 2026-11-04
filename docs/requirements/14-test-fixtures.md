@@ -23,6 +23,8 @@ as a behaviour change. Fixture availability is tracked in OQ-011.
 | FX-SCR-xx | Real production scripts from users (≥ 20) plus synthetic scripts covering every command and lexical rule (continuations, comments, `\;`, symbols, `CALL` nesting, `PAUSE`) | chapter 05 | owner + generated |
 | FX-CFG-xx | Real `Multiplot.ini` files (old short colour table, current), favourites, `.markers`, `.wpd` (with bitmap, markers, ynomen), `.flt` with several `[FILTER]=` sections | chapter 09/07 | owner |
 | FX-RT-01 | Writer tool that appends MULTITIME blocks / UNCOMPRESSED points to a live file at configurable rates, adds events, rewrites the header (reference change) | chapter 11 | to be built (C# using the SUN writer) |
+| FX-PQ-01 | MULTITIME64 written by the SUN writer in the test (t8/d8/f4 index, dropout, empty parameter, EOF event), converted with `multi2parquet` into several row groups | FR-PLG-033, FR-XPT-050 | generated in `ParquetPluginTests` |
+| FX-PQ-02 | Generic Parquet files: TIMESTAMP, relative-seconds (with reference metadata) and nullable/string columns across several row groups | FR-PLG-033 | generated in `ParquetPluginTests` |
 | FX-SAMPLE | `ColorPrinter.wps`, `samples/MinimalPlugin/demo_data.min` | misc | repo |
 
 ## 14.2 Golden outputs
@@ -62,4 +64,6 @@ For each scenario a script produces outputs that become golden files once review
 | TST-XPT-001 | Export matrix (zoom, multi-file, PvP, end-to-end, shared time, GMT, precisions) | golden |
 | TST-RT-001 | Live-file refresh scenario (FX-RT-01) equals static reload; UI responsive | integration |
 | TST-PLG-001 | Sample plugin loads, is listed, can be blocked/unblocked via registry and script | integration |
+| TST-PLG-002 | The Parquet plugin loads from `plugins\Multiplot.Parquet\`. Reads of FX-PQ-01 equal SUN reads of the source file (values bit for bit, times within 1e-5 relative, GMT within 1 µs, same error codes) for full and windowed ranges. FX-PQ-02 times, nulls, dropouts and windowed reads are correct. A `/hide` script opens, plots and exports a `.parquet` file | integration |
+| TST-XPT-050 | `multi2parquet verify` on converted sample and synthetic files (every index type, LZH, big-endian, appended blocks, 32- and 64-bit) reports a bit-for-bit match. `crosscheck` matches the SUN reader except for the OQ-017 leap-day case | integration (manual / tool) |
 | TST-UI-001 | Smoke UI automation (FlaUI/WinAppDriver): menus, dialogs open/close, accelerators | UI automation |

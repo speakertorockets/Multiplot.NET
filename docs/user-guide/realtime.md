@@ -1,7 +1,8 @@
 # Real-time operation
 
 Dynamic SUN files, and plugin files that report themselves as dynamic, grow while a test is running.
-Multiplot.NET can follow them.
+Multiplot.NET can follow them. Parquet files are always static. Convert a `.multi` file to Parquet
+with `multi2parquet` only after the test has finished and the file is closed.
 
 | Command / menu | Effect |
 |---|---|

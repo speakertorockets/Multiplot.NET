@@ -131,6 +131,30 @@ relative times, LZH-compressed, native byte order.
 **FR-XPT-021 (parameter/file details)** `SAVEPARMLIST`, `SAVEPARMDETAILS`, `SAVEFILEDETAILS` and the
 File/Parameter Details dialogs' Save/Copy/Copy-all produce the text formats specified in FR-SCR-157..159.
 
+## 10.3a Parquet archive conversion
+
+**FR-XPT-050 (multi2parquet)** The command-line tool `tools/MultiToParquet` (`multi2parquet.exe`) shall convert
+a SUN_MULTITIME, MULTITIME64 or `_SRT` file to an Apache Parquet file in the `multiplot.timeseries.wide/1` layout
+of `docs/parquet-archive-format.md`. That layout has an INT64 `time_ticks` column (.NET ticks, UTC, ascending) and
+one nullable DOUBLE column per parameter. Null means "no sample" and NaN means dropout. The header, parameter map,
+events and verbatim comment block go into `multiplot.*` key/value metadata.
+
+* The tool reads the stored samples only, at the stored precision. It does not add display points: no EOF hold,
+  no window clamping and no full-rate rebuild.
+* The year comes from `refTime[0]`, or from `--year`. Each time stamp is placed in a year with the ±180-day rule
+  of FR-TIM-001.
+* Defaults are Zstandard compression at the smallest-size level, DELTA_BINARY_PACKED for the time column and
+  1,048,576 rows per row group.
+* These parameters are skipped and listed in `multiplot.skipped`: `v1` data, `t8` data values and image/`p4`
+  data values.
+* The tool warns about out-of-order time stamps (it sorts them, keeping the order of equal times), about 64-bit
+  integers above 2^53, and about packed time stamps that decode to a day outside 1..366 (OQ-016). Those stamps
+  are exported as decoded.
+* The `info`, `verify` (bit-for-bit re-read), `crosscheck` (against the SUN reader) and `synth` (fixture writer)
+  commands support testing.
+
+*Acceptance:* TST-XPT-050.
+
 ## 10.4 Images
 
 **FR-XPT-030 (Save Picture)** *Edit → Save Picture* lists the supported raster formats

@@ -24,7 +24,7 @@ and recorded in 12-wpf-deviations; nothing is changed silently.
 
 | Area | In scope | Out of scope |
 |---|---|---|
-| Data formats | SUN_COMPRESSED, UNCOMPRESSED, CIRCULAR, MULTITIME, COMMONTIME, MULTITIME64, *_SRT read; COMPRESSED/COMMONTIME/MULTITIME/MULTITIME64 write; ASCII import | Native plugin DLLs |
+| Data formats | SUN_COMPRESSED, UNCOMPRESSED, CIRCULAR, MULTITIME, COMMONTIME, MULTITIME64, *_SRT read; COMPRESSED/COMMONTIME/MULTITIME/MULTITIME64 write; ASCII import; Apache Parquet read via the bundled plugin (FR-PLG-033) and MULTITIME(64) → Parquet conversion (FR-XPT-050) | Native plugin DLLs |
 | Extensibility | .NET plugin API (data sources, expression functions, menu commands) | ExternalFn.dll / RefPropFn.dll / PolyFit.dll native ABIs |
 | Expressions | full syntax, operators, functions | — |
 | Scripts | all 120 commands incl. parsing quirks; recording | mailslot/external command polling (`EXTCMDPOLLING`, `/comm`) — parsed and ignored |
@@ -62,6 +62,7 @@ and recorded in 12-wpf-deviations; nothing is changed silently.
 | End-to-end | Groups laid sequentially along the X axis |
 | Apply global | Style changes apply to all plot windows |
 | Stream | Live network/telemetry data source (PC GOAL) delivered via plugin |
+| Parquet archive | Apache Parquet file in the `multiplot.timeseries.wide/1` layout (`docs/parquet-archive-format.md`) |
 
 ## 1.6 Global limits (must be honoured as minima)
 

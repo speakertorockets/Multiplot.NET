@@ -32,6 +32,24 @@ Script options:
 * `EXPORT CLIPBOARD` copies the same text to the clipboard.
 * `SAVESUN [file]` writes the plotted data to a SUN MULTITIME file.
 
+## Converting `.multi` files to Parquet
+
+`multi2parquet` (`tools/MultiToParquet`) converts SUN_MULTITIME and SUN_MULTITIME64 files, including the
+`_SRT` variants, into compressed Apache Parquet archives. Multiplot.NET opens the result directly, and so
+can other tools such as pandas, pyarrow, DuckDB and Spark. The archive has one INT64 column of .NET ticks
+(UTC) and one nullable DOUBLE column per parameter. The header, parameter map, events and comment block go
+into the file metadata. See `docs/parquet-archive-format.md`.
+
+```
+multi2parquet convert test.multi                  # writes test.parquet
+multi2parquet convert test.multi out.parquet --level fastest
+multi2parquet info test.multi                     # header, events, blocks and points per parameter
+multi2parquet verify test.multi test.parquet      # compares every sample bit for bit
+```
+
+Use `--year N` when the file's header year is missing or wrong. Convert a file only after it has been
+closed. A file with signature `00 00 00 00` is still being written, and the converter cannot open it.
+
 ## Pictures
 
 `SAVEPIC BMP|JPEG|GIF|PNG [file|ALL|CLIPBOARD]` (*File → Save Picture*) draws the plot at the size
