@@ -2,7 +2,7 @@
 
 ## 1.1 Product
 
-Multiplot.NET is a Windows desktop tool for rocket-engine and other test data. It opens binary test
+Multiplot.NET is a Windows desktop tool for  test data. It opens binary test
 data files (the "SUN" family), lets engineers select parameters, evaluate expressions and functions
 over them, plot them in many styles and time references, annotate plots with markers, tabulate and
 export data, monitor growing (live) files in real time, and automate all of this with a script
