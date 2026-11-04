@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Multiplot.Application</RootNamespace>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Multiplot.Core\Multiplot.Core.csproj" />
+    <ProjectReference Include="..\Multiplot.Sun\Multiplot.Sun.csproj" />
+    <ProjectReference Include="..\Multiplot.DataAccess\Multiplot.DataAccess.csproj" />
+    <ProjectReference Include="..\Multiplot.Expressions\Multiplot.Expressions.csproj" />
+    <ProjectReference Include="..\Multiplot.Scripting\Multiplot.Scripting.csproj" />
+    <ProjectReference Include="..\Multiplot.Settings\Multiplot.Settings.csproj" />
+    <ProjectReference Include="..\Multiplot.ImportExport\Multiplot.ImportExport.csproj" />
+    <ProjectReference Include="..\Multiplot.Plugins.Abstractions\Multiplot.Plugins.Abstractions.csproj" />
+    <ProjectReference Include="..\Multiplot.Rendering\Multiplot.Rendering.csproj" />
+  </ItemGroup>
+</Project>

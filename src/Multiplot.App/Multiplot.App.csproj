@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Multiplot.App</RootNamespace>
+    <AssemblyName>Multiplot</AssemblyName>
+    <ApplicationIcon>Resources\Multiplot.ico</ApplicationIcon>
+    <PlatformTarget>x64</PlatformTarget>
+    <Version>1.0.0</Version>
+    <Product>Multiplot.NET</Product>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Multiplot.Application\Multiplot.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\*.bmp" />
+    <Resource Include="Resources\Multiplot.ico" />
+    <None Update="Multiplot.ini" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="ColorPrinter.wps" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

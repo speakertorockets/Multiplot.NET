@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Multiplot.Sun</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Multiplot.Core\Multiplot.Core.csproj" />
+    <ProjectReference Include="..\Multiplot.Plugins.Abstractions\Multiplot.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

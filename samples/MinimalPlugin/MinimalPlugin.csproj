@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Sample data-source plugin (FR-PLG-030): a minimal template for new data sources.
+       Build it and copy MinimalPlugin.dll into <Multiplot folder>\plugins or %USERPROFILE%\My Multiplot\plugins. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>MinimalPlugin</RootNamespace>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The host supplies the contracts assembly; do not copy it next to the plugin. -->
+    <ProjectReference Include="..\..\src\Multiplot.Plugins.Abstractions\Multiplot.Plugins.Abstractions.csproj" Private="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="demo_data.min" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

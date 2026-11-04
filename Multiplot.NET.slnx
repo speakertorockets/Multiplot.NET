@@ -1,0 +1,21 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Multiplot.App/Multiplot.App.csproj" />
+    <Project Path="src/Multiplot.Application/Multiplot.Application.csproj" />
+    <Project Path="src/Multiplot.Core/Multiplot.Core.csproj" />
+    <Project Path="src/Multiplot.DataAccess/Multiplot.DataAccess.csproj" />
+    <Project Path="src/Multiplot.Expressions/Multiplot.Expressions.csproj" />
+    <Project Path="src/Multiplot.ImportExport/Multiplot.ImportExport.csproj" />
+    <Project Path="src/Multiplot.Plugins.Abstractions/Multiplot.Plugins.Abstractions.csproj" />
+    <Project Path="src/Multiplot.Rendering/Multiplot.Rendering.csproj" />
+    <Project Path="src/Multiplot.Scripting/Multiplot.Scripting.csproj" />
+    <Project Path="src/Multiplot.Settings/Multiplot.Settings.csproj" />
+    <Project Path="src/Multiplot.Sun/Multiplot.Sun.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/MinimalPlugin/MinimalPlugin.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Multiplot.Tests/Multiplot.Tests.csproj" />
+  </Folder>
+</Solution>

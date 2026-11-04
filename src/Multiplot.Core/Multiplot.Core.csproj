@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Multiplot.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Multiplot.Plugins.Abstractions\Multiplot.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

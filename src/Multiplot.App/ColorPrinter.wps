@@ -1,0 +1,42 @@
+;Multiplot Color Printer Color Settings (monitor too)
+;Modify these settings for specialized colors to use with color printers
+;this file can be loaded from the menu function Options->Printer->Load Color Table
+;it may also be called from another script when needed
+; RED=255,GREEN=255,BLUE=255 is white
+; RED=0,GREEN=0;BLUE=0 is black
+
+ColorPrinter ON
+; white background so you can see the colors as they will appear on the printed page
+set color BACKGROUND,255,255,255 GLOBAL
+; larger line size to improve legibility
+linesize 2
+; black grid and text
+set color GRID,0,0,0 GLOBAL
+set color LABEL,0,0,0 GLOBAL
+set color TITLE,0,0,0 GLOBAL
+; 25 line/curve colors recycled for > 25 curves
+set color 1,255,0,0 GLOBAL
+set color 2,0,0,255 GLOBAL
+set color 3,0,128,0 GLOBAL
+set color 4,255,128,64 GLOBAL
+set color 5,255,0,255 GLOBAL
+set color 6,0,128,192 GLOBAL
+set color 7,128,0,0 GLOBAL
+set color 8,0,0,0 GLOBAL
+set color 9,0,255,0 GLOBAL
+set color 10,128,0,64 GLOBAL
+set color 11,64,128,128 GLOBAL
+set color 12,0,255,255 GLOBAL
+set color 13,255,128,128 GLOBAL
+set color 14,255,0,128 GLOBAL
+set color 15,128,0,255 GLOBAL
+set color 16,0,128,255 GLOBAL
+set color 17,128,128,255 GLOBAL
+set color 18,0,128,0 GLOBAL
+set color 19,0,0,128 GLOBAL
+set color 20,64,0,0 GLOBAL
+set color 21,0,64,0 GLOBAL
+set color 22,0,0,64 GLOBAL
+set color 23,64,64,0 GLOBAL
+set color 24,0,64,64 GLOBAL
+set color 25,64,0,64 GLOBAL

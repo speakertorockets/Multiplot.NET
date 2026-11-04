@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Multiplot.Plugins</RootNamespace>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Version>1.0.0</Version>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>Multiplot.Plugins.Abstractions</PackageId>
+    <Description>Public plugin contracts for Multiplot.NET (data sources, expression functions, menu commands).</Description>
+  </PropertyGroup>
+</Project>

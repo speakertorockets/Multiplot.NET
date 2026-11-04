@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <PlatformTarget>x64</PlatformTarget>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Multiplot.Core\Multiplot.Core.csproj" />
+    <ProjectReference Include="..\..\src\Multiplot.Sun\Multiplot.Sun.csproj" />
+    <ProjectReference Include="..\..\src\Multiplot.Plugins.Abstractions\Multiplot.Plugins.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Multiplot.Scripting\Multiplot.Scripting.csproj" />
+    <ProjectReference Include="..\..\src\Multiplot.Settings\Multiplot.Settings.csproj" />
+    <ProjectReference Include="..\..\src\Multiplot.ImportExport\Multiplot.ImportExport.csproj" />
+    <ProjectReference Include="..\..\src\Multiplot.DataAccess\Multiplot.DataAccess.csproj" />
+    <ProjectReference Include="..\..\src\Multiplot.Expressions\Multiplot.Expressions.csproj" />
+    <ProjectReference Include="..\..\src\Multiplot.Rendering\Multiplot.Rendering.csproj" />
+    <ProjectReference Include="..\..\samples\MinimalPlugin\MinimalPlugin.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\src\Multiplot.App\Multiplot.App.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="fixtures\Multiplot.ini" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
