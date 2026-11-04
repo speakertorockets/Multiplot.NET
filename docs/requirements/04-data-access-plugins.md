@@ -122,7 +122,9 @@ registered is rejected with a warning at load.
 
 **FR-PLG-010 (locations)** Plugins are loaded from (a) the `plugins` folder beside the executable and,
 if *Use user plugin folder* is enabled, (b) `<UserFolder>\plugins`. Every `*.dll` that contains a
-public non-abstract type implementing `IMultiplotPlugin` is a candidate.
+public non-abstract type implementing `IMultiplotPlugin` is a candidate. A plugin that has its own dependencies is
+deployed in a sub-folder named after it, and the candidate is `plugins\<Name>\<Name>.dll`. Its `.deps.json` and
+dependency assemblies resolve inside that plugin's load context. The blocking name is the file name `<Name>.dll`.
 
 **FR-PLG-011 (blocking)** File names listed as value names under
 `HKCU\SOFTWARE\Multiplot\Plugins\Blocked` (case-insensitive) are not loaded. `DISABLE PLUGIN name` adds
@@ -150,6 +152,14 @@ delivered with the SDK as documentation and as an integration test of the API.
 `STREAMnnREF`, stream "EOF" GMT) is required for the in-scope real-time stream feature; its protocol
 specification is **not available** — see OQ-001.
 **FR-PLG-032** An ElvAcc live plugin (signatures `0x4C41424C` / `0x4C42414C`, the ASCII tags "LBAL"/"LABL") is optional — see OQ-001.
+**FR-PLG-033** An **Apache Parquet plugin** (`src/Multiplot.Parquet`, signature `0x31524150`, the magic
+"PAR1") ships with the application in `plugins\Multiplot.Parquet\`. It reads static (non-real-time) archives:
+the `multiplot.timeseries.wide/1` convention written by `tools/MultiToParquet`
+(see `docs/parquet-archive-format.md`), and generic Parquet files whose time column is INT64 `time_ticks`, a
+TIMESTAMP, or relative seconds. Every other numeric top-level column is a parameter. A null cell is "no sample"
+and NaN is a dropout. Reads follow the MULTITIME rules: lead-in and trailing points with extrapolation, clamping
+to the window, and the EOF hold point. GMT tags are built directly from the absolute times.
+
 **FR-PLG-040** Expression functions `fn(...)` and `refprop(...)` (and its deprecated aliases) are
 served by `IExpressionFunctionProvider` plugins; if no provider implements the requested name the
 error text is `Externally defined fn() not available (DLL not loaded)` /

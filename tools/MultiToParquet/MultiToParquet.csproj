@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Converts SUN_MULTITIME / SUN_MULTITIME64 (.multi) files to compressed Apache Parquet files. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>MultiToParquet</RootNamespace>
+    <AssemblyName>multi2parquet</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Parquet.Net" Version="6.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Multiplot.Sun\Multiplot.Sun.csproj" />
+    <ProjectReference Include="..\..\src\Multiplot.Plugins.Abstractions\Multiplot.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

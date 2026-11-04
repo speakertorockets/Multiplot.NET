@@ -47,7 +47,7 @@ public sealed class AppSettings
     public string TStart = "-3.4e+038", TStop = "+3.4e+038", TRef = "NONE";
 
     // [options]
-    public string FileFilters = "All Files(*.*)|*.*|025 Files|*.025|050 Files|*.050|250 Files|*.250|Filter Files (*.flt)|*.flt||";
+    public string FileFilters = "All Files(*.*)|*.*|Parquet Files (*.parquet)|*.parquet|025 Files|*.025|050 Files|*.050|250 Files|*.250|Filter Files (*.flt)|*.flt||";
     public bool AutoSave = true, AlignClosest = true, CalcEveryInstance, UsePlaceholder, ExitSafety, RebuildRate = true;
     public bool TabHistory = true, MaxPresentation = true, FirstOccurrence, Extrapolate, ShowSysLoad = true, ShowCoord = true;
     public int Monitors, OptimizedDraw = 1, OffscreenDraw = 1;

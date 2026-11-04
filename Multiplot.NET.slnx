@@ -6,6 +6,7 @@
     <Project Path="src/Multiplot.DataAccess/Multiplot.DataAccess.csproj" />
     <Project Path="src/Multiplot.Expressions/Multiplot.Expressions.csproj" />
     <Project Path="src/Multiplot.ImportExport/Multiplot.ImportExport.csproj" />
+    <Project Path="src/Multiplot.Parquet/Multiplot.Parquet.csproj" />
     <Project Path="src/Multiplot.Plugins.Abstractions/Multiplot.Plugins.Abstractions.csproj" />
     <Project Path="src/Multiplot.Rendering/Multiplot.Rendering.csproj" />
     <Project Path="src/Multiplot.Scripting/Multiplot.Scripting.csproj" />
@@ -14,6 +15,9 @@
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/MinimalPlugin/MinimalPlugin.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/MultiToParquet/MultiToParquet.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Multiplot.Tests/Multiplot.Tests.csproj" />

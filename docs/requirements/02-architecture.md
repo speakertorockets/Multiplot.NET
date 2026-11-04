@@ -30,6 +30,8 @@ subject to OQ-004); it must support the custom layout of chapter 08 (multi-Y col
 | `Multiplot.Settings` | INI reader/writer, registry adapter, command-id map (chapter 09) | Core |
 | `Multiplot.App` | WPF shell, MVVM view models, dialogs, commands, menus/toolbars | all |
 | `Multiplot.Tests.*` | Unit, golden-file, UI automation tests (chapter 14) | – |
+| `Multiplot.Parquet` | Bundled Apache Parquet data-source plugin, deployed to `plugins\Multiplot.Parquet\` (FR-PLG-033) | Abstractions, Parquet.Net |
+| `tools/MultiToParquet` | `multi2parquet` converter, SUN_MULTITIME(64) → Parquet | Sun, Parquet.Net |
 | `samples/MinimalPlugin` | Plugin SDK sample (FR-PLG-030) | Abstractions |
 
 **ARC-010 (single command layer)** All user actions (menus, toolbars, popups, accelerators, user

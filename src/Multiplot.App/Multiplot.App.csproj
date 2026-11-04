@@ -12,7 +12,24 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Multiplot.Application\Multiplot.Application.csproj" />
+    <!-- bundled plugin: built first, deployed to plugins\Multiplot.Parquet\ (not referenced) -->
+    <ProjectReference Include="..\Multiplot.Parquet\Multiplot.Parquet.csproj" ReferenceOutputAssembly="false" Private="false" SkipGetTargetFrameworkProperties="true" />
   </ItemGroup>
+  <PropertyGroup>
+    <ParquetPluginOutput>$(MSBuildThisFileDirectory)..\Multiplot.Parquet\bin\$(Configuration)\net10.0\</ParquetPluginOutput>
+  </PropertyGroup>
+  <Target Name="DeployParquetPlugin" AfterTargets="Build">
+    <ItemGroup>
+      <ParquetPluginFiles Include="$(ParquetPluginOutput)**\*" Exclude="$(ParquetPluginOutput)**\*.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ParquetPluginFiles)" DestinationFiles="@(ParquetPluginFiles->'$(OutDir)plugins\Multiplot.Parquet\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="PublishParquetPlugin" AfterTargets="Publish">
+    <ItemGroup>
+      <ParquetPluginPublishFiles Include="$(ParquetPluginOutput)**\*" Exclude="$(ParquetPluginOutput)**\*.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ParquetPluginPublishFiles)" DestinationFiles="@(ParquetPluginPublishFiles->'$(PublishDir)plugins\Multiplot.Parquet\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
   <ItemGroup>
     <Resource Include="Resources\*.bmp" />
     <Resource Include="Resources\Multiplot.ico" />

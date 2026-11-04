@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Apache Parquet data-source plugin (multiplot.timeseries.wide/1 and generic time-series files).
+       Deployed by Multiplot.App into <exe>\plugins\Multiplot.Parquet\ together with its dependencies. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Multiplot.Parquet</RootNamespace>
+    <AssemblyName>Multiplot.Parquet</AssemblyName>
+    <!-- plugin: copy NuGet dependencies and emit a .deps.json for the plugin load context -->
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Parquet.Net" Version="6.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The host supplies the contracts assembly; do not copy it next to the plugin. -->
+    <ProjectReference Include="..\Multiplot.Plugins.Abstractions\Multiplot.Plugins.Abstractions.csproj" Private="false" ExcludeAssets="runtime" />
+  </ItemGroup>
+</Project>

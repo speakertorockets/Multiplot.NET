@@ -185,7 +185,8 @@ public sealed class DataAccessService : IDisposable
     public int ExecuteSunCommand(string command) => Sun.ExecuteCommand(command);
 
     /// <summary>
-    /// Loads plugins from the given folders (FR-PLG-010/011): every *.dll with a public non-abstract
+    /// Loads plugins from the given folders (FR-PLG-010/011): every *.dll, and every <c>Name/Name.dll</c> in a
+    /// sub-folder (a plugin with its own dependencies), with a public non-abstract
     /// <see cref="IMultiplotPlugin"/> type, skipping blocked file names; each assembly in its own collectible context.
     /// </summary>
     public PluginScanResult LoadPlugins(IEnumerable<string> folders, ISet<string> blocked, IPluginHost host)
@@ -197,7 +198,14 @@ public sealed class DataAccessService : IDisposable
         foreach (string folder in folders)
         {
             if (!Directory.Exists(folder)) continue;
-            foreach (string dll in Directory.GetFiles(folder, "*.dll").OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+            // plugins\X.dll, and plugins\X\X.dll for a plugin deployed with its own dependencies
+            var candidates = Directory.GetFiles(folder, "*.dll").OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (string sub in Directory.GetDirectories(folder).OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+            {
+                string main = System.IO.Path.Combine(sub, System.IO.Path.GetFileName(sub) + ".dll");
+                if (File.Exists(main)) candidates.Add(main);
+            }
+            foreach (string dll in candidates)
             {
                 string name = System.IO.Path.GetFileName(dll);
                 if (name.Equals("Multiplot.Plugins.Abstractions.dll", StringComparison.OrdinalIgnoreCase)) continue;
