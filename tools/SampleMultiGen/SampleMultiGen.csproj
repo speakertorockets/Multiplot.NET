@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Generates a synthetic SUN_MULTITIME64 (.multi) test file through the native SunAcc42.dll write library. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SampleMultiGen</RootNamespace>
+    <AssemblyName>samplemultigen</AssemblyName>
+    <!-- SunAcc42.dll in native/ is the 64-bit Release build (Winplot/AccessLibs/SunAcc/Release64). -->
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="native\SunAcc42.dll" Link="SunAcc42.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
