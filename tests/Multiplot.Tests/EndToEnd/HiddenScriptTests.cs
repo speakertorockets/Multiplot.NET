@@ -275,4 +275,52 @@ public class HiddenScriptTests
         Assert.Equal(new[] { "2.5,Event", "redline 0.5,Upper limit,RIGHT" }, File.ReadAllLines(P("b.markers")).Where(l => !l.StartsWith(';')).ToArray());
         try { Directory.Delete(dir, true); } catch (IOException) { }
     }
+
+    /// <summary>
+    /// Issue #1: with two open files that share parameter names, a file-qualified name (what the Parameter Selection
+    /// dialog now produces when one file is selected) loads from that file only, for PLOT and ADDPARAMETER, with a
+    /// file-name or a full-path qualifier.
+    /// </summary>
+    [Fact]
+    public void HiddenScript_FileQualifiedNamesLoadOneFile()
+    {
+        string? exe = FindExe();
+        Assert.True(exe != null, "Multiplot.exe not built (the test project builds it via a project reference)");
+
+        string dir = Path.Combine(Path.GetTempPath(), "MultiplotNetE2E", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        string P(string n) => Path.Combine(dir, n);
+        WriteFixture(P("rt_feed.sun"));
+        WriteFixture(P("static_run.sun"));
+        File.WriteAllText(P("qualified.wps"),
+            "open " + P("rt_feed.sun") + "\r\n" +
+            "open " + P("static_run.sun") + "\r\n" +
+            "plot SINE\r\n" +
+            "export " + P("both.csv") + "\r\n" +
+            "plot rt_feed.sun:SINE\r\n" +
+            "addparameter static_run.sun:SINE\r\n" +
+            "export " + P("added.csv") + "\r\n" +
+            "plot " + P("static_run.sun") + ":RAMP\r\n" +
+            "export " + P("path.csv") + "\r\n" +
+            "exit\r\n");
+
+        var (exited, code) = RunHidden(exe!, dir, P("qualified.wps"));
+        Assert.True(exited, "Multiplot.exe did not exit within 60 s");
+        Assert.Equal(0, code);
+        int Curves(string csv, string name)
+        {
+            Assert.True(File.Exists(P(csv)), csv + " not written");
+            string header = File.ReadLines(P(csv)).First(l => l.Contains(name));
+            return header.Split(',', '\t').Count(c => c.Trim().Trim('"').Equals(name, StringComparison.Ordinal));
+        }
+        Assert.Equal(2, Curves("both.csv", "SINE"));   // unqualified: one curve per file
+        Assert.Equal(2, Curves("added.csv", "SINE"));  // one from each file, not four
+        Assert.Equal(1, Curves("path.csv", "RAMP"));
+        // the first export line names the source file of each curve
+        string Sources(string csv) => File.ReadLines(P(csv)).First();
+        Assert.Contains("rt_feed.sun", Sources("added.csv"));
+        Assert.Contains("static_run.sun", Sources("added.csv"));
+        Assert.DoesNotContain("rt_feed.sun", Sources("path.csv"));
+        try { Directory.Delete(dir, true); } catch (IOException) { }
+    }
 }

@@ -9,7 +9,8 @@ Each item can be:
 * **A name**: `PC1`. Names are matched against the primary, alternate and extended names, without
   regard to case. `@n` selects the parameter at position n.
 * **A file-qualified name**: `run12:PC1`. Only files whose path or group name contains `run12` are
-  searched.
+  searched. The parameter-selection dialog writes these for you when one file is selected in its
+  **File** box. A colon inside a `"description"` is not taken as a qualifier.
 * **An expression**: anything that contains `[ ] ( )`, for example `[PC1]-[PC2]`.
 * **A function**: `avg(PC1 0.5)`.
 * Any of the above followed by `"description"`: the text in quotes replaces the curve description.

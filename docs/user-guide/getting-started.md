@@ -74,6 +74,14 @@ The selected names make up the **Y parameter list**, for example `PC1,TEMP`. You
 list directly. A list can contain expressions such as `[PC1]*2` and functions such as `avg(PC1 0.1)`.
 See [Parameter lists and expressions](expressions.md).
 
+When several files are open, a name is loaded from **every** file that has it. To take it from one
+file only, pick that file in the dialog's **File** box: the names are then written as file-qualified
+names, for example `static_run.sun:PC1`, and only that file is searched. This also works for *Add
+Parameter*, so you can add a recorded parameter next to the live parameter of the same name. With
+**All Files** selected the names stay unqualified. If a file's name can't be told apart from the
+other open files, the dialog says so; type a qualifier yourself (any part of the path) or choose All
+Files.
+
 To limit the time range, use *TimeSlice → Set Time Slice* or `TIME start,stop[,reference]`. Times
 are in seconds relative to the reference. A reference can be a GMT (`ddd/hh:mm:ss.mmm`) or the name
 of an event in the file's `[events]` section.

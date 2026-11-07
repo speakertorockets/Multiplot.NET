@@ -550,13 +550,10 @@ public sealed partial class Session
                     else
                     {
                         string buf;
-                        int colon = pn.LastIndexOf(':');
+                        int colon = FileQualifier.Colon(pn); // a colon in a "description" is not a qualifier
                         if (colon >= 0)
                         {
-                            string s1 = file.Info.Path.ToLowerInvariant();
-                            string s2 = pn[..colon].ToLowerInvariant();
-                            string s3 = g.GroupName.ToLowerInvariant();
-                            if (!s1.Contains(s2) && !s3.Contains(s2)) continue;
+                            if (!FileQualifier.Matches(file.Info.Path, g.GroupName, pn[..colon])) continue;
                             buf = pn[(colon + 1)..];
                         }
                         else buf = pn;
@@ -1109,6 +1106,7 @@ public sealed partial class Session
                     y = (y + LayoutGridSpacingValue / 2) / LayoutGridSpacingValue * LayoutGridSpacingValue;
                 }
                 y = 4096 - y;
+                Record("addparameter " + YAxis + (plot.Config.Style == PlotStyle.Tabular && !YAxis.Contains('@') ? Crt.Sprintf("@%d:%d", x, y) : ""));
             }
             else load = false;
         }
@@ -1147,6 +1145,17 @@ public sealed partial class Session
                 Message("Parameter(s) not available for selected time\nor not found in file group\n", PromptButtons.Ok, PromptIcon.Information);
         }
         YAxis = saveY;
+    }
+
+    /// <summary>
+    /// The qualifier (<c>qualifier:NAME</c>) that limits a parameter name to open file <paramref name="file"/>, or
+    /// null when no text selects that file alone (FR-UI-020).
+    /// </summary>
+    public string? QualifierForFile(int file)
+    {
+        var paths = _files.Select(f => f.Info.Path).ToList();
+        var groups = Enumerable.Range(0, _files.Count).Select(i => _groups.Count > 0 ? _groups[GroupOfFile(i)].GroupName : "").ToList();
+        return FileQualifier.For(paths, groups, file);
     }
 
     /// <summary>Returns true on OK.</summary>

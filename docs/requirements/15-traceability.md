@@ -27,6 +27,7 @@ Every source file of Multiplot.NET is mapped to the requirement areas it impleme
 | `Multiplot.Core/Model/*` | settings, plot configuration, plot documents, curves, markers | 08, 09 |
 | `Multiplot.Core/Plotting/Scale.cs` | axis scaling, zoom stack | FR-PLT-010..014 |
 | `Multiplot.Core/ParameterOps.cs` | min/max, append, average, quantize, full-rate rebuild, compaction | FR-ACC-002, FR-FN-030, FR-SUN-076, FR-RT-031 |
+| `Multiplot.Core/FileQualifier.cs` | file-qualified parameter names: matching, unique qualifier for one file, qualifying a list | FR-UI-020, FR-LOAD |
 | `Multiplot.Core/TimeReference.cs`, `TimeParse.cs`, `Formatting.cs` | time slices and references, reference shifting, time strings, value formatting | FR-LOAD-020/021, FR-UI-024a, FR-XPT-001 |
 | `Multiplot.Core/Crt.cs`, `Strtok.cs`, `AnsiText.cs` | C runtime number semantics, tokenizer, text encoding | NFR-COMP-001/002 |
 | `Multiplot.Core/CommandIds.cs` | command ids | FR-CFG-040 |

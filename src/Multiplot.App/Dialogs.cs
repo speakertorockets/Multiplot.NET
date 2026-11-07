@@ -248,11 +248,31 @@ public sealed class ParameterSelectDialog : DialogBase
         if (_list.SelectedItems.Count == 0) return;
         var names = _list.SelectedItems.Cast<ParmRow>().Select(r => _alt.IsChecked == true ? r.AltName : r.Name);
         if (_mode == ParmSelectMode.XAxis) _x.Text = names.First();
-        else _y.Text = string.Join(",", names);
+        else
+        {
+            string list = string.Join(",", names);
+            // show the file qualifier when one file is selected, so the Y axis box says what will load
+            if (_file.SelectedIndex > 0 && _s.QualifierForFile(_file.SelectedIndex - 1) is { } q) list = FileQualifier.Qualify(list, q);
+            _y.Text = list;
+        }
     }
 
     private void Accept()
     {
+        // a single file selected: plain names are limited to that file (FR-UI-020)
+        string y = _y.Text.Trim();
+        if (_mode != ParmSelectMode.XAxis && _file.SelectedIndex > 0 && y.Length > 0)
+        {
+            string? q = _s.QualifierForFile(_file.SelectedIndex - 1);
+            if (q == null)
+            {
+                MessageBox.Show(this, "The selected file can't be told apart from the other open files by its name or path,\n" +
+                    "so its parameters can't be limited to it.\n\nSelect All Files, or type a qualified name (text of the path:NAME) in the Y axis box.",
+                    "Multiplot", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            y = FileQualifier.Qualify(y, q);
+        }
         s_plot = _plot.IsChecked == true;
         s_alt = _alt.IsChecked == true;
         s_ext = _ext.IsChecked == true;
@@ -265,7 +285,7 @@ public sealed class ParameterSelectDialog : DialogBase
         if (_mode == ParmSelectMode.XAxis) _s.XAxis = _x.Text.Trim().Length == 0 ? "(default)" : _x.Text.Trim();
         else
         {
-            _s.YAxis = _y.Text.Trim();
+            _s.YAxis = y;
             if (_mode == ParmSelectMode.Normal) _s.XAxis = _x.Text.Trim().Length == 0 ? "(default)" : _x.Text.Trim();
         }
         DialogResult = true;

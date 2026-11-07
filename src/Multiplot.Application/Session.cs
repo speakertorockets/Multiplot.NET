@@ -159,7 +159,12 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
     public readonly List<RedlineMarker> MasterRedlines = new();
     public readonly FixedScaleDefaults Fix = new() { XSetGrad = -1 };
     public readonly int[] RestoreColors;
-    public int PlotNo, ImportCnt, CurrentFile = -1;
+    public int PlotNo, ImportCnt;
+    /// <summary>
+    /// File last chosen in the Parameter Selection dialog (−1 = All Files); only remembers the dialog choice.
+    /// Loading is limited to one file by file-qualified names (<see cref="QualifierForFile"/>), not by this.
+    /// </summary>
+    public int CurrentFile = -1;
     public bool DataLoading, FileLoading, RtLoaded, TimeChange, RefreshPaused, Refreshing;
     public int AutoRefresh;
     public bool RunHidden, NoPlugins, UseUserPluginFolder, ExtCmdPolling, PresentationMode, KeepOnTop;
