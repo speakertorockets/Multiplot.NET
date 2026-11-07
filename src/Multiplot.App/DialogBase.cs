@@ -26,6 +26,7 @@ public class DialogBase : Window
         SizeToContent = SizeToContent.Height;
         ResizeMode = ResizeMode.CanResizeWithGrip;
         ShowInTaskbar = false;
+        UseCompactDensity();
         Body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         Body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         var dock = new DockPanel();
@@ -94,6 +95,44 @@ public class DialogBase : Window
         if (editable) c.Text = value;
         else c.SelectedItem = items?.FirstOrDefault(i => i == value) ?? items?.FirstOrDefault();
         return c;
+    }
+
+    /// <summary>
+    /// Compact density, applied to every dialog: keeps the Windows 11 (Fluent) look of the current
+    /// appearance but with shorter text boxes, combo boxes, buttons, list rows and column headers, so the
+    /// dialogs take less space. The styles are based on the current theme styles, so light and dark both
+    /// work. Multi-line text boxes (<c>AcceptsReturn</c>) keep their height.
+    /// </summary>
+    private void UseCompactDensity()
+    {
+        Style Based(object key, Type target, params Setter[] setters)
+        {
+            var style = new Style(target, TryFindResource(key) as Style);
+            foreach (var x in setters) style.Setters.Add(x);
+            return style;
+        }
+        void Add(Type t, params Setter[] setters) => Resources[t] = Based(t, t, setters);
+
+        var text = Based(typeof(TextBox), typeof(TextBox), new Setter(MinHeightProperty, 0.0), new Setter(HeightProperty, 28.0),
+            new Setter(PaddingProperty, new Thickness(6, 3, 6, 2)));
+        var multi = new Trigger { Property = TextBox.AcceptsReturnProperty, Value = true };
+        multi.Setters.Add(new Setter(HeightProperty, double.NaN));
+        text.Triggers.Add(multi);
+        Resources[typeof(TextBox)] = text;
+        Add(typeof(ComboBox), new Setter(MinHeightProperty, 0.0), new Setter(HeightProperty, 28.0), new Setter(PaddingProperty, new Thickness(8, 3, 8, 2)));
+        Add(typeof(Button), new Setter(MinHeightProperty, 0.0), new Setter(HeightProperty, 28.0), new Setter(PaddingProperty, new Thickness(10, 2, 10, 2)));
+        Add(typeof(CheckBox), new Setter(MinHeightProperty, 0.0));
+        Add(typeof(RadioButton), new Setter(MinHeightProperty, 0.0));
+        Add(typeof(GridViewColumnHeader), new Setter(MinHeightProperty, 0.0), new Setter(HeightProperty, 26.0), new Setter(PaddingProperty, new Thickness(6, 2, 6, 2)));
+        Setter[] row =
+        {
+            new(MinHeightProperty, 0.0), new(HeightProperty, 24.0), new(PaddingProperty, new Thickness(4, 0, 0, 0)),
+            new(MarginProperty, new Thickness(0)), new(VerticalContentAlignmentProperty, VerticalAlignment.Center),
+        };
+        Add(typeof(ListBoxItem), row);
+        Add(typeof(ListViewItem), row);
+        // ListView with a GridView takes its rows from this key instead of the ListViewItem style
+        Resources[GridView.GridViewItemContainerStyleKey] = Based(GridView.GridViewItemContainerStyleKey, typeof(ListViewItem), row);
     }
 
     /// <summary>Check box helper.</summary>

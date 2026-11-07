@@ -432,7 +432,7 @@ Attributes allows X/Y position, legend and format edits; *Copy to File → as WP
 | FR-UI-032 | **Slice Average** | FR-XPT-042 |
 | FR-UI-033 | **Data Pick** | Values of every curve at the picked time (`%g`), sortable list, double-click/plot selected/plot all into a new plot. |
 | FR-UI-034 | **Symbolic Names** | List/add/edit/delete/clear user symbols (`Name already exists` confirm). |
-| FR-UI-035 | **File Paths** | Data file search path, (DB_DIR search path), script search path, WPD search path, export folder. |
+| FR-UI-035 | **File Paths** | Data file search path, (DB_DIR search path), script search path, WPD search path, export folder. Each has a *Browse...* button with the Windows folder selection dialog (`Microsoft.Win32.OpenFolderDialog`, starting in the first existing folder of the path). Search paths (`;` lists): multi-select, the chosen folders are appended unless already present (case-insensitive, trailing `\` ignored). Export folder: the choice replaces the text. |
 | FR-UI-036 | **External Applications** | Export application, edit/view application, text printer command (stored), Include GMTs. |
 | FR-UI-037 | **Precision** | Data format and time format (GENERAL, 0..7, HEX…, OCT…), shared time. |
 | FR-UI-038 | **Average Function** | default rate, time-stamp mode (first/last/averaged). |

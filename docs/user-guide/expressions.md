@@ -42,7 +42,7 @@ decimal (`1.5e-3`) or hexadecimal (`0x1F`, up to `0xffff`).
 
 Operator precedence and evaluation order follow the rules in the specification (chapter 06),
 including some unusual precedences. If any input is a
-dropout at a point, the result at that point is a dropout too.
+[dropout](plot-windows.md#dropouts) at a point, the result at that point is a dropout too.
 
 **Timeline.** By default the result uses the time points of the first parameter. The other
 parameters take their value at the last point at or before each time. Two commands change this:

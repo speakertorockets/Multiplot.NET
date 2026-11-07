@@ -104,7 +104,7 @@ The exact syntax and error messages for each command are in `docs/requirements/0
 [Colors and appearance](plot-windows.md#colors-and-appearance)),
 `XTITLE`, `YTITLE`, `ENABLE`, `DISABLE`, `AUTOLABEL`, `TESTINFO` (test title in the bottom-left
 corner), `CAPTION` (`CAPTION USER text` sets the plot window title), `APPLYGLOBAL`, `DROPOUTIGNORE`,
-`DROPOUTMARKER`, `OPTIMIZEDDRAW`, `SHOWCOORD`.
+`DROPOUTMARKER` (see [Dropouts](plot-windows.md#dropouts)), `OPTIMIZEDDRAW`, `SHOWCOORD`.
 
 Retired, accepted and ignored so that old scripts still run: `TIMESTAMP`, `SHOWVERSION`,
 `SHOWUSERNAME`, `SHOWPAGENO`, `SHOWSCRIPT` (those texts are no longer drawn), `SET GROUPNAME ...`

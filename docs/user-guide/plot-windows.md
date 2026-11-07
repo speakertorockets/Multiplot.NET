@@ -31,7 +31,7 @@ Use the *Style* menu or `STYLE` to switch styles:
 
 | Style | Description |
 |---|---|
-| 2D line | Curves against time; optional symbols, stair-step drawing, dropout markers |
+| 2D line | Curves against time; optional symbols, stair-step drawing, [dropout](#dropouts) markers |
 | 2D scatter | Symbols only |
 | 3D line / 3D area | Perspective view with depth (`LINESIZE 3DTHIN/3DMEDIUM/3DWIDE`); *Axis → Z Angle* sets the angle |
 | Logic | Each curve on its own strip, drawn as true or false labels (`SET LOGIC TEXT`) |
@@ -167,6 +167,47 @@ in `[interface]`) switches the look of the whole application. Light is the defau
 * Pictures saved or copied from a plot (`SAVEPIC`, *Copy to Clipboard*, *Copy to File*) show the plot
   as it looks on the screen, so in the dark appearance they are dark too.
 * The Windows colour and font dialogs and the message boxes keep the light Windows style.
+
+## Dropouts
+
+A **dropout** is a sample that exists in the data but is invalid, for example a lost or corrupted
+measurement. A dropout is never drawn as a value.
+
+### How dropouts are stored
+
+| Source | Dropout |
+|---|---|
+| SUN files | A float32 value with the bit pattern `0x80000001`. It is recognised by its exact bits, not by comparing numbers. |
+| Parquet files | `NaN`. An empty (null) cell is different: it means "no sample at this time", not a dropout. |
+| ASCII import | An empty data column, or text that starts with `N`, `-N` or `1.#QNAN`. |
+| Expressions | The result at a point is a dropout when any input is a dropout there, when the point is outside an input parameter's time range, or when a function is out of range, for example `log` or `sqrt` of a value ≤ 0, `asin`/`acos` of a value beyond ±1, or `exp`/`sinh`/`cosh`/`tan`/`tanh` of a value beyond ±85 (see [Parameter lists and expressions](expressions.md)). |
+
+Dropouts are left out of autoscaling (the minimum and maximum of a curve) and of the statistics
+(*Slice Average*, `DATASTATS`).
+
+### How dropouts are drawn
+
+Two switches in *Data → Dropouts* control the drawing (saved in `Multiplot.ini` as `DropoutIgnore` and
+`DropoutMarker`):
+
+* **Ignore** (`DROPOUTIGNORE ON|OFF`, on by default). On: the dropout is skipped and the curve runs
+  straight from the last valid point to the next one, so the line looks continuous. Off: the curve is
+  broken at the dropout and starts again at the next valid point, leaving a visible gap.
+* **Show Markers** (`DROPOUTMARKER ON|OFF`, off by default). On: a small marker is drawn just below
+  the top edge of the plot area at the time of each dropout, so you can see where data is missing even
+  when *Ignore* bridges the gap.
+
+Other displays:
+
+* **Parameter-versus-parameter (X-Y) plots**: a point is skipped when its X or its Y value is a dropout,
+  and the line always breaks there. No dropout markers are drawn.
+* **Tabular displays and text exports** (`EXPORT`, *Copy to Clipboard as Text*) show the value as
+  `DROP_OUT`.
+
+```
+dropoutignore off      ; show gaps where data is missing
+dropoutmarker on       ; and mark each dropout at the top of the plot
+```
 
 ## Markers
 

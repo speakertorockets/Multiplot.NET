@@ -8,7 +8,7 @@ files.
 | Chapter | Contents |
 |---|---|
 | [Getting started](getting-started.md) | Installing, the main window, opening files, making a first plot |
-| [Plot windows](plot-windows.md) | Plot styles, mouse and keyboard, context menus, scales, fonts, tabular displays |
+| [Plot windows](plot-windows.md) | Plot styles, mouse and keyboard, context menus, scales, fonts, colours and appearance, dropouts, tabular displays |
 | [Event and redline markers](markers.md) | Timestamp markers and value-axis redlines on plots, `[events]` from SUN and Parquet files, `MARKER` and `REDLINE` commands, marker colours, `.markers` files |
 | [Parameter lists and expressions](expressions.md) | Parameter lists, expressions, operators and functions |
 | [Scripts](scripts.md) | The `.wps` language, symbols, recording, and a command reference |

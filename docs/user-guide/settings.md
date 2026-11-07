@@ -9,6 +9,29 @@
 | Export folder (`EXPORTPATH`) | Default location for exports, pictures and statistics |
 | `%LOCALAPPDATA%\Multiplot\logs` | Diagnostic log, and the messages from hidden mode |
 
+### File paths
+
+*Options → File Paths* sets where Multiplot.NET looks for files and where it writes them:
+
+| Path | Script command | Used for |
+|---|---|---|
+| Data file search path | `FILEPATH` | Data files given without a folder |
+| DB_DIR search path | `DBPATH` | Database (`DB_DIR`) files |
+| Script search path | `SCRIPTPATH` | Scripts (`.wps`) given without a folder; the first folder is also where the script and marker file dialogs start |
+| WPD search path | `WPDPATH` | Display files (`.wpd`) and their background bitmaps |
+| Export folder | `EXPORTPATH` | Exports, pictures and statistics |
+
+The four search paths are lists of folders separated by `;` (for example `D:\Tests;D:\Archive`). Each
+path has a **Browse...** button that opens the Windows folder selection dialog:
+
+* For a search path, you can select one or more folders; they are **added** to the end of the list
+  (folders already in the list are not added twice). To remove a folder or change the order, edit the
+  text.
+* For the export folder, the folder you select **replaces** the current one.
+
+The dialog starts in the first existing folder of the path. The paths are saved in `Multiplot.ini` by
+*Save Settings*.
+
 ## Multiplot.ini
 
 Multiplot.NET reads and writes its settings in an INI file with fixed sections, keys and order.

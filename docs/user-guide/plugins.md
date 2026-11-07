@@ -40,7 +40,7 @@ they never update in real time.
   relative time 0 is the first sample. For a seconds column, 0 is the column's own zero, and the clock time
   comes from the `multiplot.reference.iso` (or `multiplot.reference.ticks`) metadata. Without that metadata
   the clock time starts at 2000-01-01 00:00.
-* An empty (null) cell means "no sample". NaN is shown as a dropout.
+* An empty (null) cell means "no sample". NaN is shown as a [dropout](plot-windows.md#dropouts).
 
 To convert existing files, run `multi2parquet convert file.multi`. See `docs/parquet-archive-format.md` for the format.
 

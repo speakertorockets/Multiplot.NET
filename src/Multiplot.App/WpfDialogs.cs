@@ -314,7 +314,7 @@ public sealed class SliceAverageWindow : DialogBase
             try { AnsiText.WriteAllText(dlg.FileName, sb.ToString()); } catch (IOException ex) { MessageBox.Show(this, ex.Message); }
         });
         AddButton("Close", () => DialogResult = true, isDefault: true, isCancel: true);
-        Height = 520;
+        Height = 460;
     }
 }
 
@@ -411,7 +411,7 @@ public sealed class NomenWindow : DialogBase
                 var it = Items.First(i => i.Flag == f);
                 if (!y && (f == Nomen.SEQNUM || f == Nomen.CURVAL || f == Nomen.CURTIME)) continue;
                 var row = new DockPanel { Tag = f };
-                var lenBox = lens.TryGetValue(f, out var lb) ? lb : lens[f] = new TextBox { Width = 40, Text = Len[Nomen.IndexOf(f)].ToString(System.Globalization.CultureInfo.InvariantCulture) };
+                var lenBox = lens.TryGetValue(f, out var lb) ? lb : lens[f] = new TextBox { Width = 40, Height = 22, Padding = new Thickness(4, 1, 4, 1), Text = Len[Nomen.IndexOf(f)].ToString(System.Globalization.CultureInfo.InvariantCulture) };
                 var cb = checks.TryGetValue(f, out var c) ? c : checks[f] = new CheckBox { Content = it.Name, IsChecked = (nomen & f) != 0, VerticalAlignment = VerticalAlignment.Center };
                 (lenBox.Parent as Panel)?.Children.Remove(lenBox);
                 (cb.Parent as Panel)?.Children.Remove(cb);
@@ -457,7 +457,7 @@ public sealed class NomenWindow : DialogBase
             LogicIdx = Math.Max(0, logic.SelectedIndex);
             return true;
         });
-        Height = 560;
+        Height = 520;
     }
 }
 
@@ -585,7 +585,7 @@ public sealed class MarkerWindow : DialogBase
             s.ReplaceMarkers(work);
             return true;
         });
-        Height = 520;
+        Height = 440;
     }
 }
 
@@ -706,7 +706,7 @@ public sealed class RedlineWindow : DialogBase
             s.ReplaceRedlines(work);
             return true;
         });
-        Height = 520;
+        Height = 440;
     }
 }
 
@@ -783,7 +783,7 @@ public sealed class FavoritesWindow : DialogBase
         list.MouseDoubleClick += (_, _) => Accept();
         AddButton("OK", Accept, isDefault: true);
         AddButton("Cancel", () => DialogResult = false, isCancel: true);
-        Height = 460;
+        Height = 400;
     }
 }
 
@@ -987,7 +987,7 @@ public sealed class SymbolsWindow : DialogBase
             foreach (var e in s.Symbols.Entries) s.Record("set " + SymbolTable.NameOf(e) + " = " + SymbolTable.ValueOf(e));
             return true;
         });
-        Height = 460;
+        Height = 420;
     }
 }
 
@@ -1055,15 +1055,58 @@ public static class SimpleForms
         public static CheckBox C(string t, bool v) => Check(t, v);
     }
 
-    /// <summary>File Paths (FR-UI-035).</summary>
+    /// <summary>Folders of a <c>;</c>-separated search path list, trimmed, empty entries removed.</summary>
+    private static List<string> PathEntries(string list) =>
+        list.Split(';').Select(p => p.Trim()).Where(p => p.Length > 0).ToList();
+
+    /// <summary>
+    /// A path text box with a <i>Browse...</i> button that opens the Windows folder selection dialog. For a
+    /// search path list (<paramref name="list"/>) the folders chosen (several can be selected) are added to
+    /// the list unless already in it; for a single folder the choice replaces the text.
+    /// </summary>
+    private static TextBox FolderRow(Form f, string label, string value, bool list)
+    {
+        var box = Form.T(value);
+        var browse = new Button { Content = "Browse...", MinWidth = 80, Margin = new Thickness(6, 0, 0, 0) };
+        browse.ToolTip = list ? "Add folders to the search path" : "Choose the folder";
+        var panel = new DockPanel();
+        DockPanel.SetDock(browse, Dock.Right);
+        panel.Children.Add(browse);
+        panel.Children.Add(box);
+        f.R(label, panel);
+        browse.Click += (_, _) =>
+        {
+            var entries = list ? PathEntries(box.Text) : new List<string> { box.Text.Trim() };
+            string? start = entries.FirstOrDefault(Directory.Exists);
+            var dlg = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = list ? label.Replace("__", "_").TrimEnd(':') + " — add folders" : label.Replace("__", "_").TrimEnd(':'),
+                Multiselect = list,
+            };
+            if (start != null) dlg.InitialDirectory = start;
+            if (dlg.ShowDialog(f) != true) return;
+            if (!list) { box.Text = dlg.FolderName; return; }
+            foreach (var folder in dlg.FolderNames)
+                if (!entries.Any(e => string.Equals(e.TrimEnd('\\'), folder.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)))
+                    entries.Add(folder);
+            box.Text = string.Join(";", entries);
+        };
+        return box;
+    }
+
+    /// <summary>
+    /// File Paths (FR-UI-035): each path has a <i>Browse...</i> button with the Windows folder selection
+    /// dialog; the search paths are <c>;</c>-separated folder lists that can still be edited as text.
+    /// </summary>
     public static bool Paths(Window? owner, Session s)
     {
-        var f = new Form(owner, "File Paths");
-        var data = f.R("Data file search path:", Form.T(s.Settings.FileSpec));
-        var db = f.R("DB_DIR search path:", Form.T(s.Settings.DbFolder));
-        var script = f.R("Script search path:", Form.T(s.Settings.ScriptDir));
-        var wpd = f.R("WPD search path:", Form.T(s.Settings.WpdFolder));
-        var export = f.R("Export folder:", Form.T(s.Settings.ExportDir));
+        var f = new Form(owner, "File Paths", 640);
+        var data = FolderRow(f, "Data file search path:", s.Settings.FileSpec, true);
+        var db = FolderRow(f, "DB__DIR search path:", s.Settings.DbFolder, true);
+        var script = FolderRow(f, "Script search path:", s.Settings.ScriptDir, true);
+        var wpd = FolderRow(f, "WPD search path:", s.Settings.WpdFolder, true);
+        var export = FolderRow(f, "Export folder:", s.Settings.ExportDir, false);
+        f.R("", new TextBlock { Text = "Search paths are lists of folders separated by ';'. Browse adds folders to the list.", TextWrapping = TextWrapping.Wrap, Opacity = 0.75 });
         f.Ok();
         if (f.ShowDialog() != true) return false;
         s.Settings.FileSpec = data.Text; s.Settings.DbFolder = db.Text; s.Settings.ScriptDir = script.Text; s.Settings.WpdFolder = wpd.Text; s.Settings.ExportDir = export.Text;

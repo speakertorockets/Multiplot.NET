@@ -92,8 +92,10 @@ public sealed class ParameterSelectDialog : DialogBase
 
     /// <summary>Creates the dialog.</summary>
     public ParameterSelectDialog(Window? owner, Session s, ParmSelectMode mode)
-        : base(owner, mode == ParmSelectMode.AddParameter ? "Add Parameter to Plot" : mode == ParmSelectMode.XAxis ? "Select X Axis Parameter" : "Parameter Selection", 820)
+        : base(owner, mode == ParmSelectMode.AddParameter ? "Add Parameter to Plot" : mode == ParmSelectMode.XAxis ? "Select X Axis Parameter" : "Parameter Selection", 720)
     {
+        MinWidth = 560;
+        MinHeight = 400;
         _s = s;
         _mode = mode;
         var files = new List<string> { "All Files" };
@@ -129,11 +131,15 @@ public sealed class ParameterSelectDialog : DialogBase
             int col = i;
             var h = new GridViewColumnHeader { Content = heads[i] };
             h.Click += (_, _) => HeaderClick(col);
-            gv.Columns.Add(new GridViewColumn { Header = h, DisplayMemberBinding = new System.Windows.Data.Binding(props[i]), Width = i == 3 ? 260 : 100 });
+            gv.Columns.Add(new GridViewColumn { Header = h, DisplayMemberBinding = new System.Windows.Data.Binding(props[i]), Width = ColumnWeights[i] * 80 });
         }
         _list.View = gv;
-        StretchRow(_list, 260);
-        Height = 600;
+        // columns always fit the list width: no horizontal scroll bar over the last row, and room is kept
+        // on the right for the vertical scroll bar so it does not cover the last column
+        ScrollViewer.SetHorizontalScrollBarVisibility(_list, ScrollBarVisibility.Disabled);
+        _list.SizeChanged += (_, e) => { if (e.WidthChanged) FitColumns(gv); };
+        StretchRow(_list, 180);
+        Height = 520;
         _list.SelectionChanged += (_, _) => SelectionToY();
         _list.MouseDoubleClick += (_, _) => { if (_list.SelectedItems.Count > 0) { SelectionToY(); Accept(); } };
         _file.SelectionChanged += (_, _) => Reload();
@@ -157,6 +163,18 @@ public sealed class ParameterSelectDialog : DialogBase
         AddButton("OK", Accept, isDefault: true);
         AddButton("Cancel", () => DialogResult = false, isCancel: true);
         Reload();
+    }
+
+    /// <summary>Relative column widths: Name, Name (alt), Units, Description, Seq#, Rate, Type.</summary>
+    private static readonly double[] ColumnWeights = { 1.4, 1.2, 0.8, 2.9, 0.7, 0.8, 0.8 };
+
+    /// <summary>Spreads the list width over the columns by <see cref="ColumnWeights"/>.</summary>
+    private void FitColumns(GridView gv)
+    {
+        double avail = _list.ActualWidth - SystemParameters.VerticalScrollBarWidth - 12;
+        if (avail < 200) return;
+        double total = ColumnWeights.Sum();
+        for (int i = 0; i < gv.Columns.Count; i++) gv.Columns[i].Width = Math.Floor(avail * ColumnWeights[i] / total);
     }
 
     private IEnumerable<int> SelectedFiles() => _file.SelectedIndex <= 0 ? Enumerable.Range(0, _s.Files.Count) : new[] { _file.SelectedIndex - 1 };

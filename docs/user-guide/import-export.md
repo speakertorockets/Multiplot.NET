@@ -23,6 +23,9 @@ Script options:
 
 `IMPORT CLIPBOARD` imports text that is on the clipboard.
 
+An empty data field, or text that starts with `N`, `-N` or `1.#QNAN`, is imported as a
+[dropout](plot-windows.md#dropouts) (an invalid sample). Exports write dropouts as `DROP_OUT`.
+
 ## Export
 
 * `EXPORT [file]` (*File → Export*) writes the active plot as comma-separated text. The first lines
