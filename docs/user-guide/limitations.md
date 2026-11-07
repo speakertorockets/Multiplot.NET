@@ -50,7 +50,9 @@
   fits the curves only, and a redline outside the visible value range is hidden. Redlines are not
   drawn on tabular, logic or 3D plots. Curve redlines made with `redline()` in a parameter list
   still work.
-* The Time Alignment tool sets a time shift for each curve.
+* The Time Alignment tool sets a time shift for each curve. The shift is lost when the curve is
+  reloaded. To line up recorded data with live data, use *Align Static to Live* instead (see
+  [Real-time operation](realtime.md#aligning-recorded-data-with-live-data)).
 * The colour and font dialogs are the Windows common dialogs; they and the message boxes stay light in
   the dark appearance. Both appearances use the WPF Windows 11 (Fluent) style, so menus and dialogs
   look different from the classic Windows style of earlier versions.

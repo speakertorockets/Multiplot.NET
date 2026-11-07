@@ -94,6 +94,7 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
     {
         int i = _plots.IndexOf(p);
         if (i < 0) return;
+        if (Align != null && Align.Plot != p) CancelAlign();
         if (i > 0) { _plots.RemoveAt(i); _plots.Insert(0, p); }
         if (notifyShell) Shell.Activate(p);
     }
@@ -140,6 +141,7 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
     /// <summary>Removes a plot window (closed by the user or by CLEAR PLOTS).</summary>
     public void RemovePlot(PlotDocument p)
     {
+        if (Align?.Plot == p) { Align = null; Shell.RefreshCommands(); }
         if (_plots.Remove(p)) Shell.PlotRemoved(p);
         if (ActivePlot != null) Shell.Activate(ActivePlot);
     }

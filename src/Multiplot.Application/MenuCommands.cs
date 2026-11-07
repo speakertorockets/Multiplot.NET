@@ -115,6 +115,7 @@ public sealed partial class Session
             case ID_TIMESLICE: Shell.Dialogs.TimeSlice(this, false); break;
             case ID_MULTITIME: Shell.Dialogs.TimeSlice(this, true); break;
             case ID_TIMEALIGN: Shell.Dialogs.Show(this, DialogKind.TimeAlign); break;
+            case ID_ALIGN_STATIC: if (Align != null) AcceptAlign(); else BeginAlign(); break;
             case ID_TIMEFREEZE:
                 if (plot != null && RtLoaded)
                 {
@@ -411,6 +412,7 @@ public sealed partial class Session
             ID_SCRIPT_EMBEDDED => Settings.EmbeddedScript,
             ID_SCRIPT_RECORD => Recording,
             ID_TIMEFREEZE => ActivePlot != null && ActivePlot.TimeFreeze != 0,
+            ID_ALIGN_STATIC => Align != null,
             ID_PRESENTATION_MODE => PresentationMode,
             ID_MAX_PRES => Settings.MaxPresentation,
             ID_AXIS_MULTIY => c.Multi,

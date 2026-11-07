@@ -956,6 +956,7 @@ public sealed partial class Session
         plot.Initialize(PlotNo, Settings.MultiGroupBy, Settings.GmtFormat, UserCaption, ScriptRun != 0 ? ScriptFile : null,
             Settings.ContinueTitle, Settings.ContinueSubTitle, Settings.IgnoreStatic, Fix, DateTime.Now);
         if (plot.Config.Style == PlotStyle.Tabular && plot.BackgroundFile.Length > 0) LoadBackground(plot, plot.BackgroundFile);
+        CancelAlign();
         _plots.Insert(0, plot);
         Shell.PlotAdded(plot, Settings.PlotMax);
         Shell.RefreshCommands();

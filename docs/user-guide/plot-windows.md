@@ -70,6 +70,7 @@ Choose the right-button function with *Options → Right Button*.
 | Ctrl+Esc | Stop a running script |
 | Esc | Leave presentation mode |
 | Alt+F1 … Alt+F5 | User buttons 1–5 |
+| Ctrl+L | Align Static to Live on or off (see [Real-time operation](realtime.md#aligning-recorded-data-with-live-data)) |
 
 The other shortcuts are shown next to the menu items.
 

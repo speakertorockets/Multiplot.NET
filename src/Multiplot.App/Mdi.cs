@@ -351,10 +351,16 @@ public sealed class PlotView : FrameworkElement
     private readonly Rectangle _box = new() { Stroke = UiTheme.Overlay, StrokeDashArray = new DoubleCollection { 2, 2 }, Visibility = Visibility.Collapsed };
     private readonly Line _line1 = new() { Stroke = UiTheme.Overlay, Visibility = Visibility.Collapsed };
     private readonly Line _line2 = new() { Stroke = UiTheme.Overlay, Visibility = Visibility.Collapsed };
+    private readonly Line _snapLine = new() { Stroke = UiTheme.Overlay, StrokeDashArray = new DoubleCollection { 4, 3 }, Visibility = Visibility.Collapsed };
 
     /// <summary>Overlay line colour for the current <see cref="UiTheme"/>.</summary>
-    public void ApplyTheme() => _box.Stroke = _line1.Stroke = _line2.Stroke = UiTheme.Overlay;
+    public void ApplyTheme() => _box.Stroke = _line1.Stroke = _line2.Stroke = _snapLine.Stroke = UiTheme.Overlay;
     private Point? _leftStart, _rightStart, _midAnchor;
+    // Align Static drag: start point, shift and X factor at the drag start
+    private Point? _alignStart;
+    private double _alignBase, _alignFactor;
+
+    private bool Aligning => _s.Align?.Plot == _doc;
     private int _rbFunction;
     private bool _moved;
 
@@ -370,6 +376,7 @@ public sealed class PlotView : FrameworkElement
         _overlay.Children.Add(_box);
         _overlay.Children.Add(_line1);
         _overlay.Children.Add(_line2);
+        _overlay.Children.Add(_snapLine);
         Cursor = Cursors.Cross;
         ClipToBounds = true;
         Focusable = true;
@@ -404,6 +411,20 @@ public sealed class PlotView : FrameworkElement
             _s.DiagLog("Render failed: " + ex);
             dc.DrawRectangle(UiTheme.Dark ? Brushes.Black : Brushes.White, null, new Rect(0, 0, w, h));
         }
+        UpdateAlignOverlay();
+    }
+
+    /// <summary>Align Static cursor and the marker of a pending snap click.</summary>
+    private void UpdateAlignOverlay()
+    {
+        bool on = Aligning;
+        if (_midAnchor == null) Cursor = on ? Cursors.SizeWE : Cursors.Cross;
+        if (on && _s.Align!.SnapX is double sx && _doc.XScale.Factor != 0)
+        {
+            double px = (sx - _doc.XScale.RMin) * _doc.XScale.Factor + _doc.GraphLeft;
+            SetLine(_snapLine, px, _doc.GraphTop, px, _doc.GraphBottom);
+        }
+        else _snapLine.Visibility = Visibility.Collapsed;
     }
 
     private static (int X, int Y) P(Point p) => ((int)p.X, (int)p.Y);
@@ -418,6 +439,20 @@ public sealed class PlotView : FrameworkElement
     {
         Focus();
         var (x, y) = P(e.GetPosition(this));
+        if (Aligning)
+        {
+            // Align Static: drag moves the static curves, a click marks a snap point
+            if (InGraph(x, y))
+            {
+                _alignStart = e.GetPosition(this);
+                _alignBase = _s.Align!.Shift;
+                _alignFactor = _doc.XScale.Factor;
+                _moved = false;
+                CaptureMouse();
+            }
+            e.Handled = true;
+            return;
+        }
         if (_doc.Config.Style != PlotStyle.Tabular)
         {
             if (_s.SelectAxisAt(_doc, x, y)) return;
@@ -433,6 +468,15 @@ public sealed class PlotView : FrameworkElement
     /// <inheritdoc/>
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
     {
+        if (_alignStart != null)
+        {
+            var at = _alignStart.Value;
+            _alignStart = null;
+            ReleaseMouseCapture();
+            if (!_moved && Aligning) _s.AlignSnap(Session.XValueAt(_doc, (int)at.X));
+            e.Handled = true;
+            return;
+        }
         if (_leftStart == null) return;
         var start = _leftStart.Value;
         var end = Clamp(e.GetPosition(this));
@@ -501,6 +545,20 @@ public sealed class PlotView : FrameworkElement
     /// <inheritdoc/>
     protected override void OnMouseRightButtonDown(MouseButtonEventArgs e)
     {
+        if (_alignStart != null)
+        {
+            // cancel the drag in progress
+            _alignStart = null;
+            ReleaseMouseCapture();
+            _s.SetAlignShift(_alignBase);
+            e.Handled = true;
+            return;
+        }
+        if (Aligning && _s.CancelAlignSnap())
+        {
+            e.Handled = true;
+            return;
+        }
         if (_leftStart != null)
         {
             _leftStart = null;
@@ -637,6 +695,13 @@ public sealed class PlotView : FrameworkElement
     protected override void OnMouseMove(MouseEventArgs e)
     {
         var pos = e.GetPosition(this);
+        if (_alignStart != null)
+        {
+            double dx = pos.X - _alignStart.Value.X;
+            if (Math.Abs(dx) > 2) _moved = true;
+            if (_moved && _alignFactor != 0 && Aligning) _s.SetAlignShift(_alignBase + dx / _alignFactor);
+            return;
+        }
         if (_leftStart != null)
         {
             var p = Clamp(pos);

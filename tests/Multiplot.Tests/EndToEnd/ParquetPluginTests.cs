@@ -227,7 +227,9 @@ public class ParquetPluginTests
                 Assert.Equal("VALVE", r[4].Text);
                 Assert.Equal(30.5, r[4].Time, 6);
 
-                // against a reference event the axis shifts; without file events only user markers remain
+                // against a reference event the axis shifts (file events follow their group's reference);
+                // without file events only user markers remain
+                groups[0].TRef = "IGNITION";
                 var shifted = EventMarkers.Resolve(user.Take(1).ToList(), true, files, groups, new[] { 0 }, "IGNITION");
                 Assert.Equal(-5, shifted[0].Time, 6);
                 Assert.Equal(0, shifted[1].Time, 6);

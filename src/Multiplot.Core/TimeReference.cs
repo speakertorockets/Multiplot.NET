@@ -114,6 +114,43 @@ public static class TimeReference
     }
 
     /// <summary>
+    /// The reference that moves data read against <paramref name="refEvent"/> by <paramref name="shift"/> seconds
+    /// (positive = later on the time axis), as a literal GMT <c>ddd/msec.usec</c>. NONE, START, CUTOFF and constants
+    /// are offsets from the file reference GMT; they become a constant offset instead when the files of the group
+    /// have different (or no) reference GMTs. Null when the reference cannot be shifted (EOF or unresolved).
+    /// </summary>
+    public static string? ShiftReference(IReadOnlyList<IDataFile> files, int current, string refEvent, double shift)
+    {
+        string r = refEvent.Trim();
+        double offset;
+        if (r.Length == 0 || r.Equals("NONE", StringComparison.OrdinalIgnoreCase)) offset = 0.0;
+        else if (r.Equals("EOF", StringComparison.OrdinalIgnoreCase)) return null;
+        else if (GetRefGmt(files, current, r) is TimeTag gmt) return EventMarkers.GmtSpec(TimeMath.Gmt(-shift, gmt, true));
+        else if (GetRefTime(files, current, r) is double t && Math.Abs(t) < 1e30) offset = t;
+        else return null;
+        var fileRef = files[current].Info.RefGmt;
+        bool commonRef = fileRef.JulianDay != 0 && files.All(f => f.Info.RefGmt == fileRef);
+        return commonRef ? EventMarkers.GmtSpec(TimeMath.Gmt(offset - shift, fileRef, true)) : FormatSeconds(offset - shift);
+    }
+
+    /// <summary>
+    /// A start/stop time after the reference moved by <paramref name="shift"/> seconds: a plain number is relative to
+    /// the reference and moves with it; events, GMTs and the ±3.4e38 defaults are unchanged.
+    /// </summary>
+    public static string ShiftSliceTime(string time, double shift)
+    {
+        if (!double.TryParse(time.Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double v)
+            || Math.Abs(v) >= 1e30) return time;
+        return FormatSeconds(v + shift);
+    }
+
+    private static string FormatSeconds(double v)
+    {
+        string s = Crt.Sprintf("%.6f", Math.Abs(v) < 5e-7 ? 0.0 : v).TrimEnd('0');
+        return s.EndsWith('.') ? s[..^1] : s;
+    }
+
+    /// <summary>
     /// Converts a start/stop string (base[±offset]) to seconds relative to <paramref name="refEvent"/>.
     /// Returns 0 on success, −1/−2/−4 on failure.
     /// </summary>

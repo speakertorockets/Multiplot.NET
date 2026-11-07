@@ -72,7 +72,8 @@ public static class EventMarkers
                 {
                     if (Marker.IsReservedEvent(e.Name)) continue;
                     if (!seen.Add((e.Name.ToUpperInvariant(), e.Gmt.JulianDay, e.Gmt.MilliSeconds, e.Gmt.MicroSeconds))) continue;
-                    if (TimeReference.SetTime(gf, 0, GmtSpec(e.Gmt), tRef, out double t) == 0)
+                    // file events follow their own group's reference (Align Static moves it)
+                    if (TimeReference.SetTime(gf, 0, GmtSpec(e.Gmt), groups[g].TRef, out double t) == 0)
                         result.Add(new ResolvedMarker(t, e.Name, false));
                 }
             }

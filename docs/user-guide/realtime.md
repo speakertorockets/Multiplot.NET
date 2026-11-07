@@ -32,6 +32,37 @@ Y* is on, the value axis refits to the data at each refresh, so a redline moves 
 scale and disappears while its value is outside the visible range; with *Auto Scale Y* off the value
 axis keeps its scale and the redlines stay put.
 
+## Aligning recorded data with live data
+
+To compare a recorded (static) file with a file that is still growing, plot parameters from both
+in one plot. Then choose *TimeSlice → Align Static to Live* (or press Ctrl+L, or use the plot area's
+context menu). While the mode is on:
+
+| Action | Effect |
+|---|---|
+| Left drag | Move all static curves along the time axis. The live curves stay put |
+| ← / → | Move by one pixel |
+| Shift+← / → | Move by one X grid division |
+| Ctrl+← / → | Move by a tenth of a pixel |
+| Click, then click | Snap: click a feature on a static curve (a dashed line marks it), then the same feature on a live curve. The static curves move so the two line up |
+| Right click | Cancel the drag in progress or a pending snap click |
+| Wheel, middle drag | Zoom and pan as usual, so you can fine-tune at a closer zoom |
+| Enter (or Ctrl+L again) | Accept |
+| Esc | Cancel a pending snap click, otherwise cancel and put the curves back |
+
+The status bar shows the current shift. Refreshing is held while the mode is on and catches up
+when you accept or cancel.
+
+Accepting moves the time reference of the static file groups: each group's reference becomes a GMT
+(a seconds offset if its files have no common reference GMT), so the alignment lasts. The static
+file's events move with its curves. It survives refreshes, replots and
+new plots, and it is recorded as a `TIME group:start,stop,reference` command when you record a
+script. To undo it, set the group's reference again (*TimeSlice → Per Database*). A group whose
+reference is EOF cannot be aligned this way.
+
+Align Static to Live needs a time plot. It is not available in tabular, End-to-End,
+parameter-vs-parameter or log-X plots, or with 64-bit time switched on.
+
 ## AutoRun
 
 `AUTORUN EVENT,script.wps` runs a script the first time the named event appears in a file's

@@ -21,6 +21,7 @@ public sealed class MainWindow : Window
     private readonly Menu _menu = new();
     private readonly StatusBar _status = new();
     private readonly TextBlock _msg = new(), _cpu = new() { Width = 54 }, _mem = new() { Width = 54 }, _clock = new() { Width = 110 };
+    private readonly LoadMeter _cpuBar = new(), _memBar = new();
     private readonly DispatcherTimer _perfTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private Session? _s;
     private WindowStyle _savedStyle;
@@ -43,10 +44,18 @@ public sealed class MainWindow : Window
         DockPanel.SetDock(_menu, Dock.Top);
         DockPanel.SetDock(_status, Dock.Bottom);
         _status.Items.Add(new StatusBarItem { Content = _msg, HorizontalContentAlignment = HorizontalAlignment.Left });
-        foreach (var t in new[] { _cpu, _mem, _clock })
+        foreach (var (t, bar) in new (TextBlock, LoadMeter?)[] { (_cpu, _cpuBar), (_mem, _memBar), (_clock, null) })
         {
             _status.Items.Add(new Separator());
-            _status.Items.Add(new StatusBarItem { Content = t });
+            object content = t;
+            if (bar != null)
+            {
+                var row = new StackPanel { Orientation = Orientation.Horizontal };
+                row.Children.Add(t);
+                row.Children.Add(bar);
+                content = row;
+            }
+            _status.Items.Add(new StatusBarItem { Content = content });
         }
         // first item stretches
         var panel = new DockPanel();
@@ -227,7 +236,6 @@ public sealed class MainWindow : Window
     public void SetStatus(string text) => _msg.Text = text;
     /// <summary>Real-time clock pane.</summary>
     public void SetClock(string text) => _clock.Text = text;
-    /// <summary>Status bar visibility.</summary>
     /// <summary>
     /// Light or dark appearance (FR-UI-046): the WPF Fluent theme (light or dark) for the menus, dialogs
     /// and window frames, and the plot window frames.
@@ -238,9 +246,49 @@ public sealed class MainWindow : Window
 #pragma warning disable WPF0001 // ThemeMode is marked experimental
         if (System.Windows.Application.Current is { } app) app.ThemeMode = dark ? ThemeMode.Dark : ThemeMode.Light;
 #pragma warning restore WPF0001
+        UseCompactBars();
         Mdi.ApplyTheme();
     }
 
+    /// <summary>
+    /// Keeps the menu bar and status bar one text line high: the Fluent theme pads them for touch, which
+    /// roughly doubles their height. The styles are based on the current theme styles (call after a theme change).
+    /// </summary>
+    private void UseCompactBars()
+    {
+        Style Based(Type t, params Setter[] setters)
+        {
+            var style = new Style(t, TryFindResource(t) as Style);
+            foreach (var x in setters) style.Setters.Add(x);
+            return style;
+        }
+        _menu.Resources.Clear();
+        _menu.Style = Based(typeof(Menu), new Setter(PaddingProperty, new Thickness(0)), new Setter(MinHeightProperty, 0.0));
+        var item = Based(typeof(MenuItem));
+        item.Setters.Add(new EventSetter(LoadedEvent, new RoutedEventHandler((o, _) => CompactTopLevel(o as MenuItem))));
+        _menu.Resources[typeof(MenuItem)] = item;
+        // items already shown get the new theme template without a new Loaded event
+        Dispatcher.BeginInvoke(() => { foreach (var mi in _menu.Items.OfType<MenuItem>()) CompactTopLevel(mi); }, DispatcherPriority.Loaded);
+        _status.Resources.Clear();
+        _status.Style = Based(typeof(StatusBar), new Setter(PaddingProperty, new Thickness(0)), new Setter(MinHeightProperty, 0.0));
+        _status.Resources[typeof(StatusBarItem)] = Based(typeof(StatusBarItem), new Setter(PaddingProperty, new Thickness(6, 1, 6, 1)), new Setter(MinHeightProperty, 0.0));
+    }
+
+    /// <summary>
+    /// The Fluent menu bar item template has fixed 4 px outer and 10 px inner margins (not template bound), so they
+    /// are reduced on the template instance.
+    /// </summary>
+    private static void CompactTopLevel(MenuItem? mi)
+    {
+        if (mi == null || mi.Role != MenuItemRole.TopLevelHeader) return;
+        mi.ApplyTemplate();
+        if (mi.Template?.FindName("Border", mi) is not Border border) return;
+        border.Margin = new Thickness(1, 1, 1, 1);
+        if (border.Child is Grid outer && outer.Children.OfType<Grid>().FirstOrDefault() is Grid inner)
+            inner.Margin = new Thickness(8, 3, 8, 3);
+    }
+
+    /// <summary>Status bar visibility.</summary>
     public void SetStatusBarVisible(bool show) => _status.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>Presentation mode (FR-UI-006).</summary>
@@ -286,6 +334,7 @@ public sealed class MainWindow : Window
         if (_s == null || !_s.Settings.ShowSysLoad)
         {
             _cpu.Text = _mem.Text = "";
+            _cpuBar.Visibility = _memBar.Visibility = Visibility.Collapsed;
             return;
         }
         try
@@ -294,12 +343,21 @@ public sealed class MainWindow : Window
             {
                 ulong total = kernel.Value + user.Value;
                 ulong dt = total - _lastTotal, di = idle.Value - _lastIdle;
-                if (_lastTotal != 0 && dt > 0) _cpu.Text = Crt.Sprintf("CPU %d%%", (int)(100.0 * (dt - di) / dt));
+                if (_lastTotal != 0 && dt > 0)
+                {
+                    int cpu = (int)(100.0 * (dt - di) / dt);
+                    _cpu.Text = Crt.Sprintf("CPU %d%%", cpu);
+                    _cpuBar.SetPercent(cpu);
+                }
                 _lastTotal = total;
                 _lastIdle = idle.Value;
             }
             var m = new MemoryStatusEx { Length = (uint)Marshal.SizeOf<MemoryStatusEx>() };
-            if (GlobalMemoryStatusEx(ref m)) _mem.Text = Crt.Sprintf("MEM %d%%", (int)m.MemoryLoad);
+            if (GlobalMemoryStatusEx(ref m))
+            {
+                _mem.Text = Crt.Sprintf("MEM %d%%", (int)m.MemoryLoad);
+                _memBar.SetPercent((int)m.MemoryLoad);
+            }
         }
         catch (Exception) { }
     }
@@ -312,8 +370,14 @@ public sealed class MainWindow : Window
         var mod = Keyboard.Modifiers;
         bool ctrl = (mod & ModifierKeys.Control) != 0, shift = (mod & ModifierKeys.Shift) != 0, alt = (mod & ModifierKeys.Alt) != 0;
         Key k = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (_s.Align != null && AlignKey(k, ctrl, shift))
+        {
+            e.Handled = true;
+            return;
+        }
         int id = k switch
         {
+            Key.L when ctrl => ID_ALIGN_STATIC,
             Key.Down => ID_AXIS_SHDY,
             Key.Up => ID_AXIS_SHUY,
             Key.Left => ID_AXIS_SHLX,
@@ -352,6 +416,26 @@ public sealed class MainWindow : Window
         }
         Execute(id);
         e.Handled = true;
+    }
+
+    /// <summary>Align Static keys: arrows nudge, Enter accepts, Esc cancels the snap click or the alignment.</summary>
+    private bool AlignKey(Key k, bool ctrl, bool shift)
+    {
+        switch (k)
+        {
+            case Key.Left:
+            case Key.Right:
+                _s!.NudgeAlign(k == Key.Right ? 1 : -1, shift ? AlignStep.Graduation : ctrl ? AlignStep.Fine : AlignStep.Pixel);
+                return true;
+            case Key.Return:
+                _s!.AcceptAlign();
+                return true;
+            case Key.Escape:
+                if (!_s!.CancelAlignSnap()) _s.CancelAlign();
+                return true;
+            default:
+                return false;
+        }
     }
 
     private async void OnDrop(object sender, DragEventArgs e)
@@ -397,5 +481,45 @@ public sealed class MainWindow : Window
         }
         if (openedData) _s.PromptFirstPlot();
         CommandsChanged();
+    }
+}
+
+/// <summary>
+/// Small horizontal load bar of the status bar (CPU, memory): green, yellow above 90 %, red above 95 %.
+/// Shorter than the status text so it does not change the status bar height.
+/// </summary>
+internal sealed class LoadMeter : Border
+{
+    private const double BarWidth = 40;
+    private static readonly Brush Normal = Frozen(Color.FromRgb(0x3C, 0xB3, 0x4A)), Warn = Frozen(Color.FromRgb(0xF2, 0xC2, 0x0F)),
+        Alarm = Frozen(Color.FromRgb(0xE0, 0x30, 0x30));
+    private readonly Border _fill = new() { HorizontalAlignment = HorizontalAlignment.Left, Width = 0 };
+
+    public LoadMeter()
+    {
+        Width = BarWidth + 2;
+        Height = 10;
+        Margin = new Thickness(4, 0, 0, 0);
+        VerticalAlignment = VerticalAlignment.Center;
+        BorderThickness = new Thickness(1);
+        SetResourceReference(BorderBrushProperty, SystemColors.GrayTextBrushKey);
+        Child = _fill;
+        Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>Shows the load, 0..100 %.</summary>
+    public void SetPercent(int percent)
+    {
+        int p = Math.Clamp(percent, 0, 100);
+        _fill.Width = BarWidth * p / 100.0;
+        _fill.Background = p > 95 ? Alarm : p > 90 ? Warn : Normal;
+        Visibility = Visibility.Visible;
+    }
+
+    private static Brush Frozen(Color c)
+    {
+        var b = new SolidColorBrush(c);
+        b.Freeze();
+        return b;
     }
 }

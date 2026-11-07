@@ -71,7 +71,7 @@ public sealed partial class Session
     /// <summary>Refreshes files and plots, then processes AutoRun events.</summary>
     public void RefreshNow()
     {
-        if (_files.Count == 0) return;
+        if (_files.Count == 0 || Align != null) return; // Align Static holds the plot still
         if (!Refreshing)
         {
             Refreshing = true;

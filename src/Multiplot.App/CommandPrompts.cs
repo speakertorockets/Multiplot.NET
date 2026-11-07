@@ -253,6 +253,7 @@ public static class CommandPrompts
         [CommandIds.ID_TAB_GRID] = "Display tabular display layout grid.\nLayout Grid",
         [CommandIds.ID_TAB_HISTORY] = "Maintain full history of data while in tabular display mode.\nTabular History",
         [CommandIds.ID_TAB_SGL_TIME] = "Output a single shared time column when possible.\nShared Time",
+        [CommandIds.ID_ALIGN_STATIC] = "Drag or nudge the static curves along the time axis to line them up with the live data (Enter = accept, Esc = cancel).\nAlign Static to Live",
         [CommandIds.ID_TIMEALIGN] = "Time align current data using alignment tool.\nTime Align",
         [CommandIds.ID_TIMEFREEZE] = "Freeze current time of active realtime plot (inhibit refreshes).\nFreeze Realtime Plot",
         [CommandIds.ID_TIMEPRECISION] = "Set ouput format for data time stamps.\nTime Value Format",

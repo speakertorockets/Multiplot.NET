@@ -98,6 +98,7 @@ public static class MenuDefinitions
             new("&Global Time Slice", CommandIds.ID_TIMESLICE),
             new("&Per Database", CommandIds.ID_MULTITIME),
             new("&Aligment Tool", CommandIds.ID_TIMEALIGN),
+            new("Align &Static to Live\tCtrl+L", CommandIds.ID_ALIGN_STATIC),
             new("&Freeze Plot", CommandIds.ID_TIMEFREEZE),
         }),
         new("&View", new MenuNode[]
@@ -511,6 +512,7 @@ public static class MenuDefinitions
                 new("&Save", CommandIds.ID_MARKER_SAVE),
                 new("&Load", CommandIds.ID_MARKER_LOAD),
             }),
+            new("Align S&tatic to Live", CommandIds.ID_ALIGN_STATIC),
             new("&Colors", new MenuNode[]
             {
                 new("&Line Colors", CommandIds.ID_LINE_COLOR),

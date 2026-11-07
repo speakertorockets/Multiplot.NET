@@ -360,6 +360,7 @@ public static class CommandIds
     public const int ID_INDICATOR_TIME = 61419;
     public const int ID_SHOW_CURRENT_TIME = 61420;
     public const int ID_SHOW_PERFORMANCE = 61423;
+    public const int ID_ALIGN_STATIC = 61430;
 
     /// <summary>All ids by name.</summary>
     public static readonly IReadOnlyDictionary<string, int> ByName = new Dictionary<string, int>
@@ -717,5 +718,6 @@ public static class CommandIds
         ["ID_INDICATOR_TIME"] = 61419,
         ["ID_SHOW_CURRENT_TIME"] = 61420,
         ["ID_SHOW_PERFORMANCE"] = 61423,
+        ["ID_ALIGN_STATIC"] = 61430,
     };
 }
