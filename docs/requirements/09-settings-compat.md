@@ -127,6 +127,7 @@ is written as the current value only when it is `start` (case-insensitive), othe
 | `gridoffset` | |n| ≤ 90 | | 0 |
 | `legendcolumns` | int ≥ 1 else 2 | | 2 |
 | `averagefreq` | int | | 100 |
+| `zaxisfreq` | int, min 1 | 3D segment density | 25 |
 | `tabsteprate` | float | | 1.0 |
 | `timestampmode` | 0 first,1 last,2 averaged | `avg()` default | 1 |
 | `averagerate` | float | `avg()`/`quantize()` default dt | 1.0 |

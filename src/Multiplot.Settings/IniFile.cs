@@ -154,6 +154,7 @@ public static class IniFile
             else if (K("gridoffset")) { if (setting != null) s.MinGridOffset = Math.Abs(Crt.Atoi(setting)) > 90 ? 90 : Math.Abs(Crt.Atoi(setting)); }
             else if (K("legendcolumns")) { if (setting != null) p.LegendColumns = Crt.Atoi(setting) >= 1 ? Crt.Atoi(setting) : 2; }
             else if (K("averagefreq")) { if (setting != null) p.AvgFreq = unchecked((uint)Crt.Atoi(setting)); }
+            else if (K("zaxisfreq")) { if (setting != null) p.ZaxFreq = (uint)Math.Max(1, Crt.Atoi(setting)); }
             else if (K("tabsteprate")) { if (setting != null) s.TabStepRate = (float)Crt.Atof(setting); }
             else if (K("timestampmode")) { if (setting != null) s.TimeStampMode = Crt.Atoi(setting); }
             else if (K("averagerate")) { if (setting != null) s.AverageRate = (float)Crt.Atof(setting); }

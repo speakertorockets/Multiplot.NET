@@ -95,6 +95,20 @@ public class IniTests
     }
 
     [Fact]
+    public void Reader_LoadsDataRateDensities()
+    {
+        string tmp = Path.Combine(Path.GetTempPath(), "mpnet_ini_" + Guid.NewGuid().ToString("N") + ".ini");
+        try
+        {
+            File.WriteAllText(tmp, "[plot style]\r\nSampleFreq = 250\r\nAverageFreq = 300\r\nZaxisFreq = 64\r\n");
+            var s = new AppSettings();
+            IniFile.Load(s, tmp, Ctx);
+            Assert.Equal((250u, 300u, 64u), (s.Plot.SamFreq, s.Plot.AvgFreq, s.Plot.ZaxFreq));
+        }
+        finally { File.Delete(tmp); }
+    }
+
+    [Fact]
     public void Reader_EmptyBooleanIsTrue()
     {
         string tmp = Path.Combine(Path.GetTempPath(), "mpnet_ini_" + Guid.NewGuid().ToString("N") + ".ini");
