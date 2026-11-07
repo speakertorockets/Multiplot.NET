@@ -72,5 +72,5 @@ save the table as CSV or text.
 | `SAVEPARMDETAILS n,file` | Details of curve n of the active plot (0 = the list of curves) |
 | `SAVEFILEDETAILS n,file` | Header and comment block of file n (0 = the list of files) |
 
-The *Parameter Properties* and *File Properties* dialogs show the same text and can copy or save
-it.
+The *Parameter → Parameter Properties* and *File → Properties* dialogs show the same text and can
+copy or save it. *Parameter Properties* is also in the plot right-click menus (*Properties*).

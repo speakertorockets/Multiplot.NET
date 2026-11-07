@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core;
 using Multiplot.Core.Model;
 using Multiplot.ImportExport;
@@ -200,8 +203,19 @@ public sealed partial class Session
                 RescaleXY();
                 break;
 
-            case Cmd.FixXAutoY:
-                if (oo == null) Err(); else Settings.FixXAutoY = oo.Value;
+            case Cmd.AutoScale:
+                {
+                    // AUTOSCALE X|Y|XY [ON|OFF] (default ON)
+                    var parts = cmdParm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    bool? on = parts.Length < 2 ? true : OnOffArg(parts[1]);
+                    string axis = parts.Length > 0 ? parts[0].ToUpperInvariant() : "";
+                    if (on == null || (axis != "X" && axis != "Y" && axis != "XY")) Err("expected: AUTOSCALE X|Y|XY [ON|OFF]");
+                    else
+                    {
+                        if (axis.Contains('X')) SetAutoScaleX(on);
+                        if (axis.Contains('Y')) SetAutoScaleY(on);
+                    }
+                }
                 break;
 
             case Cmd.FixX:
@@ -263,10 +277,7 @@ public sealed partial class Session
                 break;
 
             case Cmd.FontSize:
-                {
-                    int fs = Crt.Atoi(cmdParm);
-                    if (fs <= 4 && fs >= 1) SetFontSize(fs); else Err("out of range");
-                }
+                // retired screen scaling factor: accepted and ignored (fonts are set with the font dialogs)
                 break;
 
             case Cmd.GridStyle:
@@ -320,7 +331,7 @@ public sealed partial class Session
                 if (oo == null) Err(); else { Settings.EmfWide = oo.Value; ScriptLog("EMFWIDE stored (EMF output is not supported)"); }
                 break;
 
-            case Cmd.TimeStamp: if (oo == null) Err(); else SetTimeStamp(oo); break;
+            case Cmd.TimeStamp: break; // retired (plot time stamp removed): accepted and ignored
             case Cmd.TestInfo: if (oo == null) Err(); else SetTestInfo(oo); break;
             case Cmd.ScriptPrompt: if (oo == null) Err(); else SetScriptPrompt(oo); break;
             case Cmd.EmbeddedScript: if (oo == null) Err(); else Settings.EmbeddedScript = oo.Value; break;
@@ -488,25 +499,26 @@ public sealed partial class Session
                     if (c.Length == 0 || c == "plots") CloseAllPlots();
                     else if (c == "files") CloseAllFiles();
                     else if (c == "last") CloseLast();
-                    else if (c.Contains("markers"))
+                    else if (c.StartsWith("marker", StringComparison.Ordinal))
                     {
-                        if (c.Contains("all")) ClearAllMarkers();
+                        // CLEAR MARKERS ALL | CLEAR MARKER[S] n[,m…] (1-based positions in the plot's marker list)
+                        string rest = c[(c.StartsWith("markers", StringComparison.Ordinal) ? 7 : 6)..].Trim();
+                        if (rest == "all" || rest.Length == 0) ClearAllMarkers();
                         else
                         {
-                            var nums = new List<int>();
-                            int first = 7, last;
-                            int m = Crt.Atoi(c.Length > 8 ? c[8..] : "");
-                            while (m != 0)
-                            {
-                                nums.Add(m);
-                                if ((last = c.IndexOf(',', first)) > first)
-                                {
-                                    m = Crt.Atoi(c[++last..]);
-                                    first = last;
-                                }
-                                else m = 0;
-                            }
-                            ClearMarkers(nums);
+                            var nums = rest.Split(',').Select(x => Crt.Atoi(x.Trim())).Where(x => x > 0).ToList();
+                            if (nums.Count > 0) ClearMarkers(nums); else Err();
+                        }
+                    }
+                    else if (c.StartsWith("redline", StringComparison.Ordinal))
+                    {
+                        // CLEAR REDLINES ALL | CLEAR REDLINE[S] n[,m…] (1-based positions in the plot's redline list)
+                        string rest = c[(c.StartsWith("redlines", StringComparison.Ordinal) ? 8 : 7)..].Trim();
+                        if (rest == "all" || rest.Length == 0) ClearAllRedlines();
+                        else
+                        {
+                            var nums = rest.Split(',').Select(x => Crt.Atoi(x.Trim())).Where(x => x > 0).ToList();
+                            if (nums.Count > 0) ClearRedlines(nums); else Err();
                         }
                     }
                     else if (c.Contains('$'))
@@ -634,6 +646,7 @@ public sealed partial class Session
                     if (m.Length > 5)
                     {
                         if (Left(m, 7, "topmost")) SetMarkersTopmost(!m.ToLowerInvariant().Contains(" off"));
+                        else if (Left(m, 10, "fileevents")) SetShowFileEvents(!m.ToLowerInvariant().Contains(" off"));
                         else if (Left(m, 5, "save ")) MarkersToFile(m[5..]);
                         else if (Left(m, 5, "load ")) MarkersFromFile(m[5..]);
                         else Err("invalid command");
@@ -642,19 +655,18 @@ public sealed partial class Session
                 }
                 break;
 
-            case Cmd.ShowVersion: if (oo == null) Err(); else SetShowVersion(oo); break;
-            case Cmd.ShowUserName: if (oo == null) Err(); else SetShowUserName(oo); break;
-            case Cmd.TimeSlide: if (oo == null) Err(); else SetTimeSlide(oo); break;
+            case Cmd.ShowVersion: break; // retired: accepted and ignored
+            case Cmd.ShowUserName: break; // retired: accepted and ignored
             case Cmd.IgnoreStatic: if (oo == null) Err(); else SetIgnoreStatic(oo); break;
             case Cmd.DropoutIgnore: if (oo == null) Err(); else SetDropoutIgnore(oo); break;
             case Cmd.DropoutMarker: if (oo == null) Err(); else SetDropoutMarker(oo); break;
-            case Cmd.ShowScript: if (oo == null) Err(); else SetShowScript(oo); break;
+            case Cmd.ShowScript: break; // retired: accepted and ignored
             case Cmd.FirstOccurrence: if (oo == null) Err(); else Settings.FirstOccurrence = oo.Value; break;
             case Cmd.Extrapolate:
                 if (oo == null) Err();
                 else { Settings.Extrapolate = !oo.Value; ToggleExtrapolate(); }
                 break;
-            case Cmd.ShowPageNo: if (oo == null) Err(); else SetShowPageNo(oo); break;
+            case Cmd.ShowPageNo: break; // retired: accepted and ignored
             case Cmd.LegendShift: if (oo == null) Err(); else SetLegendShift(oo); break;
 
             case Cmd.Tile:
@@ -662,8 +674,8 @@ public sealed partial class Session
                 else if (Is(cmdParm, "HORIZONTAL") || cmdParm.Length == 0) Arrange(WindowArrange.TileHorizontal);
                 else if (Is(cmdParm, "CASCADE")) Arrange(WindowArrange.Cascade);
                 else if (Is(cmdParm, "STACKED")) Arrange(WindowArrange.Stack);
-                else if (Is(cmdParm, "OFF")) { if (ActivePlot != null && !Shell.IsMaximized(ActivePlot)) Shell.Arrange(WindowArrange.MaximizeActive, null); }
-                else Arrange(WindowArrange.TileGroup, cmdParm);
+                else if (Is(cmdParm, "OFF")) { if (ActivePlot != null && !Shell.IsMaximized(ActivePlot)) Shell.Arrange(WindowArrange.MaximizeActive); }
+                else Arrange(WindowArrange.TileHorizontal); // TILE <group name>: plot group names were removed, tiles all plots
                 break;
 
             case Cmd.Export:
@@ -684,8 +696,7 @@ public sealed partial class Session
             case Cmd.AutoTab:
                 if ((i = Crt.Atoi(cmdParm)) >= 0)
                 {
-                    int k = cmdParm.IndexOfAny(new[] { ',', ' ' });
-                    SetAutoTab(i, k > 0 ? cmdParm[(k + 1)..].Trim() : null);
+                    SetAutoTab(i); // a trailing group name (retired) is ignored
                 }
                 else Err("invalid range");
                 break;
@@ -733,13 +744,6 @@ public sealed partial class Session
                 Array.Fill(PastParms, "");
                 break;
 
-            case Cmd.Toolbar:
-                if (Is(cmdParm, "OFF")) SetToolbarVisible(false);
-                else if (Is(cmdParm, "ON")) SetToolbarVisible(true);
-                else if (cmdParm.Length == 0) SetToolbarVisible(null);
-                else Err();
-                break;
-
             case Cmd.StatusBar:
                 if (Is(cmdParm, "OFF")) SetStatusBarVisible(false);
                 else if (Is(cmdParm, "ON")) SetStatusBarVisible(true);
@@ -752,9 +756,26 @@ public sealed partial class Session
 
             case Cmd.Marker:
                 {
-                    var m = new Marker();
-                    int mNo = CommandParsers.ParseMarker(cmdParm, m, out bool global);
-                    if (mNo >= 0) SetMarker(mNo, m, global); else Err();
+                    // MARKER <timestamp>,<text>[,TOP|BOTTOM]
+                    var m = Marker.Parse(ScriptKeywords.TrimRightC(cmdParm));
+                    if (m == null) Err("invalid marker, expected: MARKER <timestamp>,<text>[,TOP|BOTTOM]");
+                    else AddMarker(m);
+                }
+                break;
+
+            case Cmd.Appearance:
+                // APPEARANCE LIGHT|DARK (FR-UI-046)
+                if (Is(cmdParm, "DARK")) SetAppearance(true);
+                else if (Is(cmdParm, "LIGHT")) SetAppearance(false);
+                else Err("expected: APPEARANCE LIGHT|DARK");
+                break;
+
+            case Cmd.Redline:
+                {
+                    // REDLINE <value>,<text>[,LEFT|RIGHT]
+                    var r = RedlineMarker.Parse(ScriptKeywords.TrimRightC(cmdParm));
+                    if (r == null) Err("invalid redline, expected: REDLINE <value>,<text>[,LEFT|RIGHT]");
+                    else AddRedline(r);
                 }
                 break;
 
@@ -804,7 +825,6 @@ public sealed partial class Session
                 if (oo == null) Err(); else Set64BitTime(oo);
                 break;
 
-            case Cmd.UseIniToolbar: if (oo == null) Err(); else Settings.IncludeToolbar = oo.Value; break;
             case Cmd.UsePlaceholder: if (oo == null) Err(); else Settings.UsePlaceholder = oo.Value; break;
             case Cmd.IncludeGmt: if (oo == null) Err(); else Settings.ShowGmt = oo.Value; break;
 
@@ -867,7 +887,6 @@ public sealed partial class Session
                 break;
 
             case Cmd.ShowCoord: if (oo == null) Err(); else Settings.ShowCoord = oo.Value; break;
-            case Cmd.ScaleRedlines: if (oo == null) Err(); else Settings.ScaleRedlines = oo.Value; break;
             case Cmd.SharedTime: if (oo == null) Err(); else Settings.SharedTabTime = oo.Value; break;
 
             case Cmd.Unknown:
@@ -967,22 +986,7 @@ public sealed partial class Session
             BackgroundFn = cmdParm[11..].Trim();
             SetTabBackground(false);
         }
-        else if (Left(cmdParm, 10, "GROUPNAME "))
-        {
-            string g = ScriptKeywords.TrimRightC(cmdParm);
-            string lower = g.ToLowerInvariant();
-            if ((i = lower.IndexOf("next=", StringComparison.Ordinal)) >= 0) GroupName = g[(i + 5)..].TrimStart();
-            else if ((i = lower.IndexOf("all=", StringComparison.Ordinal)) >= 0)
-            {
-                GroupName = g[(i + 4)..].TrimStart();
-                ApplyGroupName(true, false);
-            }
-            else
-            {
-                GroupName = g[10..].TrimStart();
-                ApplyGroupName(false, false);
-            }
-        }
+        else if (Left(cmdParm, 9, "GROUPNAME")) { } // retired (plot group names removed): accepted and ignored
         else if (Left(cmdParm, 4, "USER") && cmdParm.Length > 4 && char.IsAsciiDigit(cmdParm[4]))
         {
             int n = Crt.Atoi(cmdParm[4..]) - 1;

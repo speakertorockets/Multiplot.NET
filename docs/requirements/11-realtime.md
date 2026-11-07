@@ -12,7 +12,7 @@ automatically when a dynamic file or stream is opened and auto refresh is off (i
 value or INI `AutoRefresh`, default 2000 ms). Controls:
 * *Refresh interval…* dialog: `Refresh interval delta (in seconds):` with choices `OFF, .1, .2, .5, 1,
   2, 5, 10`; 0/OFF stops; recorded `refresh %g` / `refresh OFF`.
-* *Toggle refresh* (toolbar) stops/restarts using the previous interval (only when real-time data is loaded).
+* *Toggle refresh* (*Data → Real-Time → Auto Refresh*) stops/restarts using the previous interval (only when real-time data is loaded).
 * *Refresh now* performs one refresh if none is in progress.
 * Script `REFRESH` (FR-SCR-284).
 
@@ -57,10 +57,11 @@ paused), for every curve (last to first) whose source file updated:
 4. Re-evaluate the curve item (symbols re-substituted; function, expression or plain read; X item for
    parameter-vs-parameter, which always replaces).
 5. Replace: keep display attributes, tab position, and name (units/description too unless the
-   reference changed); keep previous min/max if the Y scale is persistent, else adopt new; for the
-   first curve also reset X (if not persistent) and Y (single-scale, not persistent) scales.
-   Append: `AppendParameter` (retain scale if Y persistent or time-slide on) and incrementally extend
-   the drawn trace; with *TimeSlide* the X window slides to keep the latest data visible.
+   reference changed). Append: `AppendParameter` (retain the min/max when *Auto Scale Y* is off) and
+   incrementally extend the drawn trace. After all curves of a plot: tabular displays follow the
+   newest time; time plots apply the autoscale switches once (FR-PLT-017: X spans all data, or the
+   visible span slides with the newest data; Y fits the visible range, or keeps its scale);
+   parameter-versus-parameter plots keep their scales.
 6. If nothing was returned: after a time change set the curve to one dropout point at the start time;
    otherwise stop processing this plot.
 7. Data reduction (not for parameter-vs-parameter): if *AutoDiscard* N > 0 discard data older than

@@ -59,7 +59,7 @@ For each scenario a script produces outputs that become golden files once review
 | TST-LOAD-001 | Time slice/reference matrix (NONE/START/CUTOFF/EOF/events/GMT/constants with offsets) | golden |
 | TST-PLT-001 | Axis scaling vs. golden reference values (10 k random ranges, log, clock) | unit |
 | TST-CFG-001 | INI load→save round-trip vs. golden saved INI | golden |
-| TST-CFG-002 | Command-id map covers all default toolbar ids | unit |
+| TST-CFG-002 | Command-id map covers all menu command ids | unit |
 | TST-IMP-001 | Import fixtures vs. golden imported SUN (via export) | golden |
 | TST-XPT-001 | Export matrix (zoom, multi-file, PvP, end-to-end, shared time, GMT, precisions) | golden |
 | TST-RT-001 | Live-file refresh scenario (FX-RT-01) equals static reload; UI responsive | integration |

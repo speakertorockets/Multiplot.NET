@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core.Model;
 using Multiplot.Plugins;
 

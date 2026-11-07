@@ -56,7 +56,7 @@ and recorded in 12-wpf-deviations; nothing is changed silently.
 | Expression | Arithmetic/logical formula over bracketed parameters (chapter 06) |
 | Function | Built-in transformation such as `avg()`, `spline()` (chapter 06) |
 | Symbol / symbolic | Script variable `$NAME` (chapter 05) |
-| Marker | Annotation drawn on a plot (text, line, box, circle, event, redline, image) |
+| Marker | Event marker: a timestamp and a text, drawn as a vertical line with the text at the top or bottom of the plot |
 | WPD | Display file defining a tabular display |
 | Multi-Y | Several Y scales side by side |
 | End-to-end | Groups laid sequentially along the X axis |
@@ -72,11 +72,11 @@ and recorded in 12-wpf-deviations; nothing is changed silently.
 | LIM-002 | file groups | 1000 |
 | LIM-003 | curves per plot / per load | 1000 |
 | LIM-004 | markers per plot | 1000 |
-| LIM-005 | colour table | 100 curve colours + grid, label, background, mono, title |
+| LIM-005 | colour table | 100 curve colours + grid, label, background, mono, title, event marker, redline marker |
 | LIM-006 | bracketed items per expression | 128 |
 | LIM-007 | expression stack | 512 operands |
 | LIM-008 | remembered parameter lists | 64 |
-| LIM-009 | toolbars / user buttons | 19 / 5 |
+| LIM-009 | toolbars / user buttons | none / 5 |
 | LIM-010 | legend columns / reserved rows | 64 / 32 |
 | LIM-011 | multi-Y scales | 10 |
 | LIM-012 | logic label sets | 4 |

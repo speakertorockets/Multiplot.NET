@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Runtime.InteropServices;
 using System.Text;
 using Multiplot.Core;
@@ -23,7 +26,7 @@ public sealed class IniContext
 }
 
 /// <summary>Result of <see cref="IniFile.Load"/>.</summary>
-public readonly record struct IniLoadResult(bool Found, bool ToolbarsChanged);
+public readonly record struct IniLoadResult(bool Found);
 
 /// <summary>
 /// INI reader/writer (FR-CFG-010/011/012).
@@ -34,16 +37,14 @@ public static class IniFile
     /// <summary>Loads <paramref name="path"/> into <paramref name="s"/>; returns Found=false when the file cannot be read.</summary>
     public static IniLoadResult Load(AppSettings s, string path, IniContext ctx)
     {
-        if (string.IsNullOrEmpty(path) || !File.Exists(path)) return new(false, false);
+        if (string.IsNullOrEmpty(path) || !File.Exists(path)) return new(false);
         List<string> lines;
         try { lines = AnsiText.ReadAllLines(path); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new(false, false); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new(false); }
 
-        bool includeToolbar = s.IncludeToolbar;
         bool loadSymbols = s.LoadSymbols;
-        bool resetToolbar = false;
-        string iniVersion = "";
         var p = s.Plot;
+        int legacyFontSize = 0;
 
         foreach (string raw in lines)
         {
@@ -79,11 +80,14 @@ public static class IniFile
                     if (t != null) p.DrawColor[i] = Crt.Atoi(t);
                     else
                     {
-                        if (i < ColorIndex.Total - 1)
+                        // legacy tables end before the title colour: grid/label/background/mono were at 25..28
+                        if (i < ColorIndex.Title)
                         {
                             for (int up = 0; up < 4; up++) p.DrawColor[ColorIndex.Grid + up] = p.DrawColor[25 + up];
                             p.DrawColor[ColorIndex.Title] = p.DrawColor[ColorIndex.Label];
                         }
+                        // tables written before the marker colour existed: markers keep the grid colour
+                        if (i <= ColorIndex.Marker) p.DrawColor[ColorIndex.Marker] = p.DrawColor[ColorIndex.Grid];
                         break;
                     }
                     t = tok.Next(" ");
@@ -100,7 +104,7 @@ public static class IniFile
                     if (s.MarginSize < 0f || s.MarginSize > 10f) s.MarginSize = 5f;
                 }
             }
-            else if (K("fontsize")) { if (setting != null) p.FontSize = Crt.Atoi(setting); }
+            else if (K("fontsize")) legacyFontSize = Crt.Atoi(setting); // retired screen scaling factor (see ApplyLegacyFontSize)
             else if (K("titlefont")) { if (setting != null) p.TitlePointSize = ReadFont(p.TitleFont, setting, p.TitlePointSize); }
             else if (K("labelfont")) { if (setting != null) p.LabelPointSize = ReadFont(p.LabelFont, setting, p.LabelPointSize); }
             else if (K("gridstyle"))
@@ -118,7 +122,6 @@ public static class IniFile
             else if (K("stairstep")) p.StairStep = B();
             else if (K("clocktime")) p.ClockTime = B();
             else if (K("gmtformat")) s.GmtFormat = setting ?? "%03u/%02u:%02u:%02u.%03u";
-            else if (K("timeslide")) s.TimeSlide = B();
             else if (K("ignorestatic")) s.IgnoreStatic = B();
             else if (K("dropoutmarker")) p.DropoutMarker = B();
             else if (K("dropoutignore")) p.DropoutIgnore = B();
@@ -137,10 +140,7 @@ public static class IniFile
             else if (K("showsymbols")) p.Symbols = B();
             else if (K("symbolsize")) { if (setting != null && Math.Abs(Crt.Atoi(setting)) <= 1) p.SymbolSize = Crt.Atoi(setting); }
             else if (K("testinfo")) p.TestInfo = B();
-            else if (K("showversion")) p.ShowVersion = B();
-            else if (K("showusername")) p.ShowUserName = B();
-            else if (K("showpageno")) p.ShowPageNo = B();
-            else if (K("showscript")) p.ShowScript = B();
+            else if (K("showversion") || K("showusername") || K("showpageno") || K("showscript")) { } // retired plot texts
             else if (K("captionsource")) { if (setting != null) p.CaptionSource = Crt.Atoi(setting); }
             else if (K("nocaptionbar")) { if (setting != null) s.NoCaptionBar = Crt.Atoi(setting); }
             else if (K("groupby")) s.MultiGroupBy = setting != null ? Crt.Atoi(setting) : GroupBy.Independent;
@@ -157,7 +157,7 @@ public static class IniFile
             else if (K("tabsteprate")) { if (setting != null) s.TabStepRate = (float)Crt.Atof(setting); }
             else if (K("timestampmode")) { if (setting != null) s.TimeStampMode = Crt.Atoi(setting); }
             else if (K("averagerate")) { if (setting != null) s.AverageRate = (float)Crt.Atof(setting); }
-            else if (K("timestamp")) p.TimeStamp = B();
+            else if (K("timestamp")) { } // retired plot time stamp
             else if (K("defaultstarttime")) { if (setting != null) s.TStart = setting; }
             else if (K("defaultstoptime")) { if (setting != null) s.TStop = setting; }
             else if (K("defaultreference")) { if (setting != null) s.TRef = setting; }
@@ -177,8 +177,8 @@ public static class IniFile
             else if (K("tabhistory")) s.TabHistory = B();
             else if (K("defaulttabtime")) p.DefTabTime = B();
             else if (K("exitsafety")) s.ExitSafety = B();
-            else if (K("toolbar")) s.ShowToolBar = B();
             else if (K("statusbar")) s.ShowStatusBar = B();
+            else if (K("appearance")) s.DarkMode = setting != null && setting.TrimStart().StartsWith("d", StringComparison.OrdinalIgnoreCase);
             else if (K("filespec")) { if (setting != null) s.FileSpec = setting; }
             else if (K("scriptdir")) { if (setting != null) s.ScriptDir = setting; }
             else if (K("wpdpath")) { if (setting != null) s.WpdFolder = setting; }
@@ -195,8 +195,6 @@ public static class IniFile
             else if (K("pausemode")) s.PauseMode = setting != null && setting[0] == '1' ? PauseMode.NextCommand : PauseMode.NextPlot;
             else if (K("colorprinter")) s.ColorPrinter = B();
             else if (K("landscape")) s.Landscape = B();
-            else if (K("fixxautoy")) s.FixXAutoY = B();
-            else if (K("scaleredlines")) s.ScaleRedlines = B();
             else if (K("alignclosest")) s.AlignClosest = B();
             else if (K("calceveryinstance")) s.CalcEveryInstance = B();
             else if (K("autocompact"))
@@ -224,47 +222,12 @@ public static class IniFile
             {
                 if ((loadSymbols || s.LoadSymbols) && setting != null) s.UserVars.Add(setting.Replace(',', '\t'));
             }
-            else if (K("includetoolbar")) { if (setting != null) includeToolbar = Crt.Atoi(setting) != 0; }
-            else if (K("version")) { if (setting != null) iniVersion = setting; }
 
             // second lookup chain
-            if (K("buttonset"))
+            if (K("userbutton"))
             {
-                if (ctx.AppVersion == iniVersion && setting != null && (s.IncludeToolbar || includeToolbar))
-                {
-                    int barNo = Math.Abs(Crt.Atoi(buf, 9));
-                    if (barNo < AppSettings.NToolbars)
-                    {
-                        var set = s.ToolbarSets[barNo];
-                        set.Clear();
-                        var tok = new Strtok(setting);
-                        s.ToolbarEnabled[barNo] = Crt.Atoi(tok.Next(" ")) != 0;
-                        string? t;
-                        while ((t = tok.Next(" ")) != null)
-                        {
-                            int id = Crt.Atoi(t);
-                            if ((t = tok.Next(" ")) != null) set.Add(new ToolbarButton(id, Crt.Atoi(t)));
-                        }
-                        if (set.Count < 1) ToolbarDefault(s, barNo);
-                        resetToolbar = true;
-                    }
-                }
-            }
-            else if (K("userbutton"))
-            {
-                if (setting != null && (s.IncludeToolbar || includeToolbar))
-                {
-                    int n = Crt.Atoi(buf, 10);
-                    var tok = new Strtok(setting);
-                    string? label = tok.Next(",");
-                    string? command = tok.Next(",");
-                    if (label != null && command != null && n >= 0 && n < AppSettings.NUserButtons)
-                    {
-                        s.UserButtons[n].Label = label;
-                        s.UserButtons[n].Command = command;
-                        resetToolbar = true;
-                    }
-                }
+                // UserButtonN lines are written for reference only; the registry holds the user buttons
+                // (they were applied from the INI only with the retired IncludeToolBar option).
             }
             else if (K("logictxtindex")) s.LogicTxtIdx = Crt.Atoi(setting);
             else if (K("logictxtlabel") && setting != null && Crt.Atoi(setting) >= 0 && Crt.Atoi(setting) <= AppSettings.NLogicLabels - 1)
@@ -279,12 +242,15 @@ public static class IniFile
                 }
             }
             else if (K("markerstopmost")) p.MarkersTopmost = Crt.Atoi(setting) != 0;
+            else if (K("showfileevents")) p.ShowFileEvents = Crt.Atoi(setting) != 0;
+            else if (K("autoscalex")) p.AutoScaleX = Crt.Atoi(setting) != 0;
+            else if (K("autoscaley")) p.AutoScaleY = Crt.Atoi(setting) != 0;
             else if (K("use64bittime")) p.Use64BitTime = Crt.Atoi(setting) != 0;
         }
 
-        s.IncludeToolbar = includeToolbar;
+        ApplyLegacyFontSize(p, legacyFontSize);
         if ((s.LoadSymbols = loadSymbols)) SortSymbols(s.UserVars);
-        return new(true, resetToolbar);
+        return new(true);
     }
 
     private static int ClampPrecision(int v) => v <= 12 ? (v >= -1 ? v : -1) : 12;
@@ -299,6 +265,24 @@ public static class IniFile
             dst[j] = Crt.Atoi(t);
             t = tok.Next(" ");
         }
+    }
+
+    /// <summary>Label point sizes (tenths) that reproduce the retired screen scaling factors 1..4.</summary>
+    private static readonly int[] LegacyLabelSizes = { 83, 100, 125, 167 };
+
+    /// <summary>
+    /// INI files written before the font dialog chose point sizes have a <c>FontSize</c> key (screen scaling
+    /// factor 1..4) and point sizes that were never used for drawing. Once, while loading such a file, the
+    /// label size is set to the size the factor produced and the title size keeps the old title/label height
+    /// ratio, so existing settings look the same. <c>FontSize</c> is no longer written.
+    /// </summary>
+    private static void ApplyLegacyFontSize(PlotConfig p, int fontSize)
+    {
+        if (fontSize < 1 || fontSize > 4) return;
+        p.LabelPointSize = LegacyLabelSizes[fontSize - 1];
+        int lh = p.LabelFont.Height, th = p.TitleFont.Height;
+        double ratio = lh != 0 && th != 0 && Math.Sign(lh) == Math.Sign(th) ? (double)th / lh : 1.5;
+        p.TitlePointSize = (int)Math.Round(p.LabelPointSize * Math.Clamp(ratio, 0.5, 4.0));
     }
 
     private static int ReadFont(LogFont lf, string setting, int pointSize)
@@ -334,22 +318,6 @@ public static class IniFile
     /// <summary>Descending byte order of the "NAME\tvalue" strings.</summary>
     public static void SortSymbols(List<string> vars) => vars.Sort((a, b) => string.CompareOrdinal(b, a));
 
-    /// <summary>Default toolbars (band contents, image index = position).</summary>
-    public static void ToolbarDefault(AppSettings s, int bar)
-    {
-        var set = s.ToolbarSets[bar];
-        set.Clear();
-        var ids = ToolbarDefaults.Buttons[bar];
-        for (int i = 0; i < ids.Length; i++) set.Add(new ToolbarButton(ids[i], i));
-    }
-
-    /// <summary>Fills empty toolbar sets with the defaults.</summary>
-    public static void EnsureToolbars(AppSettings s)
-    {
-        for (int i = 0; i < AppSettings.NToolbars; i++)
-            if (s.ToolbarSets[i].Count < 1) ToolbarDefault(s, i);
-    }
-
     /// <summary>Saved settings file layout.</summary>
     public static string Format(AppSettings s, IniContext ctx)
     {
@@ -378,16 +346,9 @@ public static class IniFile
         W(";owner = %s\n", Environment.UserName);
         W("\n");
 
-        W("[toolbar]\n");
+        W("[interface]\n");
         W("StatusBar = %d\n", s.ShowStatusBar ? 1 : 0);
-        W("ToolBar = %d\n", s.ShowToolBar ? 1 : 0);
-        W("IncludeToolBar = %d\n", s.IncludeToolbar ? 1 : 0);
-        for (int j = 0; j < AppSettings.NToolbars; j++)
-        {
-            W("ButtonSet%02u = %d ", j, s.ToolbarEnabled[j] ? 1 : 0);
-            foreach (var b in s.ToolbarSets[j]) W("%u %u ", b.EventId, b.ImageIndex);
-            W("\n");
-        }
+        W("Appearance = %s\n", s.DarkMode ? "Dark" : "Light");
         for (int j = 0; j < AppSettings.NUserButtons; j++)
             W("UserButton%d = %s,%s\n", j, s.UserButtons[j].Label, s.UserButtons[j].Command);
         W("\n");
@@ -428,7 +389,6 @@ public static class IniFile
         W("\n");
 
         W("[realtime]\n");
-        W("TimeSlide = %d\n", s.TimeSlide ? 1 : 0);
         W("IgnoreStatic = %d\n", s.IgnoreStatic ? 1 : 0);
         W("AutoCompact = %d,%g\n", (int)s.CompactPoints, (double)s.CompactInterval);
         W("AutoDiscard = %d\n", (int)s.DiscardSeconds);
@@ -479,7 +439,6 @@ public static class IniFile
         W("\n");
 
         W("[fonts]\n");
-        W("FontSize = %d\n", p.FontSize);
         WriteFont(W, "TitleFont", p.TitlePointSize, p.TitleFont);
         WriteFont(W, "LabelFont", p.LabelPointSize, p.LabelFont);
         W("\n");
@@ -504,6 +463,9 @@ public static class IniFile
         W("UseSubTitle = %d\n", s.ContinueSubTitle ? 1 : 0);
         W("UseMarkers = %d\n", s.UseMarkers ? 1 : 0);
         W("MarkersTopmost = %d\n", p.MarkersTopmost ? 1 : 0);
+        W("ShowFileEvents = %d\n", p.ShowFileEvents ? 1 : 0);
+        W("AutoScaleX = %d\n", p.AutoScaleX ? 1 : 0);
+        W("AutoScaleY = %d\n", p.AutoScaleY ? 1 : 0);
         W("LegendColumns = %d\n", p.LegendColumns);
         W("ReservedLegend = %d\n", s.ReservedLegend);
         W("GridOffset = %d\n", s.MinGridOffset);
@@ -516,7 +478,6 @@ public static class IniFile
         W("ApplyAll = %d\n", s.ApplyAll ? 1 : 0);
         W("LineSize = %d\n", p.LineSize);
         W("3DLineSize = %d\n", p.LineSize3D);
-        W("TimeStamp = %d\n", p.TimeStamp ? 1 : 0);
         W("MinorTics = %d\n", p.MinorTics ? 1 : 0);
         W("BoldFrame = %d\n", p.BoldFrame ? 1 : 0);
         W("ScaleGroup = %d\n", p.GroupId ? 1 : 0);
@@ -525,15 +486,9 @@ public static class IniFile
         W("GMTformat = %s\n", s.GmtFormat);
         W("GridLines = %d\n", p.GridLines ? 1 : 0);
         W("TestInfo = %d\n", p.TestInfo ? 1 : 0);
-        W("ShowVersion = %d\n", p.ShowVersion ? 1 : 0);
-        W("ShowUserName = %d\n", p.ShowUserName ? 1 : 0);
-        W("ShowPageNo = %d\n", p.ShowPageNo ? 1 : 0);
-        W("ShowScript = %d\n", p.ShowScript ? 1 : 0);
         W("LegendShift = %d\n", p.LegendShift ? 1 : 0);
         W("CaptionSource = %d\n", p.CaptionSource);
         W("EMFwideAspect = %d\n", s.EmfWide ? 1 : 0);
-        W("FixXautoY = %d\n", s.FixXAutoY ? 1 : 0);
-        W("ScaleRedlines = %d\n", s.ScaleRedlines ? 1 : 0);
         W("NoCaptionBar = %d\n", s.NoCaptionBar);
         W("LogicTxtIndex = %d\n", s.LogicTxtIdx);
         for (int i = 0; i < AppSettings.NLogicLabels; i++)

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Diagnostics;
 using Multiplot.Core;
 using Multiplot.DataAccess;
@@ -165,6 +168,71 @@ public class ParquetPluginTests
             var shifted = pq.Read(new ParameterRequest("PRESS", -1e6, 1e6, 2.5, new TimeTag(100, 12 * 3600000 + 1000, 0)))!;
             var plain = sun.Read(new ParameterRequest("PRESS", -1e6, 1e6, 2.5, new TimeTag(100, 12 * 3600000 + 1000, 0)))!;
             Assert.Equal(plain.Time[3], shifted.Time[3], 4);
+        }
+        finally
+        {
+            svc.UnloadPlugins();
+        }
+        try { Directory.Delete(dir, true); } catch (IOException) { }
+    }
+
+    /// <summary>
+    /// Event markers resolve identically from the SUN [events] comment section and the parquet "events"
+    /// metadata: file events are drawn (except FILE_REF / EOF), user markers resolve GMT, seconds and
+    /// event-name timestamps against the plot reference.
+    /// </summary>
+    [Fact]
+    public async Task EventMarkers_ResolveFromSunAndParquetHeaders()
+    {
+        string dir = NewDir();
+        string multi = Path.Combine(dir, "events.multi"), parquet = Path.Combine(dir, "events.parquet");
+        const int n = 100;
+        var t8 = new TimeTag[n];
+        var v = new double[n];
+        for (int i = 0; i < n; i++) { t8[i] = new TimeTag(100, (uint)(12 * 3600000 + i * 1000), 0); v[i] = i; }
+        using (var w = SunWriter.Create(multi, SunCreateMode.Overwrite, 1024, 4, 0, SunSignatures.MultiTime64))
+        {
+            w.SetRefTime(2023, 100, 12, 0, 0, 0);
+            w.SetTitle("Events fixture");
+            w.AddParm("PRESS", "P1", "kPa", "Pressure", 1, "d8", v, "t8", t8, n, SunWriteOptions.None, null);
+            w.SetCommentText("[events]\nFILE_REF=100/43200000.0\nIGNITION=100/12:00:10.000\nVALVE=100/43230500.0\nEOF=100/43299000.0\n");
+            w.Close();
+        }
+        await ConvertAsync(multi, parquet);
+
+        var svc = LoadService(new Host());
+        try
+        {
+            foreach (string path in new[] { multi, parquet })
+            {
+                using var f = svc.Open(path)!;
+                var files = new List<IDataFile> { f };
+                var groups = new List<Multiplot.Core.Model.FileGroup> { new() { StartPos = 0, NFiles = 1 } };
+                var user = new List<Multiplot.Core.Model.Marker>
+                {
+                    new("100/12:00:05", "five"),
+                    new("20", "twenty", true),
+                    new("IGNITION+2", "after ignition"),
+                    new("NOSUCHEVENT", "unresolved"),
+                };
+                var r = EventMarkers.Resolve(user, true, files, groups, new[] { 0 }, "NONE");
+                string ctx = Path.GetExtension(path);
+                Assert.True(r.Count == 5, ctx + ": " + string.Join("; ", r));
+                Assert.Equal(new ResolvedMarker(5, "five", false), r[0]);
+                Assert.Equal(new ResolvedMarker(20, "twenty", true), r[1]);
+                Assert.Equal("after ignition", r[2].Text);
+                Assert.Equal(12, r[2].Time, 6);
+                Assert.Equal("IGNITION", r[3].Text);
+                Assert.Equal(10, r[3].Time, 6);
+                Assert.Equal("VALVE", r[4].Text);
+                Assert.Equal(30.5, r[4].Time, 6);
+
+                // against a reference event the axis shifts; without file events only user markers remain
+                var shifted = EventMarkers.Resolve(user.Take(1).ToList(), true, files, groups, new[] { 0 }, "IGNITION");
+                Assert.Equal(-5, shifted[0].Time, 6);
+                Assert.Equal(0, shifted[1].Time, 6);
+                Assert.Single(EventMarkers.Resolve(user.Take(1).ToList(), false, files, groups, new[] { 0 }, "NONE"));
+            }
         }
         finally
         {

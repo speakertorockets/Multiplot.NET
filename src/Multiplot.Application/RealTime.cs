@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core;
 using static Multiplot.Core.ExprSyntax;
 using Multiplot.Core.Model;
@@ -151,6 +154,8 @@ public sealed partial class Session
             if (RefreshPaused) break;
             bool plotRefresh = false;
             bool stopPlot = false;
+            bool newData = false;
+            double previousLast = plot.LastTime();
             for (int iCurve = plot.NCurves - 1; iCurve >= 0 && !stopPlot; iCurve--)
             {
                 var curve = plot.Curves[iCurve];
@@ -235,36 +240,21 @@ public sealed partial class Session
                         }
                         if (refreshed != null)
                         {
-                            int scale = curve.ScaleIndex < plot.YScales.Count ? curve.ScaleIndex : 0;
                             if (noAppend)
                             {
                                 var old = curve.Data;
                                 if ((whyRefreshed & 2) != 0) refreshed.Name = old.Name;
                                 else { refreshed.Name = old.Name; refreshed.Units = old.Units; refreshed.Description = old.Description; }
                                 curve.Data = refreshed;
-                                if (plot.YScales[scale].Persist) { curve.VMin = old.MinValue; curve.VMax = old.MaxValue; }
-                                else { plot.YScales[scale].RMin = curve.VMin; plot.YScales[scale].RMax = curve.VMax; }
-                                if (iCurve == 0)
-                                {
-                                    if (!plot.XScale.Persist) plot.ResetMinMax(1, false);
-                                    if (!plot.Config.Multi && !plot.YScales[0].Persist) plot.ResetMinMax(2, false);
-                                }
+                                newData = true;
                                 plotRefresh = true;
                             }
                             else
                             {
-                                bool retain = plot.YScales[plot.Config.Multi ? scale : 0].Persist || plot.TimeSlide;
-                                int added = ParameterOps.Append(curve.Data, refreshed, retain);
+                                int added = ParameterOps.Append(curve.Data, refreshed, !plot.Config.AutoScaleY);
                                 if (added > 0)
                                 {
-                                    if (plot.TimeSlide && !plot.XScale.Persist)
-                                    {
-                                        double span = plot.XSetMax - plot.XSetMin;
-                                        double last = curve.Time[curve.Points - 1];
-                                        if (last > plot.XSetMax) { plot.XSetMax = last; plot.XSetMin = last - span; }
-                                    }
-                                    else if (!plot.XScale.Persist) plot.ResetMinMax(1, false);
-                                    if (!retain && !plot.Config.Multi && plot.YScales.Count > 0 && !plot.YScales[0].Persist) plot.ResetMinMax(2, false);
+                                    newData = true;
                                     plotRefresh = true;
                                 }
                             }
@@ -286,13 +276,19 @@ public sealed partial class Session
                 if (!plot.Config.PidVsPid)
                 {
                     int scale = curve.ScaleIndex < plot.YScales.Count ? curve.ScaleIndex : 0;
-                    if (Settings.DiscardSeconds != 0) DiscardData(curve, plot.YScales[scale].Persist);
+                    if (Settings.DiscardSeconds != 0) DiscardData(curve, !plot.Config.AutoScaleY);
                     else if (Settings.CompactPoints != 0 && curve.Points - curve.PackPosition >= Settings.CompactPoints)
                     {
                         ParameterOps.CompactData(curve.Data, Settings.CompactInterval, false, curve.PackPosition, Data.Sun.Options.FilterInvalid, out int newPack);
                         curve.PackPosition = newPack;
                     }
                 }
+            }
+            if (newData && plotRefresh)
+            {
+                // tabular displays follow the newest values; time plots apply the autoscale toggles
+                if (plot.Config.Style == PlotStyle.Tabular) { if (!plot.XScale.Persist) plot.ResetMinMax(1, false); }
+                else plot.ScaleAfterNewData(previousLast);
             }
             plot.ForceReload = false;
             if (plotRefresh || eventAdded) Invalidate(plot);

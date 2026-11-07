@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core;
 using static Multiplot.Core.ExprSyntax;
 using Multiplot.Core.Model;
@@ -777,7 +780,7 @@ public sealed partial class Session
 
     // ------------------------------------------------------------------ plotting
 
-    /// <summary>PLOT command / toolbar.</summary>
+    /// <summary>PLOT command.</summary>
     public void Plot()
     {
         if (DataLoading || FileLoading)
@@ -813,7 +816,8 @@ public sealed partial class Session
         string[] xAxisNomen = { "TIME", "Seconds", "Relative Time in Seconds" };
         string errMsg = "";
         bool fromWpd = false;
-        Marker[]? savedMarkers = null;
+        List<Marker>? savedMarkers = null;
+        List<RedlineMarker>? savedRedlines = null;
         int saveYNomen = PlotConfig.YNomen;
         int[] saveYLen = (int[])PlotConfig.YNomLen.Clone(), saveYOrd = (int[])PlotConfig.YNomOrder.Clone();
         string? bitmap = null;
@@ -824,7 +828,9 @@ public sealed partial class Session
             if (YAxis.EndsWith(".wpd", StringComparison.OrdinalIgnoreCase))
             {
                 savedMarkers = Marker.CopySet(MasterMarkers);
-                foreach (var m in MasterMarkers) m.Clear();
+                MasterMarkers.Clear();
+                savedRedlines = RedlineMarker.CopySet(MasterRedlines);
+                MasterRedlines.Clear();
                 ncurves = LoadParametersFromWpd(curves, xAxisNomen, out bitmap);
                 fromWpd = true;
             }
@@ -858,6 +864,7 @@ public sealed partial class Session
                 {
                     p.PrevXNomen = saveXNomen;
                     p.PrevXUdef = saveUdef;
+                    if (fromWpd || Settings.UseMarkers) p.Redlines = RedlineMarker.CopySet(MasterRedlines);
                     if (fromWpd)
                     {
                         p.Config.Style = PlotStyle.Tabular;
@@ -893,7 +900,15 @@ public sealed partial class Session
                 PlotConfig.YNomLen = saveYLen;
                 PlotConfig.YNomOrder = saveYOrd;
                 if (savedMarkers != null)
-                    for (int i = 0; i < Marker.MaxMarkers; i++) MasterMarkers[i] = savedMarkers[i];
+                {
+                    MasterMarkers.Clear();
+                    MasterMarkers.AddRange(savedMarkers);
+                }
+                if (savedRedlines != null)
+                {
+                    MasterRedlines.Clear();
+                    MasterRedlines.AddRange(savedRedlines);
+                }
             }
             DataLoading = false;
             SetRefreshPause(false);
@@ -915,15 +930,11 @@ public sealed partial class Session
             ResetNomen(curves[0].Data, msg, msg, msg);
             xn[0] = msg; xn[1] = saveY; xn[2] = msg;
             PlotNo++;
-            string bmName = Path.Combine(AppContext.BaseDirectory, "NoData.bmp");
-            if (!File.Exists(bmName)) bmName = "";
             CreatePlot(curves, null, xn, msg, msg, msg, msg, _groups.Count > 0 ? _groups[0].TRef : "NONE", tSlice, p =>
             {
                 p.Config.Style = PlotStyle.Tabular;
                 p.Config.YNomen = Nomen.NAME;
                 p.TimeFreeze = 1;
-                if (bmName.Length > 0) p.Curves[0].TabPosition = (4096u << 16) | 4096u;
-                p.Markers[0].Set(0, 0, 0, 0, 0, MarkerType.Image, bmName);
             });
         }
         else
@@ -937,13 +948,13 @@ public sealed partial class Session
     }
 
     /// <summary>Creates a plot window.</summary>
-    public PlotDocument CreatePlot(List<Curve> curves, Marker[]? markers, string[] xAxisNomen, string xUdef, string yUdef, string xTitle, string yTitle,
+    public PlotDocument CreatePlot(List<Curve> curves, IEnumerable<Marker>? markers, string[] xAxisNomen, string xUdef, string yUdef, string xTitle, string yTitle,
         string tRef, string tSlice, Action<PlotDocument>? beforeInit = null)
     {
         var plot = new PlotDocument(this, curves, PlotConfig, markers, xAxisNomen, xUdef, yUdef, xTitle, yTitle, tRef, tSlice);
         beforeInit?.Invoke(plot);
-        plot.Initialize(PlotNo, GroupName, Settings.MultiGroupBy, Settings.GmtFormat, UserCaption, ScriptRun != 0 ? ScriptFile : null,
-            Settings.ContinueTitle, Settings.ContinueSubTitle, Settings.TimeSlide, Settings.IgnoreStatic, Fix, DateTime.Now);
+        plot.Initialize(PlotNo, Settings.MultiGroupBy, Settings.GmtFormat, UserCaption, ScriptRun != 0 ? ScriptFile : null,
+            Settings.ContinueTitle, Settings.ContinueSubTitle, Settings.IgnoreStatic, Fix, DateTime.Now);
         if (plot.Config.Style == PlotStyle.Tabular && plot.BackgroundFile.Length > 0) LoadBackground(plot, plot.BackgroundFile);
         _plots.Insert(0, plot);
         Shell.PlotAdded(plot, Settings.PlotMax);
@@ -999,11 +1010,15 @@ public sealed partial class Session
                     YAxis += item[..item.IndexOf('@')];
                 }
             }
+            else if (RedlineMarker.TryParseCommand(rec, out var rl))
+            {
+                if (rl != null) RedlineMarker.AddTo(MasterRedlines, rl);
+                else Message("Invalid redline command in WPD file\nCommand: " + rec);
+            }
             else if (L(7, "marker "))
             {
-                var m = new Marker();
-                int mNo = CommandParsers.ParseMarker(rec[7..], m, out _);
-                if (mNo >= 0) MasterMarkers[mNo] = m;
+                var m = Marker.Parse(rec[7..]);
+                if (m != null) Marker.AddTo(MasterMarkers, m);
                 else Message("Invalid marker command in WPD file\nCommand: " + rec);
             }
         }
@@ -1157,27 +1172,41 @@ public sealed partial class Session
         return false;
     }
 
-    /// <summary>File → New / Open dialog.</summary>
-    public void OpenFileDialog(bool closeFirst, bool asGroup = false)
+    /// <summary>
+    /// After an interactive file open: when files are open but no plot window exists yet, opens the
+    /// Parameter Selection dialog to guide the user to a first plot. Never while a script runs.
+    /// </summary>
+    public void PromptFirstPlot()
+    {
+        if (ScriptRun != 0 || RunHidden || _files.Count == 0 || _plots.Count > 0 || DataLoading || FileLoading) return;
+        SelectParameter(ParmSelectMode.Normal);
+    }
+
+    /// <summary>File → Open (close existing files first) / File → Add dialog; true when a file was loaded.</summary>
+    public bool OpenFileDialog(bool closeFirst, bool asGroup = false)
     {
         string? dir = Settings.FileSpec.Split(';')[0];
-        var files = Shell.Dialogs.OpenFile(asGroup ? "Open Files as Group" : (closeFirst ? "New" : "Open"), Settings.FileFilters.Replace("||", ""), dir, true);
-        if (files == null || files.Length == 0) return;
+        var files = Shell.Dialogs.OpenFile(asGroup ? "Open Files as Group" : (closeFirst ? "Open" : "Add"), Settings.FileFilters.Replace("||", ""), dir, true);
+        if (files == null || files.Length == 0) return false;
         if (closeFirst) CloseAllFiles();
         if (asGroup || files.Length > 1 && asGroup)
         {
             string tmp = CreateTempDB(string.Join(",", files), null);
+            bool ok = false;
             if (tmp.Length > 0)
             {
-                LoadFileGroup(tmp);
+                ok = LoadFileGroup(tmp) == 0;
                 try { File.Delete(tmp); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
             }
-            return;
+            return ok;
         }
+        bool loaded = false;
         foreach (var f in files)
         {
             if (LoadFileGroup(f) != 0) break;
+            loaded = true;
             Record("OPEN " + f.Replace(";", "\\;"));
         }
+        return loaded;
     }
 }

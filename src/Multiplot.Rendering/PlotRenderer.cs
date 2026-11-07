@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Windows.Media;
 using Multiplot.Core;
 using Multiplot.Core.Model;
@@ -12,7 +15,26 @@ namespace Multiplot.Rendering;
 /// </summary>
 public sealed class PlotRenderer
 {
-    private static readonly int[] MaxColumnRows = { 22, 16, 12, 10 };
+    /// <summary>
+    /// Plot window size (smaller of width and 1.5 × height, in device-independent pixels) at which a font
+    /// is drawn at about its chosen point size; text grows and shrinks in proportion with the window.
+    /// </summary>
+    public const double FontReferenceSize = 768.0;
+
+    /// <summary>
+    /// Text cell height (pixels) of a font of <paramref name="pointSizeTenths"/> (tenths of a point) in a plot
+    /// whose smaller dimension is <paramref name="minHW"/>: proportional to the window, so that a font of
+    /// 10 pt has a cell height of 1/50 of <paramref name="minHW"/>, and never below 1.2 pixels per point.
+    /// </summary>
+    public static int FontCellHeight(int pointSizeTenths, double minHW)
+    {
+        double pt = Math.Clamp(pointSizeTenths > 0 ? pointSizeTenths / 10.0 : 10.0, 4.0, 200.0);
+        return (int)Math.Max(1.2 * pt, minHW * pt / 500.0);
+    }
+
+    /// <summary>Most legend rows per column for a label font of <paramref name="pointSizeTenths"/>.</summary>
+    private static int MaxLegendRows(int pointSizeTenths) =>
+        Math.Clamp((int)(1600.0 / Math.Max(40, pointSizeTenths)), 4, 30);
     private const int WpdDisplayRes = 4096;
 
     private readonly PlotDocument _d;
@@ -25,7 +47,6 @@ public sealed class PlotRenderer
     private GdiFont? _legendFont;
 
     /// <summary>The user name shown in the footer.</summary>
-    public string UserName { get; set; } = Environment.UserName;
 
     public PlotRenderer(PlotDocument doc) => _d = doc;
 
@@ -41,12 +62,18 @@ public sealed class PlotRenderer
 
     private static string DspFmt(bool e) => e ? "%.*e" : "%.*f";
 
-    private int Col(int idx) => _c.DrawColor[_c.Color ? idx : ColorIndex.Mono];
+    private bool _dark;
 
-    private GdiPen TracePen(Curve c) =>
-        new(_c.Is3D ? GdiPen.Solid : c.LineStyle, c.LineSize, _c.DrawColor[_c.Color ? c.ColorIndex : ColorIndex.Mono]);
+    /// <summary>Displayed colour of colour-table entry <paramref name="idx"/> (mono colour in black-and-white mode; adapted in the dark appearance).</summary>
+    private int Col(int idx)
+    {
+        int i = _c.Color ? idx : ColorIndex.Mono;
+        return PlotColors.Map(_c.DrawColor[i], i, _dark);
+    }
 
-    private GdiPen SymbolPen(Curve c) => new(GdiPen.Solid, c.LineSize, _c.DrawColor[_c.Color ? c.ColorIndex : ColorIndex.Mono]);
+    private GdiPen TracePen(Curve c) => new(_c.Is3D ? GdiPen.Solid : c.LineStyle, c.LineSize, Col(c.ColorIndex));
+
+    private GdiPen SymbolPen(Curve c) => new(GdiPen.Solid, c.LineSize, Col(c.ColorIndex));
 
     /// <summary>Renders the plot into a drawing context of size W×H.</summary>
     public void Draw(DrawingContext dc, int W, int H, bool imageCopy)
@@ -66,13 +93,14 @@ public sealed class PlotRenderer
         }
         int nCurves = d.NCurves;
 
-        g.FillRect(0, 0, W, H, _c.DrawColor[ColorIndex.Background]);
+        _dark = d.Host.DarkAppearance;
+        g.FillRect(0, 0, W, H, PlotColors.Display(_c.DrawColor, ColorIndex.Background, _dark));
         if (nCurves == 0) { g.Finish(); return; }
 
-        int fi = _c.FontSize >= 1 && _c.FontSize <= 4 ? _c.FontSize - 1 : 3;
+        int maxRows = MaxLegendRows(_c.LabelPointSize);
         if (_c.LegendColumns < 1) _c.LegendColumns = 1;
-        if (_c.Legend && (nCurves / _c.LegendColumns) > MaxColumnRows[fi])
-            _c.LegendColumns = (nCurves / MaxColumnRows[fi]) + ((nCurves % MaxColumnRows[fi]) != 0 ? 1 : 0);
+        if (_c.Legend && (nCurves / _c.LegendColumns) > maxRows)
+            _c.LegendColumns = (nCurves / maxRows) + ((nCurves % maxRows) != 0 ? 1 : 0);
         if ((_c.Multi && (nCurves == 1 || d.NScales == 1)) || d.NScales > 10) _c.Multi = false;
         if (_c.ClockTime && _c.EndToEnd) _c.ClockTime = false;
 
@@ -112,17 +140,16 @@ public sealed class PlotRenderer
             _c.LogY = false;
         }
 
-        float fontFactor = 30.0f + ((4 - _c.FontSize) * 10);
+        // font sizes (FR-UI-029): the chosen point sizes, scaled with the window
         float minHW = Math.Min(H * 1.5f, W);
-        int baseFontH = (int)((5 * _c.FontSize) > (minHW / fontFactor) ? (5 * _c.FontSize) : (minHW / fontFactor));
-        if (baseFontH < 12) baseFontH = 12;
+        int baseFontH = FontCellHeight(_c.LabelPointSize, minHW);
 
         int xtitO = 0, ytitO = 0, ftitO = 0, rtitO = 0;
         GdiFont? titleFont = null, vTitleFont = null;
         (int cx, int cy) te;
         if (d.UseTitle || d.UseSubTitle)
         {
-            int th = (int)(baseFontH * ((float)_c.TitleFont.Height / (_c.LabelFont.Height + .01f)));
+            int th = FontCellHeight(_c.TitlePointSize, minHW);
             titleFont = new GdiFont(_c.TitleFont.FaceName, th, _c.TitleFont.Weight, _c.TitleFont.Italic != 0, false);
             vTitleFont = new GdiFont(_c.TitleFont.FaceName, th, _c.TitleFont.Weight, _c.TitleFont.Italic != 0, true);
             g.TextColor = Col(ColorIndex.Title);
@@ -306,8 +333,8 @@ public sealed class PlotRenderer
             if (gLeft < (te.cx / 2)) gLeft = te.cx / 2;
         }
         gBottom = H - 1 - bottomO - (2 * (topO + tickH)) - ftitO;
-        if (_c.TestInfo) gBottom -= 3 * topO;
-        if (ftitO == 0 && _c.TimeStamp && d.Host.Groups.Count > 5) gBottom -= topO;
+        string testTitle = _c.TestInfo ? TestTitle(d) : "";
+        if (testTitle.Length > 0) gBottom -= topO;
         if (_c.Legend && _c.Multi && d.NScales > 1)
         {
             int nSymbs = 0;
@@ -480,7 +507,7 @@ public sealed class PlotRenderer
                 {
                     if (d.Curves[i].ScaleIndex == d.SelectedAxis)
                     {
-                        g.Pen = new GdiPen(_c.GridStyle, 0, _c.DrawColor[d.Curves[i].ColorIndex]);
+                        g.Pen = new GdiPen(_c.GridStyle, 0, Col(d.Curves[i].ColorIndex));
                         break;
                     }
                 }
@@ -600,13 +627,13 @@ public sealed class PlotRenderer
                 if (_c.Multi)
                 {
                     foreach (var cv in d.Curves)
-                        if (cv.ScaleIndex == p) { g.TextColor = _c.DrawColor[cv.ColorIndex]; break; }
+                        if (cv.ScaleIndex == p) { g.TextColor = Col(cv.ColorIndex); break; }
                 }
                 else
-                    g.TextColor = _c.DrawColor[ColorIndex.Label];
+                    g.TextColor = Col(ColorIndex.Label);
             }
             else
-                g.TextColor = _c.DrawColor[ColorIndex.Mono];
+                g.TextColor = Col(ColorIndex.Mono);
 
             labelInterval = s.Divisions / 10;
             if (labelInterval == 0) labelInterval = 1;
@@ -714,9 +741,9 @@ public sealed class PlotRenderer
             else if (_c.DataRate == DataRateMode.Sampled) certStatus += Crt.Sprintf("    *Data is Sampled to %d points", (int)_c.SamFreq);
         }
 
-        if (certStatus.Length > 0 || _c.ShowPageNo || _c.ShowVersion || _c.ShowScript || _c.TimeStamp || _c.ShowUserName)
+        // scale group IDs below the value axes
+        if (_c.Multi && _c.GroupId)
         {
-            if (_c.Multi && _c.GroupId)
             {
                 g.Font = new GdiFont(lf.FaceName, scaleidFontH, lf.Weight, lf.Italic != 0, false);
                 int downShift = 0;
@@ -737,65 +764,24 @@ public sealed class PlotRenderer
                     g.PopClip();
                 }
             }
-            g.Font = smallFont;
-            if (certStatus.Length > 0)
-            {
-                te = g.TextExtent(certStatus);
-                g.TextOut(gLeft, H - te.cy, certStatus);
-            }
-            if (_c.ShowScript || _c.ShowVersion)
-            {
-                string textBuf = "";
-                if (_c.ShowScript && d.ScriptFile.Length > 0) textBuf = "Script: " + d.ScriptFile;
-                if (_c.ShowVersion)
-                {
-                    if (_c.ShowScript) textBuf += "      ";
-                    textBuf += d.Host.Version;
-                }
-                te = g.TextExtent(textBuf);
-                if (_c.Is3D) g.TextOut((gRight - te.cx) + (tdxo * nCurves), (gTop - te.cy) - (tdyo * nCurves), textBuf);
-                else g.TextOut(gRight - te.cx, gTop - te.cy, textBuf);
-            }
-            if (_c.ShowPageNo)
-            {
-                string textBuf = Crt.Sprintf("page %d ", d.PlotNo);
-                te = g.TextExtent(textBuf);
-                g.TextOut(W - te.cx, 1, textBuf);
-            }
-            if (_c.ShowUserName)
-            {
-                if (_c.Legend) g.TextOut(1, 1, UserName);
-                else
-                {
-                    te = g.TextExtent(UserName);
-                    g.TextOut(1, H - te.cy, UserName);
-                }
-            }
-            if (_c.TimeStamp)
-            {
-                te = g.TextExtent(d.PlotDate);
-                g.TextOut((_c.Is3D ? (gRight - te.cx) + (tdxo * nCurves) : gRight - te.cx), H - te.cy, d.PlotDate);
-            }
-            g.Font = legendFont;
         }
 
-        if (_c.TestInfo)
+        // bottom-left corner: the test title of the plot's first file (Test Info), then the status notes
+        int footX = tickW;
+        if (testTitle.Length > 0)
         {
-            g.TextOut(gLeft, gBottom + (2 * topO) + (2 * tickH), "Test:");
-            g.TextOut(gLeft, gBottom + (3 * topO) + (2 * tickH), "Engine:");
-            g.TextOut(gLeft, gBottom + (4 * topO) + (2 * tickH), "Shutdown:");
-            int tab = g.TextExtent("Shutdown:").cx;
-            var groups = d.Host.Groups;
-            foreach (var grp in groups)
-                tab = Math.Max(tab, Math.Max(g.TextExtent(grp.GroupName).cx, Math.Max(g.TextExtent(grp.EngineNo).cx, g.TextExtent(grp.EngineCO).cx)));
-            tab += tab / 4;
-            for (int gi = 0; gi < groups.Count; gi++)
-            {
-                g.TextOut(gLeft + (gi * tab) + tab, gBottom + (2 * topO) + (2 * tickH), groups[gi].GroupName);
-                g.TextOut(gLeft + (gi * tab) + tab, gBottom + (3 * topO) + (2 * tickH), groups[gi].EngineNo);
-                g.TextOut(gLeft + (gi * tab) + tab, gBottom + (4 * topO) + (2 * tickH), groups[gi].EngineCO);
-            }
+            g.Font = legendFont;
+            te = g.TextExtent(testTitle);
+            g.TextOut(footX, H - te.cy, testTitle);
+            footX += te.cx + (4 * tickW);
         }
+        if (certStatus.Length > 0)
+        {
+            g.Font = smallFont;
+            te = g.TextExtent(certStatus);
+            g.TextOut(Math.Max(footX, gLeft), H - te.cy, certStatus);
+        }
+        g.Font = legendFont;
 
         // legend
         if (_c.Legend)
@@ -891,7 +877,7 @@ public sealed class PlotRenderer
 
         if (_c.Is3D) g.PushClip(gLeft - (tdxo * nCurves), gTop, gRight + 1, gBottom + 1);
         else g.PushClip(gLeft + 1, gTop + 1, gRight, gBottom);
-        if (!_c.MarkersTopmost) DrawMarkerSet(lineSz);
+        if (!_c.MarkersTopmost) { DrawMarkerSet(lineSz); DrawRedlines(lineSz); }
         if (_c.Is3D)
         {
             g.PopClip();
@@ -997,7 +983,7 @@ public sealed class PlotRenderer
                     g.LineTo(gLeft, gBottom);
                     g.LineTo(gRight, gBottom);
                 }
-                fill3d = _c.Color ? g.BrushOf(_c.DrawColor[cv.ColorIndex]) : HatchBrush(_c.DrawColor[ColorIndex.Mono], (p + 2) % 6);
+                fill3d = _c.Color ? g.BrushOf(Col(cv.ColorIndex)) : HatchBrush(Col(ColorIndex.Mono), (p + 2) % 6);
                 g.Pen = TracePen(cv);
             }
             else
@@ -1007,7 +993,7 @@ public sealed class PlotRenderer
             bool firstPoint = true;
             int xvFirst = -1, yvFirst = -1, xvLast = -1, yvLast = -1, sx = 0, sy = 0;
             bool redlineCurve = cv.Redline != 0;
-            int colorRef = _c.DrawColor[_c.Color ? cv.ColorIndex : ColorIndex.Mono];
+            int colorRef = Col(cv.ColorIndex);
             int div3d = Math.Max(1, _c.LineSize3D);
             Span<(int, int)> zbox = stackalloc (int, int)[4];
             for (int tp = pStartAt; tp < pCount; tp++)
@@ -1173,7 +1159,7 @@ public sealed class PlotRenderer
             }
         }
 
-        if (_c.MarkersTopmost) DrawMarkerSet(lineSz);
+        if (_c.MarkersTopmost) { DrawMarkerSet(lineSz); DrawRedlines(lineSz); }
         g.PopAllClips();
 
         if (_c.Is3D)
@@ -1251,12 +1237,10 @@ public sealed class PlotRenderer
         var d = _d;
         var g = _g;
         if (d.BackgroundImage is ImageSource bg) g.DrawImage(bg, 0, 0, W, H);
-        float fontFactor = 30.0f + ((4 - _c.FontSize) * 10);
         float minHW = Math.Min(H * 1.5f, W);
-        int fh = (int)((5 * _c.FontSize) > (minHW / fontFactor) ? (5 * _c.FontSize) : (minHW / fontFactor));
+        int fh = FontCellHeight(_c.LabelPointSize, minHW);
         var lf = _c.LabelFont;
         g.Font = _legendFont = new GdiFont(lf.FaceName, fh, lf.Weight, lf.Italic != 0, false);
-        DrawMarkerSet(lineSz);
 
         int timeParm = (d.Host.AutoRefreshOn || d.TabDirection <= 0) ? d.MaxTimeParm() : d.MinTimeParm();
         var tc = d.Curves[timeParm];
@@ -1284,7 +1268,7 @@ public sealed class PlotRenderer
             }
             else
                 tBuf = Crt.Sprintf("TIME : %.3f", d.TabTime);
-            g.TextColor = _c.DrawColor[ColorIndex.Label];
+            g.TextColor = Col(ColorIndex.Label);
             var te = g.TextExtent(tBuf);
             g.TextOut(W - (te.cx + 5), H - (te.cy + 5), tBuf);
         }
@@ -1293,7 +1277,7 @@ public sealed class PlotRenderer
         {
             var cv = d.Curves[p];
             if (cv.Points == 0) continue;
-            g.TextColor = _c.DrawColor[_c.Color ? (_c.LegendColor ? cv.ColorIndex : ColorIndex.Label) : ColorIndex.Mono];
+            g.TextColor = Col(_c.LegendColor ? cv.ColorIndex : ColorIndex.Label);
             int tp = TimeMath.Location(d.TabTime, cv.Time, cv.Points, 1);
             int xPos, yPos;
             if (cv.TabPosition == 0)
@@ -1323,231 +1307,102 @@ public sealed class PlotRenderer
         }
     }
 
+    /// <summary>
+    /// Test title shown by Test Info: the <c>Title</c> of the file of the plot's first curve (for curves
+    /// without a source file, such as expressions, the first file of the curve's group). Empty when blank.
+    /// </summary>
+    private static string TestTitle(PlotDocument d)
+    {
+        if (d.Curves.Count == 0) return "";
+        var cv = d.Curves[0];
+        var file = cv.Data.Source;
+        if (file == null)
+        {
+            var groups = d.Host.Groups;
+            int gi = cv.GroupNo >= 0 && cv.GroupNo < groups.Count ? cv.GroupNo : 0;
+            if (groups.Count > 0 && groups[gi].StartPos >= 0 && groups[gi].StartPos < d.Host.Files.Count) file = d.Host.Files[groups[gi].StartPos];
+            else if (d.Host.Files.Count > 0) file = d.Host.Files[0];
+        }
+        string t = (file?.Info.Title ?? "").Trim();
+        int nl = t.IndexOfAny(new[] { '\r', '\n' });
+        return nl >= 0 ? t[..nl].TrimEnd() : t;
+    }
+
     // ------------------------------------------------------------------ markers
 
+    /// <summary>
+    /// Event markers (FR-MRK-002): a full-height vertical line at each resolved timestamp with the text
+    /// beside it at the top or bottom of the plot area. Markers outside the visible X range are not drawn,
+    /// so in real time they scroll with the data and leave the window with their timestamp. Not drawn on
+    /// tabular displays, parameter-versus-parameter plots (no time axis) or end-to-end plots (the X axis
+    /// is accumulated duration, not time).
+    /// </summary>
     private void DrawMarkerSet(int lineSz)
     {
         var d = _d;
         var g = _g;
+        if (_c.Style == PlotStyle.Tabular || _c.PidVsPid || _c.EndToEnd) return;
+        if (d.Markers.Count == 0 && !_c.ShowFileEvents) return;
+        var groups = d.Curves.Select(c => c.GroupNo).Distinct().ToList();
+        if (groups.Count == 0) groups.Add(0);
+        var list = EventMarkers.Resolve(d.Markers, _c.ShowFileEvents, d.Host.Files, d.Host.Groups, groups, d.TReference);
+        if (list.Count == 0) return;
         var xs = d.XScale;
-        var y0 = d.YScales[0];
         int gl = d.GraphLeft, gr = d.GraphRight, gt = d.GraphTop, gb = d.GraphBottom;
-        for (int markerNo = 0; markerNo < d.Markers.Length; markerNo++)
+        int color = Col(ColorIndex.Marker);
+        g.Pen = new GdiPen(GdiPen.Solid, lineSz, color);
+        g.TextColor = color;
+        foreach (var m in list)
         {
-            var m = d.Markers[markerNo];
-            if (!m.Valid) continue;
-            bool keepVisible = false;
-            g.Pen = new GdiPen(GdiPen.Solid, lineSz, _c.DrawColor[_c.Color ? m.Color : ColorIndex.Mono]);
-            int x1, y1, x2, y2;
-            if (m.Type != MarkerType.Event)
-            {
-                if (m.Label.Contains("\\%", StringComparison.Ordinal))
-                {
-                    int xr = gr - gl, yr = gb - gt;
-                    x1 = IntFloat(((_c.LogX ? Log(m.X1) : m.X1) / 100.0) * xr + gl);
-                    x2 = IntFloat(((_c.LogX ? Log(m.X2) : m.X2) / 100.0) * xr + gl);
-                    y1 = IntFloat(gb - (((_c.LogY ? Log(m.Y1) : m.Y1) / 100.0) * yr));
-                    y2 = IntFloat(gb - (((_c.LogY ? Log(m.Y2) : m.Y2) / 100.0) * yr));
-                }
-                else
-                {
-                    x1 = IntFloat((((_c.LogX ? Log(m.X1) : m.X1) - xs.RMin) * xs.Factor) + gl);
-                    x2 = IntFloat((((_c.LogX ? Log(m.X2) : m.X2) - xs.RMin) * xs.Factor) + gl);
-                    y1 = IntFloat(gb - (((_c.LogY ? Log(m.Y1) : m.Y1) - y0.RMin) * y0.Factor));
-                    y2 = IntFloat(gb - (((_c.LogY ? Log(m.Y2) : m.Y2) - y0.RMin) * y0.Factor));
-                }
-                if (m.Type == MarkerType.Image)
-                {
-                    if (x1 > x2) (x1, x2) = (x2, x1);
-                    if (y1 > y2) (y1, y2) = (y2, y1);
-                    if (m.X1 == 0f && m.X2 == 0f) { x1 = gl; x2 = gr; }
-                    if (m.Y1 == 0f && m.Y2 == 0f) { y1 = gt; y2 = gb; }
-                }
-                else if (m.Type == MarkerType.Redline && x1 > x2)
-                {
-                    (x1, x2) = (x2, x1);
-                    (y1, y2) = (y2, y1);
-                }
-            }
-            else
-            {
-                string sEventPos = m.Label;
-                int q = sEventPos.IndexOfAny(new[] { '"', '\\' });
-                if (q != -1) sEventPos = sEventPos[..q];
-                if (sEventPos.Contains('/') && Crt.Atoi(sEventPos) == 0)
-                {
-                    d.Host.ShowMessage(m.Label + ": Invalid syntax for TIME/GMT\nMarker disabled.");
-                    m.UnSet();
-                    d.Host.DisableGlobalMarker(markerNo);
-                    continue;
-                }
-                bool found = false;
-                double eventPos = 0;
-                for (int ig = 0; ig < d.Host.Groups.Count; ig++)
-                {
-                    if (d.Host.ResolveTime(ig, sEventPos, d.TReference, out eventPos)) { found = true; break; }
-                }
-                if (!found)
-                {
-                    if (!d.Host.RtLoaded)
-                    {
-                        d.Host.ShowMessage(m.Label + ": event marker GMT not found\nMarker disabled.");
-                        m.UnSet();
-                        d.Host.DisableGlobalMarker(markerNo);
-                    }
-                    continue;
-                }
-                x1 = x2 = IntFloat((((_c.LogX ? Log(eventPos) : eventPos) - xs.RMin) * xs.Factor) + gl);
-                y1 = gb;
-                y2 = gt;
-                keepVisible = true;
-            }
+            double xv = _c.LogX ? Log(m.Time) : m.Time;
+            double xp = ((xv - xs.RMin) * xs.Factor) + gl;
+            if (double.IsNaN(xp) || xp < gl || xp > gr) continue;
+            int x = IntFloat(xp);
+            g.MoveTo(x, gt + 1);
+            g.LineTo(x, gb - 1);
+            var te = g.TextExtent(m.Text);
+            int tx = x + _tickW;
+            if (tx + te.cx >= gr && x - _tickW - te.cx > gl) tx = x - _tickW - te.cx;
+            int ty = m.Bottom ? gb - te.cy - 2 : gt + 2;
+            g.TextOut(tx, ty, m.Text);
+        }
+    }
 
-            (int cx, int cy) te = (0, 0);
-            switch (m.Type)
-            {
-                case MarkerType.Line:
-                    if (y1 == y2 && m.Label.Contains("\\v", StringComparison.Ordinal) && !m.Label.Contains("\\t", StringComparison.Ordinal) && !m.Label.Contains("\\b", StringComparison.Ordinal))
-                    {
-                        string label = m.Label.Replace("\\v", "");
-                        bool forcedL = label.Contains("\\l", StringComparison.Ordinal);
-                        label = label.Replace("\\l", "").Replace("\\r", "").Replace("\\t", "").Replace("\\b", "").Replace("\\a", "").Replace("\\%", "");
-                        te = g.TextExtent(label + "X");
-                        g.MoveTo(x1, y1);
-                        if (x1 > x2)
-                        {
-                            int xtmp = x2 + (forcedL ? 0 : te.cx);
-                            if (x1 > gl + te.cx) g.LineTo(xtmp < gl + te.cx ? gl + te.cx : xtmp, y2);
-                        }
-                        else
-                        {
-                            int xtmp = x2 - (forcedL ? te.cx : 0);
-                            if (x1 < gr - te.cx) g.LineTo(xtmp > gr - te.cx ? gr - te.cx : xtmp, y2);
-                        }
-                    }
-                    else
-                    {
-                        g.MoveTo(x1, y1);
-                        g.LineTo(x2, y2);
-                    }
-                    break;
-                case MarkerType.Circle:
-                    g.Ellipse(x1, y1, x2, y2);
-                    break;
-                case MarkerType.Redline:
-                    g.MoveTo(x1, y1);
-                    g.LineTo(x2, y2);
-                    for (int i = x1 + d.SymSize; i < x2; i += 5 * d.SymSize)
-                    {
-                        int yPos = (((y2 - y1) * (i - x1)) / (x2 - x1)) + y1;
-                        if (string.Equals(m.Label, "MAX", StringComparison.OrdinalIgnoreCase)) RedlineMax(d.SymSize, i, yPos);
-                        else RedlineMin(d.SymSize, i, yPos);
-                    }
-                    break;
-                case MarkerType.Image:
-                    if (m.Label.Length > 0)
-                    {
-                        string fName = m.Label.EndsWith("\\%", StringComparison.Ordinal) ? m.Label.Replace("\\%", "") : m.Label;
-                        if (!string.Equals(m.BitmapName, fName, StringComparison.OrdinalIgnoreCase) || m.Image == null)
-                        {
-                            m.Image = GdiCanvas.LoadImage(fName);
-                            m.BitmapName = m.Image != null ? fName : "";
-                        }
-                        if (m.Image is ImageSource img)
-                        {
-                            g.DrawImage(img, x1, y1, x2 - x1, y2 - y1);
-                            if (m.Color != ColorIndex.Background && !(m.X1 == 0f && m.X2 == 0f))
-                            {
-                                g.MoveTo(x1, y1);
-                                g.LineTo(x2, y1);
-                                g.LineTo(x2, y2);
-                                g.LineTo(x1, y2);
-                                g.LineTo(x1, y1);
-                            }
-                        }
-                        else
-                        {
-                            d.Host.ShowMessage(m.Label + ": failed to load\nMarker disabled.");
-                            m.UnSet();
-                        }
-                    }
-                    break;
-                case MarkerType.Box:
-                    g.MoveTo(x1, y1);
-                    g.LineTo(x2, y1);
-                    g.LineTo(x2, y2);
-                    g.LineTo(x1, y2);
-                    g.LineTo(x1, y1);
-                    break;
-            }
-
-            bool hidden = m.Label.Contains("\\h", StringComparison.Ordinal) || m.Label.Contains("\\H", StringComparison.Ordinal);
-            if (m.Label.Length > 0 && m.Type != MarkerType.Image && m.Type != MarkerType.Redline && !hidden)
-            {
-                string ml = m.Label.Replace("\\%", "");
-                int lineOrientation = x1 == x2 ? 1 : (y1 == y2 ? 2 : 0);
-                int posMode = 0;
-                if (ml.Contains("\\v", StringComparison.Ordinal)) { keepVisible = true; ml = ml.Replace("\\v", ""); }
-                if (ml.Contains("\\l", StringComparison.Ordinal)) { posMode = 1; ml = ml.Replace("\\l", ""); }
-                if (ml.Contains("\\r", StringComparison.Ordinal)) { posMode = 2; ml = ml.Replace("\\r", ""); }
-                if (ml.Contains("\\t", StringComparison.Ordinal)) { posMode = 3; ml = ml.Replace("\\t", ""); }
-                if (ml.Contains("\\b", StringComparison.Ordinal)) { posMode = 4; ml = ml.Replace("\\b", ""); }
-                if (ml.Contains("\\a", StringComparison.Ordinal)) { posMode = 4; ml = ml.Replace("\\a", ""); }
-                ml = ml[(ml.IndexOf('"') + 1)..].Replace("\"", "");
-                te = g.TextExtent(ml);
-                if (m.Type == MarkerType.Text && posMode == 0)
-                {
-                    if (_c.Style == PlotStyle.Tabular) { x1 = x2; y1 = y2 - te.cy; }
-                    else { x1 = x2 - (te.cx / 2); y1 = y2 - (te.cy / 2); }
-                }
-                else if (posMode != 0)
-                {
-                    switch (posMode)
-                    {
-                        case 1: x1 = x2 - _tickW - te.cx; y1 = y2 - (te.cy / 2); break;
-                        case 2: x1 = x2 + _tickW; y1 = y2 - (te.cy / 2); break;
-                        case 3: x1 = x2 - (te.cx / 2); y1 = y2 - _tickH - te.cy; break;
-                        case 4: x1 = x2 - (te.cx / 2); y1 = (m.Type == MarkerType.Event ? y1 : y2) + _tickH; break;
-                    }
-                }
-                else
-                {
-                    if (m.Type == MarkerType.Event || m.X1 == m.X2)
-                    {
-                        x1 -= te.cx / 2;
-                        y1 = y1 > y2 ? y2 - te.cy - _tickH : y2 + _tickH;
-                    }
-                    else
-                    {
-                        x1 = x2 + _tickW;
-                        y1 = y2 - (te.cy / 2);
-                    }
-                }
-                if (keepVisible)
-                {
-                    y2 = 0;
-                    if (x1 <= gl && lineOrientation != 1) x1 = gl + 1;
-                    if (x1 + te.cx >= gr && lineOrientation != 1) x1 = (gr - te.cx) - 1;
-                    if (y1 <= gt && lineOrientation != 2) y1 = y2 = gt + 1;
-                    if (y1 + te.cy >= gb && lineOrientation != 2) y1 = (gb - te.cy) + 1;
-                }
-                g.TextColor = _c.DrawColor[_c.Color ? m.Color : ColorIndex.Mono];
-                g.TextOut(x1, y1, ml);
-            }
-
-            if (m.Type == MarkerType.Event)
-            {
-                if (!hidden)
-                {
-                    g.MoveTo(x2, y2 != 0 ? gt + te.cy + _tickH : gt + 1);
-                    g.LineTo(x2, y2 != 0 ? gb - 1 : gb - (te.cy + _tickH));
-                }
-                else
-                {
-                    g.MoveTo(x2, gt + 1);
-                    g.LineTo(x2, gb - 1);
-                }
-            }
+    /// <summary>
+    /// Redline markers (FR-MRK-010): a full-width horizontal line at each redline value with the text above
+    /// it (below when there is no room) at the left or right end. The value is measured on the selected value
+    /// axis (the first axis unless another one is selected in multiple-Y mode). Redlines whose value is
+    /// outside the visible value range are not drawn, so they move with the scale when it is panned or
+    /// zoomed and disappear when the value leaves the view. Not drawn on tabular displays, logic plots and
+    /// 3D plots (no single value plane).
+    /// </summary>
+    private void DrawRedlines(int lineSz)
+    {
+        var d = _d;
+        var g = _g;
+        if (d.Redlines.Count == 0 || d.YScales.Count == 0) return;
+        if (_c.Style == PlotStyle.Tabular || _c.Style == PlotStyle.Logic || _c.Is3D) return;
+        int axis = d.SelectedAxis >= 0 && d.SelectedAxis < d.YScales.Count ? d.SelectedAxis : 0;
+        var ys = d.YScales[axis];
+        int gl = d.GraphLeft, gr = d.GraphRight, gt = d.GraphTop, gb = d.GraphBottom;
+        int color = Col(ColorIndex.Redline);
+        g.Pen = new GdiPen(GdiPen.Solid, lineSz, color);
+        g.TextColor = color;
+        foreach (var r in d.Redlines)
+        {
+            if (_c.LogY && r.Value <= 0) continue;
+            double yv = _c.LogY ? Math.Log(r.Value) : r.Value;
+            double yp = gb - ((yv - ys.RMin) * ys.Factor);
+            if (double.IsNaN(yp) || double.IsInfinity(yp) || yp < gt || yp > gb) continue;
+            int y = IntFloat(yp);
+            g.MoveTo(gl + 1, y);
+            g.LineTo(gr, y);
+            var te = g.TextExtent(r.Text);
+            int tx = r.Right ? gr - _tickW - te.cx : gl + _tickW;
+            if (tx < gl + 1) tx = gl + 1;
+            int ty = y - te.cy - 1;
+            if (ty < gt + 1) ty = y + lineSz + 1;
+            g.TextOut(tx, ty, r.Text);
         }
     }
 
@@ -1576,7 +1431,7 @@ public sealed class PlotRenderer
             default:
                 {
                     int save = g.TextColor;
-                    g.TextColor = _c.DrawColor[_c.Color ? c.ColorIndex : ColorIndex.Mono];
+                    g.TextColor = Col(c.ColorIndex);
                     string buf;
                     if (s >= 75) buf = new string((char)(s - 10), 2);
                     else if (s >= 65) buf = ((char)(s - 17)).ToString();

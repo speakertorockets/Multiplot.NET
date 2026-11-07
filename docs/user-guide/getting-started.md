@@ -8,6 +8,7 @@ Multiplot.NET is a folder that you copy anywhere. It needs the .NET 10 Desktop R
 Multiplot.exe                 the application
 Multiplot.ini                 default settings (copied to your user folder on first start)
 ColorPrinter.wps            colour table used by SET COLOR PRINTERTABLE
+docs\user-guide\            this user guide (Help → User Guide)
 plugins\                    data-source plugins
   Multiplot.Parquet\         bundled Apache Parquet plugin (Multiplot.Parquet.dll and its libraries)
 ```
@@ -24,21 +25,24 @@ written to `Multiplot.NET\src\Multiplot.App\bin\Release\net10.0-windows\Multiplo
 * **Menu bar**: File, Edit, Script, Parameter, TimeSlice, View, Axis, Style, Nomenclature, Markers,
   Options, User, Data, Window and Help. Some commands are not supported (see
   [Limitations](limitations.md)).
-* **Toolbars**: 19 toolbar bands. You can show or hide them with *Options → Toolbars*, and the
-  layout is saved in the registry.
+* **No toolbars**: every command is in the menus or in the right-click menus of the plot windows,
+  which leaves the most room for plots.
 * **Document area**: holds the plot windows. Each plot window has its own caption bar with
   minimise, maximise and close buttons. You can drag a window by its caption and resize it from its
   edges. *Window → Tile / Cascade* arranges the windows.
 * **Status bar**: shows menu prompts, cursor coordinates, delta and track read-outs, and the CPU and
   memory load (*SYSTEMLOAD ON*).
 
-Hover over a toolbar button or menu item to see its prompt in the status bar.
+Hover over a menu item to see its prompt in the status bar. *Help → User Guide* opens this guide in
+your web browser.
 
 ## Opening data
 
 You can open data in any of these ways:
 
-* *File → Open* (Ctrl+O) opens one or more data files.
+* *File → Open* (Ctrl+O) closes the files that are open and opens one or more data files.
+* *File → Add* opens more files and keeps the ones that are already open.
+* *File → Recent Files* reopens a file you used before.
 * Drag files onto the window.
 * Pass them on the command line: `Multiplot.exe data.sun` or `Multiplot.exe archive.parquet`.
 * Use the script command `OPEN file`.
@@ -58,8 +62,10 @@ list item produces one curve per file.
 
 ## Making a plot
 
-1. Open a file.
-2. Choose *Parameter → Select* (or press the plot button). The parameter-selection dialog lists
+1. Open a file. When you open a file from the menu, from *Recent Files* or by dragging it onto the
+   window, and no plot window is open yet, the parameter-selection dialog opens by itself. (It
+   doesn't open while a script runs.)
+2. Otherwise choose *Parameter → Selection* (or press Enter). The parameter-selection dialog lists
    the parameters of every open file. Select one or more of them, then choose **Plot**.
 3. A new plot window appears. Each command that creates a plot opens a **new** window with the
    current settings.
@@ -78,3 +84,5 @@ of an event in the file's `[events]` section.
 * Record what you do as a script: use *Script → Record*, then replay it with *Script → Run*. See
   [Scripts](scripts.md).
 * Save the plot as a picture or as CSV: see [Import and export](import-export.md).
+* Show when events happened, or draw limit lines on the value axis: see
+  [Event and redline markers](markers.md).

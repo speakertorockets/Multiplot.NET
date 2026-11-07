@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core;
 using Multiplot.Core.Model;
 using Multiplot.Plugins;
@@ -49,18 +52,14 @@ public sealed partial class Session
     public void SetBoldFrame(bool? v) => PlotFlag(v, c => c.BoldFrame, (c, x) => c.BoldFrame = x, "boldframe %s");
     public void SetScaleGroup(bool? v) => PlotFlag(v, c => c.GroupId, (c, x) => c.GroupId = x, "SCALEGROUP %s");
     public void SetStairStep(bool? v) => PlotFlag(v, c => c.StairStep, (c, x) => c.StairStep = x, "stairstep %s");
-    public void SetTimeStamp(bool? v) => PlotFlag(v, c => c.TimeStamp, (c, x) => c.TimeStamp = x, "timestamp %s");
     public void SetTestInfo(bool? v) => PlotFlag(v, c => c.TestInfo, (c, x) => c.TestInfo = x, "testinfo %s");
-    public void SetShowVersion(bool? v) => PlotFlag(v, c => c.ShowVersion, (c, x) => c.ShowVersion = x, "ShowVersion %s");
-    public void SetShowUserName(bool? v) => PlotFlag(v, c => c.ShowUserName, (c, x) => c.ShowUserName = x, "showUserName %s");
-    public void SetShowPageNo(bool? v) => PlotFlag(v, c => c.ShowPageNo, (c, x) => c.ShowPageNo = x, "ShowPageNo %s");
-    public void SetShowScript(bool? v) => PlotFlag(v, c => c.ShowScript, (c, x) => c.ShowScript = x, "ShowScript %s");
     public void SetLegendShift(bool? v) => PlotFlag(v, c => c.LegendShift, (c, x) => c.LegendShift = x, "LegendShift %s");
     public void SetLegend(bool? v) => PlotFlag(v, c => c.Legend, (c, x) => c.Legend = x, "legend %s");
     public void SetDropoutMarker(bool? v) => PlotFlag(v, c => c.DropoutMarker, (c, x) => c.DropoutMarker = x, "DropoutMarker %s", true);
     public void SetDropoutIgnore(bool? v) => PlotFlag(v, c => c.DropoutIgnore, (c, x) => c.DropoutIgnore = x, "DropoutIgnore %s", true);
     public void SetDefTabTime(bool? v) => PlotFlag(v, c => c.DefTabTime, (c, x) => c.DefTabTime = x, "DefTabTime %s", true);
     public void SetMarkersTopmost(bool? v) => PlotFlag(v, c => c.MarkersTopmost, (c, x) => c.MarkersTopmost = x, "MARKERSET TOPMOST %s");
+    public void SetShowFileEvents(bool? v) => PlotFlag(v, c => c.ShowFileEvents, (c, x) => c.ShowFileEvents = x, "MARKERSET FILEEVENTS %s");
     public void Set64BitTime(bool? v) => PlotFlag(v, c => c.Use64BitTime, (c, x) => c.Use64BitTime = x, "64BITTIME %s");
 
     /// <summary>Toggles legend colouring.</summary>
@@ -228,21 +227,25 @@ public sealed partial class Session
         }
     }
 
-    /// <summary>Sets the font size.</summary>
-    public void SetFontSize(int size)
+    /// <summary>
+    /// Sets the label (<paramref name="title"/> false) or title font of the default configuration and of the
+    /// active plot (all plots when <paramref name="global"/>): face, size in tenths of a point, bold, italic.
+    /// </summary>
+    public void SetPlotFont(bool title, string face, int pointSizeTenths, bool bold, bool italic, bool global)
     {
-        PlotConfig.FontSize = size;
-        Record(Crt.Sprintf("FontSize %d", size));
-        foreach (var p in TargetPlots(Settings.ApplyAll))
-            if (p.Config.FontSize != size) { p.Config.FontSize = size; Invalidate(p); }
-    }
-
-    /// <summary>Enlarge/reduce font size.</summary>
-    public void StepFontSize(int delta)
-    {
-        int fs = (ActivePlot?.Config.FontSize) ?? PlotConfig.FontSize;
-        fs = Math.Clamp(fs + delta, 1, 4);
-        SetFontSize(fs);
+        pointSizeTenths = Math.Clamp(pointSizeTenths, 40, 2000);
+        void Apply(PlotConfig cfg)
+        {
+            var lf = (title ? cfg.TitleFont : cfg.LabelFont).Clone();
+            lf.FaceName = face;
+            lf.Weight = bold ? 700 : 400;
+            lf.Italic = (byte)(italic ? 1 : 0);
+            lf.Height = -(int)Math.Round(pointSizeTenths * 96.0 / 720.0);
+            if (title) { cfg.TitleFont = lf; cfg.TitlePointSize = pointSizeTenths; }
+            else { cfg.LabelFont = lf; cfg.LabelPointSize = pointSizeTenths; }
+        }
+        Apply(PlotConfig);
+        foreach (var p in TargetPlots(global)) { Apply(p.Config); Invalidate(p); }
     }
 
     /// <summary>Data rate (interactive when <paramref name="mode"/> is null).</summary>
@@ -358,7 +361,7 @@ public sealed partial class Session
         int color;
         if (rgb == null)
         {
-            var c = Shell.Dialogs.ChooseColor(PlotConfig.DrawColor[colorIndex % ColorIndex.MaxColors], PlotConfig.DrawColor);
+            var c = Shell.Dialogs.ChooseColor(PlotConfig.DrawColor[colorIndex < ColorIndex.Total ? colorIndex : colorIndex % ColorIndex.MaxColors], PlotConfig.DrawColor);
             if (c == null) return;
             color = c.Value;
             string name = colorIndex switch
@@ -367,6 +370,8 @@ public sealed partial class Session
                 ColorIndex.Label => "LABEL",
                 ColorIndex.Title => "TITLE",
                 ColorIndex.Background => "BACKGROUND",
+                ColorIndex.Marker => "MARKER",
+                ColorIndex.Redline => "REDLINE",
                 _ => (colorIndex + 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
             };
             Record(Crt.Sprintf("set color %s,%d,%d,%d %s", name, color & 0xff, (color >> 8) & 0xff, (color >> 16) & 0xff, global ? "GLOBAL" : ""));
@@ -376,6 +381,19 @@ public sealed partial class Session
         PlotConfig.DrawColor[colorIndex] = color;
         foreach (var p in TargetPlots(global))
             if (p.Config.DrawColor[colorIndex] != color) { p.Config.DrawColor[colorIndex] = color; Invalidate(p); }
+    }
+
+    /// <summary>
+    /// Light or dark appearance (FR-UI-046; <paramref name="dark"/> null = toggle): the application theme
+    /// and the displayed plot colours. Saved in the INI (<c>Appearance</c>).
+    /// </summary>
+    public void SetAppearance(bool? dark)
+    {
+        Settings.DarkMode = dark ?? !Settings.DarkMode;
+        Record("APPEARANCE " + (Settings.DarkMode ? "DARK" : "LIGHT"));
+        Shell.SetAppearance(Settings.DarkMode);
+        RefreshAllPlots();
+        Shell.RefreshCommands();
     }
 
     /// <summary>Line colour dialog loop.</summary>
@@ -476,20 +494,20 @@ public sealed partial class Session
     /// <summary>Window caption dialog.</summary>
     public void CaptionSourceDialog()
     {
-        string[] names = { "User Defined", "X Title", "Y Title", "Plot Number", "Parameter Set", "Script Name" };
+        string[] names = { "Plot Window Title", "X Title", "Y Title", "Plot Number", "Parameter Set", "Script Name" };
         int[] ids = { CaptionSource.User, CaptionSource.XTitle, CaptionSource.YTitle, CaptionSource.PlotNo, CaptionSource.ParmSet, CaptionSource.Script };
         int cur = (ActivePlot?.Config.CaptionSource) ?? PlotConfig.CaptionSource;
         var r = Shell.Dialogs.Input(new InputRequest("Select plot window caption source", names[Math.Max(0, Array.IndexOf(ids, cur))], "Window Caption", names, true, Settings.ApplyAll, true));
         if (r != null && Array.IndexOf(names, r.Text) is int i && i >= 0) SetCaptionSource(ids[i], r.ApplyAll);
     }
 
-    /// <summary>Sets the user caption.</summary>
+    /// <summary>Sets the plot window title (the user-defined caption; script <c>CAPTION USER text</c>).</summary>
     public void SetUserCaption(string? text)
     {
         var plot = ActivePlot;
         if (text == null)
         {
-            var r = Shell.Dialogs.Input(new InputRequest("Caption text:", plot?.UserCaption ?? UserCaption, "Caption Text"));
+            var r = Shell.Dialogs.Input(new InputRequest("Plot window title:", plot?.UserCaption ?? UserCaption, "Plot Window Title"));
             if (r == null) return;
             UserCaption = r.Text;
             Record("CAPTION USER " + UserCaption);
@@ -509,33 +527,6 @@ public sealed partial class Session
         Settings.NoCaptionBar = (value ?? Settings.NoCaptionBar == 0) ? 1 : 0;
         Record("Caption " + (Settings.NoCaptionBar != 0 ? "OFF" : "ON"));
         foreach (var p in _plots) Shell.UpdateCaption(p);
-    }
-
-    /// <summary>Group name (script: <see cref="GroupName"/> already set).</summary>
-    public void ApplyGroupName(bool? applyAllOverride, bool interactive)
-    {
-        bool all = applyAllOverride ?? Settings.ApplyAll;
-        var plot = ActivePlot;
-        if (interactive)
-        {
-            var r = Shell.Dialogs.Input(new InputRequest("Plot group name:", plot?.GroupName ?? GroupName, "Group Name", null, plot != null, false));
-            if (r == null) return;
-            all = r.ApplyAll;
-            if (r.Text.Length == 0) return;
-            GroupName = r.Text;
-            Record("SET GROUPNAME " + (all ? "ALL=" : "") + GroupName);
-        }
-        foreach (var p in TargetPlots(all))
-        {
-            p.GroupName = GroupName;
-            string t = p.ParseStringKeywords(p.XTitleFormat, -1), s = p.ParseStringKeywords(p.YTitleFormat, -1);
-            if (t != p.XTitle || s != p.YTitle)
-            {
-                p.XTitle = t;
-                p.YTitle = s;
-                Invalidate(p);
-            }
-        }
     }
 
     /// <summary>Tabular background bitmap (script: <see cref="BackgroundFn"/> already set).</summary>
@@ -773,15 +764,6 @@ public sealed partial class Session
     {
         Settings.TabHistory = v ?? !Settings.TabHistory;
         Record("TABHISTORY " + OnOff(Settings.TabHistory));
-    }
-
-    /// <summary>Toggles the time slide.</summary>
-    public void SetTimeSlide(bool? value)
-    {
-        var plot = ActivePlot;
-        Settings.TimeSlide = value ?? !(plot?.TimeSlide ?? Settings.TimeSlide);
-        Record("timeslide " + OnOff(Settings.TimeSlide));
-        foreach (var p in TargetPlots(Settings.ApplyAll)) p.TimeSlide = Settings.TimeSlide;
     }
 
     /// <summary>Toggles Ignore Static.</summary>

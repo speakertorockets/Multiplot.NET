@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 namespace Multiplot.Core.Model;
 
 /// <summary>Plot styles.</summary>
@@ -93,18 +96,24 @@ public static class ColorIndex
     public const int Mono = 103;
     /// <summary>Title.</summary>
     public const int Title = 104;
+    /// <summary>Event markers (line and text).</summary>
+    public const int Marker = 105;
+    /// <summary>Redline markers (line and text).</summary>
+    public const int Redline = 106;
     /// <summary>Total.</summary>
-    public const int Total = 105;
+    public const int Total = 107;
 
     /// <summary>Default colour table (COLORREF 0x00BBGGRR).</summary>
     public static int[] Defaults()
     {
         var c = new int[Total];
-        int[] cycle = { 0x0000FF, 0x00FF00, 0xFF0000, 0x0000BF, 0x00BF00 };
+        var cycle = PlotColors.Palette;
         for (int i = 0; i < MaxColors; i++) c[i] = cycle[i % cycle.Length];
         c[Grid] = c[Label] = c[Title] = 0x808080;
         c[Background] = 0xFFFFFF;
         c[Mono] = 0;
+        c[Marker] = 0x808080;
+        c[Redline] = 0x3C14DC; // crimson RGB(220,20,60): not a curve palette colour
         return c;
     }
 }
@@ -155,17 +164,23 @@ public sealed class LogFont
 public sealed class PlotConfig
 {
     public bool Symbols = true, Multi, Color = true, PidVsPid, EndToEnd, Legend = true, LegendShift;
-    public bool TimeStamp = true, TestInfo, ShowVersion = true, ShowScript = true, ShowUserName, ShowPageNo;
-    public bool ClockTime, GridLines = true, BoldFrame, StairStep, LogX, LogY, MinorTics, MarkersTopmost;
+    /// <summary>Test Info: the test title of the plot's first file in the bottom-left corner.</summary>
+    public bool TestInfo;
+    public bool ClockTime, GridLines = true, BoldFrame, StairStep, LogX, LogY, MinorTics, MarkersTopmost, ShowFileEvents = true;
+    /// <summary>Auto scale the time (X) axis: the axis spans all data and follows new real-time data.</summary>
+    public bool AutoScaleX = true;
+    /// <summary>Auto scale the value (Y) axes: they fit the data inside the visible time range.</summary>
+    public bool AutoScaleY = true;
     public bool DropoutIgnore = true, DropoutMarker, LegendColor, GroupId, DefTabTime = true, Use64BitTime;
     public uint SymFreq = 8, SamFreq = 100, AvgFreq = 100, ZaxFreq = 25;
     public int Style = PlotStyle.Line2D, DataRate = DataRateMode.Full, ZAngle = 45, GridStyle = 2;
-    public int LineSize = 1, LineSize3D = 1, FontSize = 2, TitleSize = 2, SymbolSize;
+    public int LineSize = 1, LineSize3D = 1, TitleSize = 2, SymbolSize;
     public int XNomen = 3, YNomen = 39, LegendColumns = 2, CaptionSource = Model.CaptionSource.ParmSet;
     public int[] XNomOrder = (int[])Nomen.DefaultOrder.Clone(), YNomOrder = (int[])Nomen.DefaultOrder.Clone();
     public int[] XNomLen = new int[Nomen.ITEMS], YNomLen = new int[Nomen.ITEMS];
     public LogFont LabelFont = LogFont.DefaultFace(30), TitleFont = LogFont.DefaultFace(45);
-    public int LabelPointSize = 100, TitlePointSize = 140;
+    /// <summary>Label (legend/scale) and title font sizes in tenths of a point (FR-UI-029).</summary>
+    public int LabelPointSize = 100, TitlePointSize = 120;
     public int[] DrawColor = ColorIndex.Defaults();
 
     /// <summary>True for 3D styles.</summary>

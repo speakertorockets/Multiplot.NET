@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Scripting;
 
 namespace Multiplot.Application;
@@ -26,7 +29,7 @@ public sealed class ScriptRunner
     /// <summary>Removes all stacked scripts.</summary>
     public void ClearStack() => _stack.Clear();
 
-    /// <summary>Raised when a script starts or ends (menus/toolbar state).</summary>
+    /// <summary>Raised when a script starts or ends (menu state).</summary>
     public event Action? StateChanged;
 
     /// <summary>Runs a chosen script file (refuses while recording or running).</summary>
@@ -139,7 +142,7 @@ public sealed class ScriptRunner
         await RunAsync(f.FileName, f.Offset, f.LineNo);
     }
 
-    /// <summary>Pauses the script (Space / toolbar).</summary>
+    /// <summary>Pauses the script (Space / menu).</summary>
     public async Task PauseToggleAsync()
     {
         switch (_s.ScriptRun)

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core;
 using Multiplot.Core.Model;
 using Multiplot.Core.Plotting;
@@ -128,6 +131,42 @@ public sealed partial class Session
 
     private bool SelectedYOnly(PlotDocument p) => p.Config.Multi && !Shell.IsShiftPressed();
 
+    /// <summary>
+    /// The user set the time range by hand (zoom, pan, Fix X): Auto Scale X switches off for the plot; with
+    /// Auto Scale Y on, the value axes are refitted to the new visible time range.
+    /// </summary>
+    internal static void ManualX(PlotDocument p)
+    {
+        p.Config.AutoScaleX = false;
+        if (p.Config.AutoScaleY && p.HasTimeAxis) p.ResetMinMax(0x0202, false);
+    }
+
+    /// <summary>The user set a value range by hand (zoom, pan, Fix Y): Auto Scale Y switches off for the plot.</summary>
+    internal static void ManualY(PlotDocument p) => p.Config.AutoScaleY = false;
+
+    /// <summary>
+    /// Axis → Auto Scale X (AUTOSCALE X ON|OFF): the time axis spans all data and follows new real-time data.
+    /// Off: the visible span is kept and slides with the newest data. Turning it on rescales at once.
+    /// </summary>
+    public void SetAutoScaleX(bool? value) => PlotFlag(value, c => c.AutoScaleX, (c, x) => c.AutoScaleX = x, "AUTOSCALE X %s", false, p =>
+    {
+        if (!p.Config.AutoScaleX || !p.HasTimeAxis) return;
+        p.SaveScales();
+        p.ResetMinMax(1, false);
+        if (p.Config.AutoScaleY) p.ResetMinMax(0x0202, false);
+    });
+
+    /// <summary>
+    /// Axis → Auto Scale Y (AUTOSCALE Y ON|OFF): the value axes fit the data inside the visible time range.
+    /// Off: they keep their scale. Turning it on rescales at once.
+    /// </summary>
+    public void SetAutoScaleY(bool? value) => PlotFlag(value, c => c.AutoScaleY, (c, x) => c.AutoScaleY = x, "AUTOSCALE Y %s", false, p =>
+    {
+        if (!p.Config.AutoScaleY || !p.HasTimeAxis) return;
+        p.SaveScales();
+        p.ResetMinMax(0x0202, false);
+    });
+
     /// <summary>Zooms the X axis in.</summary>
     public void ZoomX(bool zoomIn)
     {
@@ -171,6 +210,7 @@ public sealed partial class Session
                 }
             }
         }
+        ManualX(plot);
         Invalidate(plot);
         Record(zoomIn ? "ZOOM IN X" : "ZOOM OUT X");
     }
@@ -239,6 +279,7 @@ public sealed partial class Session
             SetScaleCurves(plot, i);
             if (selected || !plot.Config.Multi) break;
         }
+        ManualY(plot);
         Invalidate(plot);
         Record(zoomIn ? "ZOOM IN Y" : "ZOOM OUT Y");
     }
@@ -301,9 +342,7 @@ public sealed partial class Session
                         plot.XSetMax = xs.RMax = xs.RMax - xs.Graduation * factor;
                     }
                 }
-                var c0 = plot.Curves[0];
-                xs.Persist = !(c0.Time[c0.Points - 1] <= plot.XSetMax);
-                if (Settings.FixXAutoY && !plot.YScales.Take(plot.NScales).Any(s => s.Persist)) plot.ResetMinMax(0x0202, false);
+                ManualX(plot);
                 if (!Settings.ApplyAll) Record(Crt.Sprintf("fixx %g,%g,%g", plot.XSetMin, plot.XSetMax, xs.Graduation));
             }
             Invalidate(plot);
@@ -355,6 +394,7 @@ public sealed partial class Session
             else SetScaleCurves(plot, i);
             if (selected || !plot.Config.Multi) break;
         }
+        ManualY(plot);
         Invalidate(plot);
         Record(up ? "PAN UP" : "PAN DOWN");
     }
@@ -364,7 +404,8 @@ public sealed partial class Session
     {
         if (r.Auto)
         {
-            if (isY) RescaleY(); else RescaleX();
+            // FIXX AUTO / FIXY AUTO: switch the axis back to autoscaling
+            if (isY) SetAutoScaleY(true); else SetAutoScaleX(true);
             return;
         }
         var f = Fix;
@@ -408,7 +449,7 @@ public sealed partial class Session
             plot.XScale.FixedScale = f.FixedScaleX;
             plot.XScale.Persist = f.FixXPersist;
             plot.TabTime = (float)f.XSetMax;
-            if (Settings.FixXAutoY && plot.YScales.Count > 0 && !plot.YScales[0].Persist) plot.ResetMinMax(0x0202, false);
+            ManualX(plot);
             Invalidate(plot);
         }
         SetRefreshPause(false);
@@ -454,6 +495,7 @@ public sealed partial class Session
             plot.YScales[0].Graduation = f.YSetGrad[0];
             plot.YScales[0].Persist = f.FixYPersist[0];
         }
+        ManualY(plot);
         Invalidate(plot);
     }
 
@@ -548,6 +590,7 @@ public sealed partial class Session
                 p.YScales[0].FixedScale = fixedScale;
                 p.YScales[0].Graduation = grad;
                 p.YScales[0].Persist = f.FixYPersist[0];
+                ManualY(p);
                 Invalidate(p);
             }
             return;
@@ -596,6 +639,7 @@ public sealed partial class Session
             ys.Graduation = grad;
             ys.Persist = f.FixYPersist[i];
         }
+        ManualY(plot);
         Invalidate(plot);
         var sb = new System.Text.StringBuilder("fixy multi ");
         for (int i = 0; i < plot.NCurves && i < plot.YScales.Count; i++)
@@ -608,7 +652,11 @@ public sealed partial class Session
         Record(sb.ToString());
     }
 
-    /// <summary>Rescales X and Y (RESCALE, Home).</summary>
+    /// <summary>
+    /// Axis → Auto Range X/Y Once (Home, RESCALE): fits both axes once to all values on the plot, then switches
+    /// Auto Scale X and Y off, so in real time the time axis slides with the data and the value axis keeps
+    /// the fitted scale. Works on every plot, with or without a time axis.
+    /// </summary>
     public void RescaleXY()
     {
         bool dropPersist = ActivePlot == null;
@@ -618,6 +666,7 @@ public sealed partial class Session
             if (plot.XScale.IsZoomed == 0) dropPersist = true;
             plot.SaveScales();
             plot.ResetMinMax(3, false);
+            plot.Config.AutoScaleX = plot.Config.AutoScaleY = false;
             Invalidate(plot);
             if (Shell.IsMaximized(plot)) break;
         }
@@ -630,50 +679,14 @@ public sealed partial class Session
         SetRefreshPause(false);
     }
 
-    /// <summary>Rescales X (FIXX AUTO).</summary>
-    public void RescaleX()
-    {
-        bool dropPersist = ActivePlot == null;
-        foreach (var plot in TargetPlots(Settings.ApplyAll))
-        {
-            if (plot.XScale.IsZoomed == 0) dropPersist = true;
-            plot.SaveScales();
-            plot.ResetMinMax(1, false);
-            Invalidate(plot);
-            if (Shell.IsMaximized(plot)) break;
-        }
-        if (dropPersist)
-        {
-            Fix.FixXPersist = Fix.FixedScaleX = false;
-            Fix.XSetGrad = -1;
-        }
-        Record("fixx AUTO");
-    }
-
-    /// <summary>Rescales Y (FIXY AUTO).</summary>
-    public void RescaleY()
-    {
-        bool dropPersist = ActivePlot == null;
-        foreach (var plot in TargetPlots(Settings.ApplyAll))
-        {
-            if (plot.XScale.IsZoomed == 0) dropPersist = true;
-            plot.SaveScales();
-            plot.ResetMinMax(0x0202, false, SelectedYOnly(plot));
-            Invalidate(plot);
-            if (Shell.IsMaximized(plot)) break;
-        }
-        if (dropPersist)
-            for (int i = 0; i < MaxCurves; i++) { Fix.FixYPersist[i] = Fix.FixedScaleY[i] = false; Fix.YSetGrad[i] = -1; }
-        Record("fixy AUTO");
-    }
-
-    /// <summary>Reverts to the previous scales (Backspace).</summary>
+    /// <summary>Reverts to the previous scales (Backspace); the restored ranges are manual ranges.</summary>
     public void UndoZoom()
     {
         var plot = ActivePlot;
         if (plot != null && plot.XScale.IsZoomed != 0)
         {
             plot.ResetMinMax(3, true);
+            plot.Config.AutoScaleX = plot.Config.AutoScaleY = false;
             Invalidate(plot);
         }
     }

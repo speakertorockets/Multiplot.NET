@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 // samplemultigen - writes a synthetic SUN_MULTITIME64 test file through the native SunAcc42.dll.
 //
 //   samplemultigen [output.multi] [--date yyyy-MM-dd] [--start HH:mm:ss] [--hours H] [--rate Hz]

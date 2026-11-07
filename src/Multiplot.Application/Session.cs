@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Text;
 using Multiplot.Core;
 using Multiplot.Core.Model;
@@ -18,7 +21,7 @@ public static class RunState
 /// <summary>
 /// The application session — main window state and behaviour: open files and groups,
 /// plot windows, settings, symbols, markers, script state, recording and logs. All user actions (menus,
-/// toolbars, scripts, command line) go through its methods (ARC-010).
+/// scripts, command line) go through its methods (ARC-010).
 /// </summary>
 public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost, ISystemSymbols
 {
@@ -105,9 +108,8 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
         PlotDocument? found = null, lo = null;
         foreach (var p in _plots.Skip(1))
         {
-            bool inGroup = TabGroup.Length == 0 || string.Equals(TabGroup, p.GroupName, StringComparison.OrdinalIgnoreCase);
-            if (p.PlotNo > plotNo && p.PlotNo < nearest && inGroup) { nearest = p.PlotNo; found = p; }
-            if (p.PlotNo < loPage && inGroup) { loPage = p.PlotNo; lo = p; }
+            if (p.PlotNo > plotNo && p.PlotNo < nearest) { nearest = p.PlotNo; found = p; }
+            if (p.PlotNo < loPage) { loPage = p.PlotNo; lo = p; }
         }
         found ??= lo;
         if (found != null) ActivatePlot(found);
@@ -117,7 +119,7 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
     /// <summary>Activates the previous plot window.</summary>
     public void PreviousWindow()
     {
-        if (AutoTab != 0) { SetAutoTab(0, null); return; }
+        if (AutoTab != 0) { SetAutoTab(0); return; }
         var plot = ActivePlot;
         if (plot == null) return;
         int plotNo = plot.PlotNo > 1 ? plot.PlotNo : PlotNo + 1;
@@ -149,14 +151,17 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
 
     public string XAxis = "(default)", YAxis = "";
     public readonly string[] PastParms = new string[Remembered];
-    public readonly Marker[] MasterMarkers = Marker.NewSet();
+    /// <summary>Master marker set: applied to new plots when Continue Markers is on.</summary>
+    public readonly List<Marker> MasterMarkers = new();
+    /// <summary>Master redline set: applied to new plots when Continue Markers is on.</summary>
+    public readonly List<RedlineMarker> MasterRedlines = new();
     public readonly FixedScaleDefaults Fix = new() { XSetGrad = -1 };
     public readonly int[] RestoreColors;
     public int PlotNo, ImportCnt, CurrentFile = -1;
     public bool DataLoading, FileLoading, RtLoaded, TimeChange, RefreshPaused, Refreshing;
     public int AutoRefresh;
     public bool RunHidden, NoPlugins, UseUserPluginFolder, ExtCmdPolling, PresentationMode, KeepOnTop;
-    public string GroupName = "Multiplot", TileGroup = "", TabGroup = "", BackgroundFn = "", UserCaption = "", UDefBuf = "";
+    public string BackgroundFn = "", UserCaption = "", UDefBuf = "";
     public int SetNomen, AutoTab, LayoutGridSpacingValue;
     public bool SnapToGridValue, ShuttingDown;
     public readonly List<string> AutoRunList = new();
@@ -326,9 +331,9 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
     IReadOnlyList<FileGroup> IPlotHost.Groups => _groups;
     string[] IPlotHost.LogicTxtTrue => Settings.LogicTxtTrue;
     string[] IPlotHost.LogicTxtFalse => Settings.LogicTxtFalse;
-    bool IPlotHost.ScaleRedlines => Settings.ScaleRedlines;
     string IPlotHost.Version => ProductVersion;
     bool IPlotHost.PresentationMode => PresentationMode;
+    bool IPlotHost.DarkAppearance => Settings.DarkMode;
     int IPlotHost.LayoutGridSpacing => LayoutGridSpacingValue;
     bool IPlotHost.SnapToGrid => SnapToGridValue;
     bool IPlotHost.AutoRefreshOn => AutoRefresh != 0;
@@ -347,11 +352,6 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
     }
 
     void IPlotHost.ShowMessage(string text) => Message(text);
-
-    void IPlotHost.DisableGlobalMarker(int markerNo)
-    {
-        if (markerNo >= 0 && markerNo < MasterMarkers.Length) MasterMarkers[markerNo].UnSet();
-    }
 
     /// <summary>Files of a group.</summary>
     public IReadOnlyList<IDataFile> GroupFiles(int g) => _files.GetRange(_groups[g].StartPos, _groups[g].NFiles);

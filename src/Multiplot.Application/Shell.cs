@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core.Model;
 using Multiplot.ImportExport;
 using Multiplot.Plugins;
@@ -15,8 +18,6 @@ public enum WindowArrange
     Cascade,
     /// <summary>Stack horizontally.</summary>
     Stack,
-    /// <summary>Tile the plots of one group name.</summary>
-    TileGroup,
     /// <summary>Maximise the active plot.</summary>
     MaximizeActive,
     /// <summary>Minimise the active plot.</summary>
@@ -44,9 +45,9 @@ public enum ParmSelectMode
 /// <summary>Dialogs that operate directly on the session.</summary>
 public enum DialogKind
 {
-    SliceAverage, XNomenclature, YNomenclature, MarkerEdit, MarkerDraw, Favorites, FilterHelper, FileProperties, ParameterProperties,
+    SliceAverage, XNomenclature, YNomenclature, MarkerEdit, MarkerDraw, RedlineEdit, RedlineDraw, Favorites, FilterHelper, FileProperties, ParameterProperties,
     SymbolicNames, FilePaths, ExternalApplications, ManagePlugins, AutoRun, AutoCompact, AutoDiscard, WindowList, About,
-    TimeAlign, LabelFont, TitleFont, ToolbarEdit, UserButtonAssign, DataPick, RefreshInterval, WindowPosition, RightButton,
+    TimeAlign, LabelFont, TitleFont, UserButtonAssign, DataPick, RefreshInterval, WindowPosition, RightButton,
     AverageRate, AverageTimeStamp, Monitors, LayoutGrid,
 }
 
@@ -108,15 +109,15 @@ public interface IShell
     /// <summary>True when the plot window is maximised.</summary>
     bool IsMaximized(PlotDocument plot);
     /// <summary>Arranges plot windows.</summary>
-    void Arrange(WindowArrange mode, string? group);
+    void Arrange(WindowArrange mode);
     /// <summary>Main window state: 0 restore, 1 minimise, 2 maximise.</summary>
     void MainWindowState(int state);
     /// <summary>Moves the main window.</summary>
     void MoveMainWindow(int left, int top, int right, int bottom);
-    /// <summary>Shows or hides the toolbars.</summary>
-    void ShowToolbar(bool show);
     /// <summary>Shows or hides the status bar.</summary>
     void ShowStatusBar(bool show);
+    /// <summary>Applies the light or dark appearance to the application windows (FR-UI-046).</summary>
+    void SetAppearance(bool dark);
     /// <summary>Presentation mode.</summary>
     void SetPresentationMode(bool on, bool fullScreen);
     /// <summary>Status bar message.</summary>
@@ -137,9 +138,11 @@ public interface IShell
     bool IsSpacePressed();
     /// <summary>True while Shift is held.</summary>
     bool IsShiftPressed();
-    /// <summary>Menus/toolbars must be refreshed (labels, check states).</summary>
+    /// <summary>Opens a local file in the default web browser; false when no browser could be started.</summary>
+    bool OpenInBrowser(string path);
+    /// <summary>Menus must be refreshed (labels, check states).</summary>
     void RefreshCommands();
-    /// <summary>Menus and toolbars must be rebuilt (toolbar layout changed).</summary>
+    /// <summary>Menus must be rebuilt (settings loaded, plugins changed).</summary>
     void RebuildCommands();
     /// <summary>Starts or restarts a named timer on the UI thread.</summary>
     void StartTimer(string name, int intervalMs, Action tick);

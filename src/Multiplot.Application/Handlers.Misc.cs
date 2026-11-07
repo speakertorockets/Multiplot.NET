@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core;
 using Multiplot.Core.Model;
 using Multiplot.ImportExport;
@@ -11,49 +14,137 @@ namespace Multiplot.Application;
 /// <summary>Markers, windows, import/export, settings and plugin handlers.</summary>
 public sealed partial class Session
 {
-    // ------------------------------------------------------------------ markers (FR-MRK, FR-LOAD-060/061)
+    // ------------------------------------------------------------------ event markers (FR-MRK, FR-LOAD-060/061)
 
-    /// <summary>MARKER command application.</summary>
-    public void SetMarker(int mNo, Marker marker, bool global)
+    /// <summary>
+    /// MARKER command / Add Event Marker: adds the marker to the master set and to the active plot (all plots
+    /// with Apply Changes Globally). An identical marker is not added twice.
+    /// </summary>
+    public void AddMarker(Marker marker)
     {
         SetRefreshPause(true);
-        foreach (var p in TargetPlots(global))
+        foreach (var p in TargetPlots(Settings.ApplyAll))
+            if (Marker.AddTo(p.Markers, marker)) Invalidate(p);
+        SetRefreshPause(false);
+        Marker.AddTo(MasterMarkers, marker);
+    }
+
+    /// <summary>
+    /// Replaces the marker list of the active plot (all plots with Apply Changes Globally) and the master set
+    /// (Markers → Edit). Recorded as <c>clear markers all</c> followed by one <c>marker</c> line per marker.
+    /// </summary>
+    public void ReplaceMarkers(IReadOnlyList<Marker> markers)
+    {
+        SetRefreshPause(true);
+        foreach (var p in TargetPlots(Settings.ApplyAll))
         {
-            p.Markers[mNo] = marker.Clone();
-            if (marker.Type == MarkerType.Redline && p.YScales.Count > 0 && !p.YScales[0].FixedScale) p.ResetMinMax(0x0202, false, true);
+            p.Markers = Marker.CopySet(markers);
             Invalidate(p);
         }
         SetRefreshPause(false);
-        MasterMarkers[mNo] = marker.Clone();
+        MasterMarkers.Clear();
+        MasterMarkers.AddRange(Marker.CopySet(markers));
+        Record("clear markers all");
+        foreach (var m in markers) Record(MarkerCommand(m));
     }
 
-    /// <summary>Clears all markers.</summary>
+    /// <summary>Clears all markers (master set and the active plot, or all plots with Apply Changes Globally).</summary>
     public void ClearAllMarkers()
     {
-        foreach (var m in MasterMarkers) m.UnSet();
+        MasterMarkers.Clear();
         foreach (var p in TargetPlots(Settings.ApplyAll))
         {
-            bool changed = false;
-            foreach (var m in p.Markers) if (m.Valid) { m.UnSet(); changed = true; }
-            if (changed) Invalidate(p);
+            if (p.Markers.Count == 0) continue;
+            p.Markers.Clear();
+            Invalidate(p);
         }
         Record("clear markers all");
     }
 
-    /// <summary>CLEAR MARKERS n[,m…] (master set and active plot).</summary>
+    /// <summary>Markers → Clear All: clears the event markers and the redline markers.</summary>
+    public void ClearAllMarkersAndRedlines()
+    {
+        ClearAllMarkers();
+        ClearAllRedlines();
+    }
+
+    /// <summary>CLEAR MARKERS n[,m…]: removes markers by 1-based position from the active plot and the master set.</summary>
     public void ClearMarkers(IEnumerable<int> numbers)
     {
         var plot = ActivePlot;
-        foreach (int m in numbers)
+        foreach (int m in numbers.Distinct().OrderByDescending(x => x))
         {
-            if (m < 1 || m > Marker.MaxMarkers) continue;
-            MasterMarkers[m - 1].UnSet();
-            plot?.Markers[m - 1].UnSet();
+            if (m >= 1 && m <= MasterMarkers.Count) MasterMarkers.RemoveAt(m - 1);
+            if (plot != null && m >= 1 && m <= plot.Markers.Count) plot.Markers.RemoveAt(m - 1);
         }
         if (plot != null) Invalidate(plot);
     }
 
-    /// <summary>Returns the number of active markers or −1.</summary>
+    // ------------------------------------------------------------------ redline markers (FR-MRK-010)
+
+    /// <summary>
+    /// REDLINE command / Add Redline Marker: adds the redline to the master set and to the active plot (all
+    /// plots with Apply Changes Globally). An identical redline is not added twice.
+    /// </summary>
+    public void AddRedline(RedlineMarker redline)
+    {
+        SetRefreshPause(true);
+        foreach (var p in TargetPlots(Settings.ApplyAll))
+            if (RedlineMarker.AddTo(p.Redlines, redline)) Invalidate(p);
+        SetRefreshPause(false);
+        RedlineMarker.AddTo(MasterRedlines, redline);
+    }
+
+    /// <summary>
+    /// Replaces the redline list of the active plot (all plots with Apply Changes Globally) and the master set
+    /// (Markers → Edit Redlines). Recorded as <c>clear redlines all</c> followed by one <c>redline</c> line each.
+    /// </summary>
+    public void ReplaceRedlines(IReadOnlyList<RedlineMarker> redlines)
+    {
+        SetRefreshPause(true);
+        foreach (var p in TargetPlots(Settings.ApplyAll))
+        {
+            p.Redlines = RedlineMarker.CopySet(redlines);
+            Invalidate(p);
+        }
+        SetRefreshPause(false);
+        MasterRedlines.Clear();
+        MasterRedlines.AddRange(RedlineMarker.CopySet(redlines));
+        Record("clear redlines all");
+        foreach (var r in redlines) Record(r.ToCommand());
+    }
+
+    /// <summary>Clears all redlines (master set and the active plot, or all plots with Apply Changes Globally).</summary>
+    public void ClearAllRedlines()
+    {
+        MasterRedlines.Clear();
+        foreach (var p in TargetPlots(Settings.ApplyAll))
+        {
+            if (p.Redlines.Count == 0) continue;
+            p.Redlines.Clear();
+            Invalidate(p);
+        }
+        Record("clear redlines all");
+    }
+
+    /// <summary>CLEAR REDLINES n[,m…]: removes redlines by 1-based position from the active plot and the master set.</summary>
+    public void ClearRedlines(IEnumerable<int> numbers)
+    {
+        var plot = ActivePlot;
+        foreach (int m in numbers.Distinct().OrderByDescending(x => x))
+        {
+            if (m >= 1 && m <= MasterRedlines.Count) MasterRedlines.RemoveAt(m - 1);
+            if (plot != null && m >= 1 && m <= plot.Redlines.Count) plot.Redlines.RemoveAt(m - 1);
+        }
+        if (plot != null) Invalidate(plot);
+    }
+
+    /// <summary>
+    /// Reads a <c>.markers</c> file (FR-LOAD-060): one marker per line as <c>&lt;timestamp&gt;,&lt;text&gt;[,TOP|BOTTOM]</c>
+    /// or one redline per line as <c>redline &lt;value&gt;,&lt;text&gt;[,LEFT|RIGHT]</c>; blank lines and lines starting
+    /// with <c>;</c> or <c>#</c> are ignored. Markers and redlines are added to the master sets and the active
+    /// plot (all plots with Apply Changes Globally). Returns the number of markers and redlines read or −1.
+    /// </summary>
     public int MarkersFromFile(string fileName)
     {
         List<string> lines;
@@ -63,63 +154,63 @@ public sealed partial class Session
             Message("Failed to open 'Marker' file");
             return -1;
         }
-        int n = 0;
-        var isNew = new bool[Marker.MaxMarkers];
-        foreach (string raw in lines)
+        var read = new List<Marker>();
+        var readRedlines = new List<RedlineMarker>();
+        int bad = 0, firstBad = 0;
+        for (int i = 0; i < lines.Count; i++)
         {
-            string line = raw.Length > 1023 ? raw[..1023] : raw;
-            int eq = line.IndexOf('=');
-            string key = (eq < 0 ? line : line[..eq]).ToLowerInvariant();
-            if (!key.StartsWith("marker", StringComparison.Ordinal) || eq < 0) continue;
-            string setting = line[(eq + 1)..].TrimStart(' ');
-            if (setting.Length == 0) continue;
-            var t = new Strtok(setting);
-            string? s;
-            int mNo = -1, valid = 0, type = 0, color = 0;
-            float x1 = 0, y1 = 0, x2 = 0, y2 = 0;
-            string label = "";
-            if ((s = t.Next(" ")) != null) mNo = Crt.Atoi(s) - 1;
-            if ((s = t.Next(" ")) != null) valid = Crt.Atoi(s);
-            if ((s = t.Next(" ")) != null) type = Crt.Atoi(s);
-            if ((s = t.Next(" ")) != null) x1 = (float)Crt.Atof(s);
-            if ((s = t.Next(" ")) != null) y1 = (float)Crt.Atof(s);
-            if ((s = t.Next(" ")) != null) x2 = (float)Crt.Atof(s);
-            if ((s = t.Next(" ")) != null) y2 = (float)Crt.Atof(s);
-            if ((s = t.Next(" ")) != null) color = Crt.Atoi(s);
-            if ((s = t.Next("")) != null) label = s.TrimEnd('\r', '\n');
-            if (mNo < 0 || mNo >= Marker.MaxMarkers) continue;
-            MasterMarkers[mNo].Set(x1, y1, x2, y2, color, type, label);
-            if (valid == 0) MasterMarkers[mNo].UnSet();
-            else { isNew[mNo] = true; n++; }
+            string line = lines[i].Trim();
+            if (line.Length == 0 || line[0] == ';' || line[0] == '#') continue;
+            if (RedlineMarker.TryParseCommand(line, out var rl))
+            {
+                if (rl == null) { if (bad++ == 0) firstBad = i + 1; }
+                else readRedlines.Add(rl);
+                continue;
+            }
+            var m = Marker.Parse(line);
+            if (m == null) { if (bad++ == 0) firstBad = i + 1; continue; }
+            read.Add(m);
         }
-        if (n > 0)
+        if (bad > 0)
+            Message(Crt.Sprintf("%d invalid line(s) in marker file skipped (first: line %d).\nExpected: <timestamp>,<text>[,TOP|BOTTOM]\nor: redline <value>,<text>[,LEFT|RIGHT]", bad, firstBad));
+        if (read.Count > 0)
         {
+            foreach (var m in read) Marker.AddTo(MasterMarkers, m);
             foreach (var p in TargetPlots(Settings.ApplyAll))
             {
-                for (int i = 0; i < Marker.MaxMarkers; i++) if (isNew[i]) p.Markers[i] = MasterMarkers[i].Clone();
+                foreach (var m in read) Marker.AddTo(p.Markers, m);
                 Invalidate(p);
             }
         }
-        return n;
+        if (readRedlines.Count > 0)
+        {
+            foreach (var r in readRedlines) RedlineMarker.AddTo(MasterRedlines, r);
+            foreach (var p in TargetPlots(Settings.ApplyAll))
+            {
+                foreach (var r in readRedlines) RedlineMarker.AddTo(p.Redlines, r);
+                Invalidate(p);
+            }
+        }
+        return read.Count + readRedlines.Count;
     }
 
-    /// <summary>Returns the number written or −1.</summary>
+    /// <summary>
+    /// Writes the markers and redlines of the active plot (or the master sets) as a <c>.markers</c> file
+    /// (FR-LOAD-061); returns the number written or −1.
+    /// </summary>
     public int MarkersToFile(string fileName)
     {
         var set = ActivePlot?.Markers ?? MasterMarkers;
+        var redlines = ActivePlot?.Redlines ?? MasterRedlines;
         var sb = new System.Text.StringBuilder();
-        int n = 0;
-        for (int i = 0; i < Marker.MaxMarkers; i++)
-        {
-            var m = set[i];
-            if (!m.Valid) continue;
-            sb.Append(Crt.Sprintf("Marker = %d %d %d %f %f %f %f %d %s\r\n", i + 1, 1, m.Type, (double)m.X1, (double)m.Y1, (double)m.X2, (double)m.Y2, m.Color, m.Label));
-            n++;
-        }
+        sb.Append("; Multiplot.NET event markers: <timestamp>,<text>[,TOP|BOTTOM]\r\n");
+        sb.Append("; redline markers: redline <value>,<text>[,LEFT|RIGHT]\r\n");
+        foreach (var m in set) sb.Append(m.ToSpec()).Append("\r\n");
+        foreach (var r in redlines) sb.Append(r.ToCommand()).Append("\r\n");
         try
         {
             AnsiText.WriteAllText(fileName.Trim(), sb.ToString());
-            return n;
+            return set.Count + redlines.Count;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
@@ -129,99 +220,58 @@ public sealed partial class Session
     }
 
     /// <summary>Script text that records a marker.</summary>
-    public static string MarkerCommand(int mNo, Marker m, bool global)
-    {
-        string color = m.Color switch
-        {
-            ColorIndex.Label => "LABEL",
-            ColorIndex.Grid => "GRID",
-            ColorIndex.Background => "BACKGROUND",
-            _ => (m.Color + 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
-        };
-        return Crt.Sprintf("marker %d,%s,%f,%f,%f,%f,%s,%s%s", mNo + 1, MarkerType.Names[Math.Clamp(m.Type, 0, MarkerType.Max - 1)],
-            (double)m.X1, (double)m.Y1, (double)m.X2, (double)m.Y2, color, m.Label, global ? "\\G" : "");
-    }
+    public static string MarkerCommand(Marker m) => "marker " + m.ToSpec();
 
     // ------------------------------------------------------------------ windows
 
     /// <summary>Tiling commands.</summary>
-    public void Arrange(WindowArrange mode, string? group = null)
+    public void Arrange(WindowArrange mode)
     {
         if (AutoTab != 0 && mode != WindowArrange.MaximizeActive && mode != WindowArrange.MinimizeActive)
         {
-            SetAutoTab(0, null);
-            if (mode != WindowArrange.TileGroup) return;
+            SetAutoTab(0);
+            return;
         }
         switch (mode)
         {
-            case WindowArrange.TileHorizontal: TileGroup = ""; Record("tile horizontal"); break;
-            case WindowArrange.TileVertical: TileGroup = ""; Record("tile vertical"); break;
-            case WindowArrange.Cascade: TileGroup = ""; Record("tile cascade"); break;
+            case WindowArrange.TileHorizontal: Record("tile horizontal"); break;
+            case WindowArrange.TileVertical: Record("tile vertical"); break;
+            case WindowArrange.Cascade: Record("tile cascade"); break;
             case WindowArrange.Stack: Record("tile stacked"); break;
-            case WindowArrange.TileGroup:
-                if (group == null && IsInteractive)
-                {
-                    var names = _plots.Select(p => p.GroupName).Distinct().ToArray();
-                    var r = Shell.Dialogs.Input(new InputRequest("Plot group name:", TileGroup.Length == 0 ? GroupName : TileGroup, "Tile Group", names));
-                    TileGroup = r?.Text ?? "";
-                }
-                else if (group != null) TileGroup = group;
-                if (TileGroup.Length == 0) return;
-                group = TileGroup;
-                Record("tile " + TileGroup);
-                break;
         }
-        Shell.Arrange(mode, group);
+        Shell.Arrange(mode);
     }
 
     /// <summary>Auto tabulation, script path (0 = off).</summary>
-    public void SetAutoTab(int seconds, string? group)
+    public void SetAutoTab(int seconds)
     {
         AutoTab = seconds;
-        TabGroup = group ?? "";
         if (seconds > 0)
         {
-            Shell.Arrange(WindowArrange.MaximizeActive, null);
+            Shell.Arrange(WindowArrange.MaximizeActive);
             Shell.StartTimer("autotab", Math.Min(seconds, 60) * 1000, NextWindow);
         }
         else
         {
             Shell.StopTimer("autotab");
             AutoTab = 0;
-            TabGroup = "";
         }
     }
 
     /// <summary>Auto tabulation, interactive path.</summary>
-    public void AutoTabDialog(bool withGroup)
+    public void AutoTabDialog()
     {
         if (AutoTab != 0)
         {
-            SetAutoTab(0, null);
-            Record(withGroup ? "AutoTab OFF" : "AutoTab 0");
+            SetAutoTab(0);
+            Record("AutoTab 0");
             return;
         }
-        if (!withGroup)
-        {
-            var r = Shell.Dialogs.Input(new InputRequest("Tab interval in seconds (1..60):", "5", "Auto Tab", new[] { "1", "2", "3", "5", "10", "15", "20", "30", "60" }));
-            if (r == null) return;
-            int s = Math.Abs(Crt.Atoi(r.Text));
-            Record(Crt.Sprintf("AutoTab %d", s));
-            SetAutoTab(s, null);
-        }
-        else
-        {
-            var list = new List<string> { "2,(all)" };
-            foreach (var p in _plots) if (!list.Contains("2," + p.GroupName)) list.Add("2," + p.GroupName);
-            var r = Shell.Dialogs.Input(new InputRequest("Auto tab interval (sec), group name:", "2," + (TileGroup.Length == 0 ? GroupName : TileGroup), "Auto Tab Group", list));
-            if (r == null) return;
-            int s = Math.Abs(Crt.Atoi(r.Text));
-            int d = r.Text.IndexOfAny(new[] { ',', ' ' });
-            string g = d > 0 ? r.Text[(d + 1)..].Trim() : "";
-            if (g.Equals("(all)", StringComparison.OrdinalIgnoreCase)) g = "";
-            Record(Crt.Sprintf("AutoTab %d %s", s, g));
-            SetAutoTab(s, g);
-        }
+        var r = Shell.Dialogs.Input(new InputRequest("Tab interval in seconds (1..60):", "5", "Auto Tab", new[] { "1", "2", "3", "5", "10", "15", "20", "30", "60" }));
+        if (r == null) return;
+        int s = Math.Abs(Crt.Atoi(r.Text));
+        Record(Crt.Sprintf("AutoTab %d", s));
+        SetAutoTab(s);
     }
 
     /// <summary>Toggles presentation mode.</summary>
@@ -231,17 +281,10 @@ public sealed partial class Session
         Shell.SetPresentationMode(PresentationMode, Settings.MaxPresentation);
         var plot = ActivePlot;
         if (plot == null || !Shell.IsMaximized(plot))
-            Shell.Arrange(TileGroup.Length == 0 ? WindowArrange.TileHorizontal : WindowArrange.TileGroup, TileGroup.Length == 0 ? null : TileGroup);
+            Shell.Arrange(WindowArrange.TileHorizontal);
         Record("PresentationMode " + OnOff(PresentationMode));
     }
 
-    /// <summary>Toolbar visibility (TOOLBAR command / menu).</summary>
-    public void SetToolbarVisible(bool? v)
-    {
-        Settings.ShowToolBar = v ?? !Settings.ShowToolBar;
-        Shell.ShowToolbar(Settings.ShowToolBar);
-        Record("TOOLBAR " + OnOff(Settings.ShowToolBar));
-    }
 
     /// <summary>Status bar visibility.</summary>
     public void SetStatusBarVisible(bool? v)
@@ -484,12 +527,8 @@ public sealed partial class Session
             string cmd = NomenCommand(true, plot.Config.YNomen & ~Nomen.EFORMAT, plot.Config.YNomOrder, plot.Config.YNomLen);
             sb.Append("ynomen ").Append(cmd["YNOMEN".Length..]).Append('\n');
         }
-        for (int i = 0; i < Marker.MaxMarkers; i++)
-        {
-            var m = plot.Markers[i];
-            if (!m.Valid) continue;
-            sb.Append(Crt.Sprintf("marker %d,%s,%d,%d,%d,%d,%d,%s\n", i + 1, MarkerType.Names[Math.Clamp(m.Type, 0, MarkerType.Max - 1)], (int)m.X1, (int)m.Y1, (int)m.X2, (int)m.Y2, m.Color + 1, m.Label));
-        }
+        foreach (var m in plot.Markers) sb.Append("marker ").Append(m.ToSpec()).Append('\n');
+        foreach (var r in plot.Redlines) sb.Append(r.ToCommand()).Append('\n');
         try { AnsiText.WriteAllText(fileName, sb.ToString().Replace("\n", "\r\n")); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { Message("Failed to open file"); }
     }
@@ -597,9 +636,9 @@ public sealed partial class Session
         Data.SetOption(Settings.RebuildRate ? 1001 : 1002);
         Data.SetOption(Settings.Extrapolate ? 1007 : 1008);
         Data.SetOption(Settings.ScriptPrompt ? 1005 : 1006);
-        IniFile.EnsureToolbars(Settings);
         Shell.ShowStatusBar(Settings.ShowStatusBar);
-        Shell.ShowToolbar(Settings.ShowToolBar);
+        Shell.SetAppearance(Settings.DarkMode);
+        RefreshAllPlots();
         Shell.RefreshCommands();
         return true;
     }
@@ -654,7 +693,7 @@ public sealed partial class Session
     /// <summary>
     /// Imports the settings of a WinPlot installation: the INI file <paramref name="iniFile"/>, the favourites
     /// file next to it and the <c>HKCU\Software\WinPlot</c> registry values (recent files, recent parameter
-    /// lists, favourites path, window position, toolbars, user buttons, plugin settings). The result is saved
+    /// lists, favourites path, window position, user buttons, plugin settings). The result is saved
     /// as the Multiplot.NET settings. Returns false when the INI file cannot be read.
     /// </summary>
     public bool ImportWinPlotSettings(string iniFile)
@@ -694,8 +733,7 @@ public sealed partial class Session
             foreach (var r in Registry.ReadRecentFiles()) AddRecentFile(r, false);
             var parms = Registry.ReadRecentParameters();
             for (int i = parms.Count - 1; i >= 0; i--) SaveParm(parms[i]);
-            Registry.ReadToolbars(Settings);
-            IniFile.EnsureToolbars(Settings);
+            Registry.ReadUserButtons(Settings);
             UseUserPluginFolder = Registry.ReadUserPluginFolder();
         }
 

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -131,7 +134,7 @@ public sealed class WpfShell : IShell
     /// <inheritdoc/>
     public bool IsMaximized(PlotDocument plot) => _main.Mdi.Find(plot)?.State == PlotWindowState.Maximized;
     /// <inheritdoc/>
-    public void Arrange(WindowArrange mode, string? group) => _main.Mdi.Arrange(mode, group);
+    public void Arrange(WindowArrange mode) => _main.Mdi.Arrange(mode);
 
     /// <inheritdoc/>
     public void MainWindowState(int state)
@@ -151,9 +154,13 @@ public sealed class WpfShell : IShell
     }
 
     /// <inheritdoc/>
-    public void ShowToolbar(bool show) => _main.SetToolbarVisible(show);
-    /// <inheritdoc/>
     public void ShowStatusBar(bool show) => _main.SetStatusBarVisible(show);
+    /// <inheritdoc/>
+    public void SetAppearance(bool dark)
+    {
+        UiTheme.Dark = dark;
+        if (!Hidden) _main.ApplyAppearance(dark);
+    }
     /// <inheritdoc/>
     public void SetPresentationMode(bool on, bool fullScreen) => _main.SetPresentation(on, fullScreen);
     /// <inheritdoc/>
@@ -196,6 +203,48 @@ public sealed class WpfShell : IShell
     /// <inheritdoc/>
     public void RefreshCommands() => _main.CommandsChanged();
     public void RebuildCommands() => _main.RebuildCommands();
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Opens the file URI with the user's default browser (the http protocol handler), so documents such as
+    /// Markdown are shown in the browser rather than in the application associated with their extension.
+    /// Falls back to Microsoft Edge, then to the shell association of the file.
+    /// </remarks>
+    public bool OpenInBrowser(string path)
+    {
+        string uri = new Uri(Path.GetFullPath(path)).AbsoluteUri;
+        string? browser = DefaultBrowser();
+        if (browser != null && TryStart(browser, "\"" + uri + "\"")) return true;
+        if (TryStart("msedge", "\"" + uri + "\"")) return true;
+        return TryStart(path, null);
+    }
+
+    private static bool TryStart(string file, string? args)
+    {
+        try
+        {
+            var psi = args != null ? new System.Diagnostics.ProcessStartInfo(file, args) : new System.Diagnostics.ProcessStartInfo(file);
+            psi.UseShellExecute = true;
+            return System.Diagnostics.Process.Start(psi) != null || args == null;
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or FileNotFoundException) { return false; }
+    }
+
+    /// <summary>Executable of the default http handler, or null.</summary>
+    private static string? DefaultBrowser()
+    {
+        try
+        {
+            using var choice = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice");
+            if (choice?.GetValue("ProgId") is not string progId || progId.Length == 0) return null;
+            using var cmd = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(progId + @"\shell\open\command");
+            if (cmd?.GetValue(null) is not string line || line.Length == 0) return null;
+            line = line.Trim();
+            string exe = line.StartsWith('"') ? line[1..Math.Max(1, line.IndexOf('"', 1))] : line.Split(' ')[0];
+            return File.Exists(exe) ? exe : null;
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return null; }
+    }
 
     /// <inheritdoc/>
     public void StartTimer(string name, int intervalMs, Action tick)

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Microsoft.Win32;
 using Multiplot.Core;
 using Multiplot.Core.Model;
@@ -113,29 +116,11 @@ public sealed class RegistryStore
         k?.SetValue("parmset", lists.Where(x => x.Length > 0 && x.Length <= 64).ToArray(), RegistryValueKind.MultiString);
     });
 
-    /// <summary>Reads toolbar sets, user buttons and band order into the settings.</summary>
-    public bool ReadToolbars(AppSettings s) => Safe(() =>
+    /// <summary>Reads the user buttons (stored under the legacy "Toolbars" key) into the settings.</summary>
+    public bool ReadUserButtons(AppSettings s) => Safe(() =>
     {
         using var k = Open("Toolbars", false);
         if (k == null) return false;
-        for (int bar = 0; bar < AppSettings.NToolbars; bar++)
-        {
-            if (k.GetValue(ToolbarDefaults.Names[bar]) is not string[] a || a.Length == 0) continue;
-            s.ToolbarEnabled[bar] = Crt.Atoi(a[0]) != 0;
-            var set = new List<ToolbarButton>();
-            for (int i = 1; i < a.Length; i++)
-            {
-                if (a[i].Length == 0) break;
-                var t = new Strtok(a[i]);
-                string? id = t.Next(" "), img = t.Next(" ");
-                if (id != null && img != null) set.Add(new ToolbarButton(Crt.Atoi(id), Crt.Atoi(img)));
-            }
-            if (set.Count > 0)
-            {
-                s.ToolbarSets[bar].Clear();
-                s.ToolbarSets[bar].AddRange(set);
-            }
-        }
         for (int i = 0; i < AppSettings.NUserButtons; i++)
         {
             if (k.GetValue("UserButton " + (i + 1)) is string[] u && u.Length >= 2)
@@ -144,32 +129,14 @@ public sealed class RegistryStore
                 s.UserButtons[i].Command = u[1];
             }
         }
-        if (k.GetValue("Band Order") is string[] order)
-        {
-            var used = new List<int>();
-            for (int i = 0; i < order.Length && i < AppSettings.NToolbars; i++)
-            {
-                int v = Crt.Atoi(order[i]);
-                if (v >= 0 && v < AppSettings.NToolbars && !used.Contains(v)) used.Add(v);
-            }
-            for (int v = 0; v < AppSettings.NToolbars; v++) if (!used.Contains(v)) used.Add(v);
-            for (int i = 0; i < AppSettings.NToolbars; i++) s.ToolbarOrder[i] = used[i];
-        }
         return true;
     }, false);
 
-    /// <summary>Saves the toolbars and user buttons.</summary>
-    public void WriteToolbars(AppSettings s) => Safe(() =>
+    /// <summary>Saves the user buttons (legacy "Toolbars" key).</summary>
+    public void WriteUserButtons(AppSettings s) => Safe(() =>
     {
         using var k = Open("Toolbars", true);
         if (k == null) return;
-        for (int bar = 0; bar < AppSettings.NToolbars; bar++)
-        {
-            var a = new List<string> { s.ToolbarEnabled[bar] ? "1" : "0" };
-            a.AddRange(s.ToolbarSets[bar].Select(b => $"{b.EventId} {b.ImageIndex}"));
-            k.SetValue(ToolbarDefaults.Names[bar], a.ToArray(), RegistryValueKind.MultiString);
-        }
-        k.SetValue("Band Order", s.ToolbarOrder.Select(x => x.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToArray(), RegistryValueKind.MultiString);
         for (int i = 0; i < AppSettings.NUserButtons; i++)
         {
             if (s.UserButtons[i].Label.Length > 0 || s.UserButtons[i].Command.Length > 0)

@@ -161,7 +161,7 @@ events and verbatim comment block go into `multiplot.*` key/value metadata.
 (BMP, JPEG, GIF, TIFF, PNG), defaulting to the last used, file name
 `plotNNNN.<ext>` in ExportPath; renders the active plot at its current window size (WYSIWYG) and
 saves. Scripts: `SAVEPIC`, `COPYBMP`, `COPYJPEG` (FR-SCR-153/154). *Copy as bitmap* puts the plot on
-the clipboard. Auto-save JPEG (toolbar) saves `plotNNNN.jpg` without dialog; `Nothing to copy` when
+the clipboard. Auto-save JPEG (Ctrl+J) saves `plotNNNN.jpg` without dialog; `Nothing to copy` when
 no plot. EMF/metafile output is out of scope (DEV-XPT-001).
 
 ## 10.5 Statistics (slice average / DATASTATS)

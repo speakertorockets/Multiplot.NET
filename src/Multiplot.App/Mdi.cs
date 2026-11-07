@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -22,6 +25,44 @@ public enum PlotWindowState
     Minimized,
 }
 
+/// <summary>
+/// Brushes of the plot window frames, the document area and the plot overlays for the light or dark
+/// appearance (FR-UI-046). Light uses the Windows system colours.
+/// </summary>
+public static class UiTheme
+{
+    /// <summary>Dark appearance.</summary>
+    public static bool Dark { get; set; }
+
+    private static SolidColorBrush B(byte r, byte g, byte b)
+    {
+        var br = new SolidColorBrush(Color.FromRgb(r, g, b));
+        br.Freeze();
+        return br;
+    }
+
+    private static readonly Brush DWorkspace = B(0x12, 0x12, 0x12), DWindow = B(0x2B, 0x2B, 0x2B), DBorder = B(0x55, 0x55, 0x55),
+        DActive = B(0x3C, 0x3C, 0x48), DInactive = B(0x2B, 0x2B, 0x2B), DActiveText = B(0xF0, 0xF0, 0xF0), DInactiveText = B(0xA0, 0xA0, 0xA0),
+        DOverlay = B(0xE0, 0xE0, 0xE0), DTip = B(0x33, 0x33, 0x33), DTipText = B(0xF0, 0xF0, 0xF0);
+
+    /// <summary>Document area behind the plot windows.</summary>
+    public static Brush Workspace => Dark ? DWorkspace : SystemColors.AppWorkspaceBrush;
+    /// <summary>Plot window frame.</summary>
+    public static Brush Window => Dark ? DWindow : SystemColors.ControlBrush;
+    /// <summary>Plot window border.</summary>
+    public static Brush Border => Dark ? DBorder : Brushes.Gray;
+    /// <summary>Caption bar background.</summary>
+    public static Brush Caption(bool active) => Dark ? (active ? DActive : DInactive) : active ? SystemColors.ActiveCaptionBrush : SystemColors.InactiveCaptionBrush;
+    /// <summary>Caption text.</summary>
+    public static Brush CaptionText(bool active) => Dark ? (active ? DActiveText : DInactiveText) : active ? SystemColors.ActiveCaptionTextBrush : SystemColors.InactiveCaptionTextBrush;
+    /// <summary>Zoom box and cross-hair lines drawn over the plot.</summary>
+    public static Brush Overlay => Dark ? DOverlay : Brushes.Black;
+    /// <summary>Curve identification pop-up.</summary>
+    public static Brush Tip => Dark ? DTip : Brushes.LightYellow;
+    /// <summary>Curve identification pop-up text.</summary>
+    public static Brush TipText => Dark ? DTipText : Brushes.Black;
+}
+
 /// <summary>MDI-like document area hosting plot windows (FR-UI-001).</summary>
 public sealed class MdiArea : Panel
 {
@@ -39,6 +80,13 @@ public sealed class MdiArea : Panel
 
     /// <summary>Finds the window of a plot.</summary>
     public PlotWindow? Find(PlotDocument p) => Windows.FirstOrDefault(w => w.Document == p);
+
+    /// <summary>Applies the current <see cref="UiTheme"/> to the document area and every plot window.</summary>
+    public void ApplyTheme()
+    {
+        Background = UiTheme.Workspace;
+        foreach (var w in Windows) w.ApplyTheme();
+    }
 
     /// <summary>Creates a window for a new plot.</summary>
     public void AddPlot(PlotDocument p, bool maximized)
@@ -93,7 +141,7 @@ public sealed class MdiArea : Panel
                  : (count < 4 ? 1 : count < 9 ? 2 : count < 13 ? 3 : count < 25 ? 4 : 5);
 
     /// <summary>Window arrangement.</summary>
-    public void Arrange(WindowArrange mode, string? group)
+    public void Arrange(WindowArrange mode)
     {
         var all = (_session?.Plots ?? Array.Empty<PlotDocument>()).Select(Find).Where(w => w != null).Cast<PlotWindow>().ToList();
         int monitors = _session?.Settings.Monitors ?? 0;
@@ -118,9 +166,7 @@ public sealed class MdiArea : Panel
                 break;
             default:
                 {
-                    var set = mode == WindowArrange.TileGroup && !string.IsNullOrEmpty(group)
-                        ? all.Where(w => string.Equals(w.Document.GroupName, group, StringComparison.OrdinalIgnoreCase)).ToList()
-                        : all.Where(w => w.State != PlotWindowState.Minimized).ToList();
+                    var set = all.Where(w => w.State != PlotWindowState.Minimized).ToList();
                     int cols = mode == WindowArrange.Stack ? (monitors != 0 ? monitors : 1)
                         : monitors != 0 ? monitors : Columns(set.Count, mode == WindowArrange.TileVertical);
                     Tile(set, cols);
@@ -188,6 +234,7 @@ public sealed class PlotWindow : Border
     private readonly Grid _header = new() { Height = 22 };
     private PlotWindowState _state;
     private Button? _maxButton;
+    private bool _active;
 
     /// <summary>The plot.</summary>
     public PlotDocument Document { get; }
@@ -218,8 +265,8 @@ public sealed class PlotWindow : Border
         _s = s;
         _mdi = mdi;
         BorderThickness = new Thickness(1);
-        BorderBrush = Brushes.Gray;
-        Background = SystemColors.ControlBrush;
+        BorderBrush = UiTheme.Border;
+        Background = UiTheme.Window;
         View = new PlotView(doc, s, this);
         var dock = new DockPanel();
         _header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -271,8 +318,19 @@ public sealed class PlotWindow : Border
     /// <summary>Highlights the active window's caption.</summary>
     public void SetActive(bool active)
     {
-        _header.Background = active ? SystemColors.ActiveCaptionBrush : SystemColors.InactiveCaptionBrush;
-        _caption.Foreground = active ? SystemColors.ActiveCaptionTextBrush : SystemColors.InactiveCaptionTextBrush;
+        _active = active;
+        _header.Background = UiTheme.Caption(active);
+        _caption.Foreground = UiTheme.CaptionText(active);
+    }
+
+    /// <summary>Applies the current <see cref="UiTheme"/> (frame, caption, overlays) and redraws the plot.</summary>
+    public void ApplyTheme()
+    {
+        BorderBrush = UiTheme.Border;
+        Background = UiTheme.Window;
+        SetActive(_active);
+        View.ApplyTheme();
+        View.InvalidateVisual();
     }
 
     /// <summary>Caption text and caption bar visibility (NoCaptionBar).</summary>
@@ -290,9 +348,12 @@ public sealed class PlotView : FrameworkElement
     private readonly Session _s;
     private readonly PlotWindow _win;
     private readonly Canvas _overlay = new() { IsHitTestVisible = false };
-    private readonly Rectangle _box = new() { Stroke = Brushes.Black, StrokeDashArray = new DoubleCollection { 2, 2 }, Visibility = Visibility.Collapsed };
-    private readonly Line _line1 = new() { Stroke = Brushes.Black, Visibility = Visibility.Collapsed };
-    private readonly Line _line2 = new() { Stroke = Brushes.Black, Visibility = Visibility.Collapsed };
+    private readonly Rectangle _box = new() { Stroke = UiTheme.Overlay, StrokeDashArray = new DoubleCollection { 2, 2 }, Visibility = Visibility.Collapsed };
+    private readonly Line _line1 = new() { Stroke = UiTheme.Overlay, Visibility = Visibility.Collapsed };
+    private readonly Line _line2 = new() { Stroke = UiTheme.Overlay, Visibility = Visibility.Collapsed };
+
+    /// <summary>Overlay line colour for the current <see cref="UiTheme"/>.</summary>
+    public void ApplyTheme() => _box.Stroke = _line1.Stroke = _line2.Stroke = UiTheme.Overlay;
     private Point? _leftStart, _rightStart, _midAnchor;
     private int _rbFunction;
     private bool _moved;
@@ -341,7 +402,7 @@ public sealed class PlotView : FrameworkElement
         catch (Exception ex)
         {
             _s.DiagLog("Render failed: " + ex);
-            dc.DrawRectangle(Brushes.White, null, new Rect(0, 0, w, h));
+            dc.DrawRectangle(UiTheme.Dark ? Brushes.Black : Brushes.White, null, new Rect(0, 0, w, h));
         }
     }
 
@@ -411,7 +472,7 @@ public sealed class PlotView : FrameworkElement
             bmp.CopyPixels(new Int32Rect(px0, py0, 1, 1), px, 4, 0);
             return px[2] | (px[1] << 8) | (px[0] << 16);
         }
-        int bg = _doc.Config.DrawColor[ColorIndex.Background];
+        int bg = PlotColors.Display(_doc.Config.DrawColor, ColorIndex.Background, _s.Settings.DarkMode);
         var (cx, cy) = P(p);
         int c = Pixel(cx, cy);
         if (c == bg) c = Pixel(cx + 1, cy);
@@ -426,11 +487,11 @@ public sealed class PlotView : FrameworkElement
             StaysOpen = false,
             Child = new Border
             {
-                Background = Brushes.LightYellow,
+                Background = UiTheme.Tip,
                 BorderBrush = new SolidColorBrush(Color.FromRgb((byte)(c & 0xff), (byte)((c >> 8) & 0xff), (byte)((c >> 16) & 0xff))),
                 BorderThickness = new Thickness(2),
                 Padding = new Thickness(4),
-                Child = new TextBlock { Text = text },
+                Child = new TextBlock { Text = text, Foreground = UiTheme.TipText },
             },
             IsOpen = true,
         };

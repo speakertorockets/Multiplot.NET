@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Text;
 using Multiplot.Core;
 using Multiplot.Core.Model;
@@ -175,11 +178,8 @@ public sealed partial class Session
                 if (selectedY) break;
             }
         }
-        if (AutoRefresh != 0)
-        {
-            p.XScale.Persist = true;
-            for (int i = 0; i < p.NCurves && i < p.YScales.Count; i++) p.YScales[i].Persist = true;
-        }
+        ManualY(p);
+        if (!selectedY) ManualX(p);
         Invalidate(p);
         if (Recording)
         {
@@ -203,7 +203,8 @@ public sealed partial class Session
     {
         foreach (var c in p.Curves)
         {
-            if (p.Config.DrawColor[c.ColorIndex] != colorRef) continue;
+            int shown = p.Config.Color ? PlotColors.Map(p.Config.DrawColor[c.ColorIndex], c.ColorIndex, p.Host.DarkAppearance) : -1;
+            if (shown != colorRef) continue;
             string n = c.Data.Source?.Info.Path ?? "";
             return n[(n.LastIndexOf('\\') + 1)..] + ":" + c.Name;
         }
@@ -280,7 +281,9 @@ public sealed partial class Session
                     if (!all) break;
                 }
             }
+            ManualY(p);
         }
+        if (Math.Abs(xdelt) > 20) ManualX(p);
         if (panned) Invalidate(p);
     }
 
@@ -320,6 +323,8 @@ public sealed partial class Session
                 if (!allY) break;
             }
         }
+        ManualY(p);
+        if (zoomX) ManualX(p);
         Invalidate(p);
     }
 

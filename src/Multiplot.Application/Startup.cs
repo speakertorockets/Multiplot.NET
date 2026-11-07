@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core.Model;
 using Multiplot.DataAccess;
 using Multiplot.Plugins;
@@ -114,8 +117,7 @@ public static class Startup
         foreach (var f in reg.ReadRecentFiles()) s.AddRecentFile(f, false);
         var parms = reg.ReadRecentParameters();
         for (int i = parms.Count - 1; i >= 0; i--) s.SaveParm(parms[i]);
-        reg.ReadToolbars(settings);
-        IniFile.EnsureToolbars(settings);
+        reg.ReadUserButtons(settings);
         s.UseUserPluginFolder = reg.ReadUserPluginFolder();
         s.SetupPlugins();
         return s;
@@ -138,7 +140,6 @@ public static class Startup
             if (cl.NoSave) s.Settings.AutoSave = false;
         }
         if (cl.Default) s.Settings.IniFile = saveIni;
-        IniFile.EnsureToolbars(s.Settings);
         if (s.Settings.FirstRun && !cl.Hide && !cl.Default) OfferWinPlotImport(s);
     }
 
@@ -212,7 +213,7 @@ public static class Startup
         if (s.AutoTab != 0) s.Shell.StopTimer("autotab");
         s.CloseAllFiles();
         if (s.Recording) s.SetRecording(null);
-        s.Registry.WriteToolbars(s.Settings);
+        s.Registry.WriteUserButtons(s.Settings);
         s.Registry.WriteRecentParameters(s.PastParms.Where(p => !string.IsNullOrEmpty(p)));
         if (s.Settings.FavFile.Length > 0) s.Registry.WriteFavoritesFile(s.Settings.FavFile);
         if (s.Settings.AutoSave && placement != null) s.Registry.WriteWindowPosition(placement.Value);

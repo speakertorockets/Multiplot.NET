@@ -12,79 +12,90 @@ content, colours, scale values and interaction semantics listed here are mandato
 
 **FR-UI-001 (shell)** A single main window hosting many **plot windows** (MDI children).
 The WPF application shall provide an MDI-equivalent document area that supports: overlapping child windows,
-maximise/minimise/restore, cascade, tile horizontally, tile vertically, stack horizontally, tile by
-group name, tile across *N* monitors (`Monitors` setting), keep-on-top, move, close, close all,
+maximise/minimise/restore, cascade, tile horizontally, tile vertically, stack horizontally, tile
+across *N* monitors (`Monitors` setting), keep-on-top, move, close, close all,
 next/previous (Ctrl+Tab / Shift+Tab), select from list (*Window → Select*), auto-tab on a timer (all
-plots or one group). New plots open maximised if *Maximized Plots* (`PlotMax`) is on.
+plots). Plot group names (Set Group Name, Tile By Group, Auto Tab By Group) were removed. New plots open maximised if *Maximized Plots* (`PlotMax`) is on.
 
 **FR-UI-002 (menus)** The main menu shall contain these items (same order, captions and check
-states) except out-of-scope items (print, EMF, Query, external command polling, help contents), which
+states) except out-of-scope items (print, EMF, Query, external command polling), which
 are omitted (DEV-UI-002). Structure (`IDR_MAINFRAME`):
-* **File**: New, Add, Import Tabular, Recent Files ▸, Close ▸ (Last, All), Properties, Exit.
+* **File**: Open (closes the open files first, `ID_FILE_NEW`), Add (`ID_FILE_OPEN`), Import Tabular, Recent Files ▸, Close ▸ (Last, All), Properties, Exit.
 * **Edit**: Copy to Clipboard ▸ (as BMP, as Text), Copy to File ▸ (as Picture, as Text, as WPD, as Sun),
   Import from Clipboard, Export to Application, Symbolic Names, Tabular Display Layout ▸ (Alignment
   Grid, Snap To Grid).
 * **Script**: Execute, Record, Edit, GoTo Next, Pause, Abort, Pause Any Command (✓), Allow Prompt and
   Error Dialogs (✓), Log Script Errors, Script Placeholder Plot, Enable File Embedded Scripts.
-* **Parameter**: Selection, Favorites, Filter Helper, Add to Plot, Select WPD.
+* **Parameter**: Selection, Favorites, Filter Helper, Add to Plot, Select WPD, Parameter Properties.
 * **TimeSlice**: Global Time Slice, Per Database, Alignment Tool, Freeze Plot.
-* **View**: New Plot, Tabulation, Parameter Properties, File Properties, Presentation Mode ▸ (Enable, Full Screen).
+* **View**: New Plot, Tabulation, Presentation Mode ▸ (Enable, Full Screen), Appearance ▸ (Light, Dark) (FR-UI-046). (File Properties is in the File menu
+  only; Parameter Properties moved to the Parameter menu.)
 * **Axis**: Multi Y ▸ (On, Group By ▸ Independent/Name/Units/Description/User Defined), End To End,
-  Log X, Log Y, Auto Y on Change in X, Auto Scale REDLINEs, Fix X, Fix Y, Auto Range X, Auto Range Y,
-  Auto Range X/Y (Home), Revert Scales (Backspace), Zoom In/Out X (Insert/Delete), Zoom In/Out Y
+  Log X, Log Y, Auto Scale X (Time Axis) ✓, Auto Scale Y (Value Axis) ✓, Auto Range X/Y Once (Home),
+  Fix X, Fix Y, Revert Scales (Backspace), Zoom In/Out X (Insert/Delete), Zoom In/Out Y
   (PgUp/PgDn), Pan Left/Right/Up/Down (arrows), 3D Z Axis Angle.
 * **Style**: 2D Line, 2D Scatter, 3D Line, 3D Area, Logic, Tabular, Trace Attributes, Data Rate ▸
   (Set Mode, Density ▸ Average/Sample/3D Segments, Tabular Step), Colors ▸ (Line, Label, Title, Grid,
-  Background, Restore), 2D Line Size, 3D Line Size, Grid Lines, Minor Tics, Bold Frame, Stair Step,
+  Marker, Redline, Background, Restore), 2D Line Size, 3D Line Size, Grid Lines, Minor Tics, Bold Frame, Stair Step,
   Symbols ▸ (Show, Density, Size ▸ Small/Normal/Large), Legend ▸ (Show, Set Columns, Fixed Parameter
   Space, Minimum Grid Offset, Multi-Y Shift Left, Text in Curve Color).
-* **Nomenclature**: Fonts ▸ (Labels, Titles, Screen Scaling ▸ 1..4), X Axis/Legend Labeling, Y
+* **Nomenclature**: Fonts ▸ (Labels..., Titles...), X Axis/Legend Labeling, Y
   Axis/Legend Labeling, Set Title, Set Sub-Title, Show Time as GMT/Clock, Set GMT Format, Scale Group
-  ID, Version, Script Name, User Name, Page Number, Time Stamp, Test Info, Set User Caption Text, Set
-  Group Name.
-* **Markers**: Draw ▸ (Text, Line, Box, Circle, Event, Redline, Image), Edit, Topmost, Clear All, Save, Load.
+  ID, Test Info (Test Title), Set Plot Window Title... (Version, Script Name, User Name, Page Number,
+  Time Stamp and Set Group Name were removed).
+* **Markers**: Add Event Marker... (Ctrl+D), Edit..., Add Redline Marker..., Edit Redlines..., Show File
+  Events, Topmost, Marker Color..., Redline Color..., Clear All, Save, Load (FR-MRK).
 * **Options**: File Paths, External Applications ▸ (Assign, Include GMTs), Tabular Output/Exports ▸
   (Data Format, Time Format, Shared Time), Expressions/Calculations ▸ (Align to Closest Point, Perform
   Every Unique Time), Draw Mode ▸ (Optimized, Offscreen), Average Function ▸ (Default Rate, Time Stamp
-  Mode), Right Button Click, Show System Load, Show Coordinates, Show Status Bar, Toolbars ▸ (Show,
-  Edit), Maximized Plots, Load Symbolic Names, Number of Monitors, Save Window Position, Exit Safety
+  Mode), Right Button Click, Show System Load, Show Coordinates, Show Status Bar, Maximized Plots, Load Symbolic Names, Number of Monitors, Save Window Position, Exit Safety
   Prompt, Continue Titles, Continue Sub-Titles, Continue Markers, X Axis Auto Label, Apply Changes
-  Globally, Window Caption ▸ (Disable, Source), Include Toolbars, Save Settings, Load Settings,
+  Globally, Window Caption ▸ (Disable, Source), Save Settings, Load Settings,
   Import WinPlot Settings (FR-CFG-050).
 * **User**: 1..5 (user-defined labels), Assign.
 * **Data**: Rebuild Full Rate, Extrapolate End Points, Use 64 Bit Timing, Dropouts ▸ (Ignore, Show
-  Markers), Real-Time ▸ (Refresh, Auto Refresh, Sliding Scales, Ignore Static Data, First Occurrence,
+  Markers), Real-Time ▸ (Refresh, Auto Refresh, Ignore Static Data, First Occurrence,
   Auto Run, Auto Data Compact, Auto Data Discard, Show Stream Certification), Tabular Options ▸
   (Maintain History, Default Time Stamp), plugin commands, Manage Plug-ins.
-* **Window**: as FR-UI-001. **Help**: Window Position, About Multiplot.
+* **Window**: as FR-UI-001. **Help**: User Guide (opens `docs\user-guide\README.md`, shipped beside the
+  executable, in the default web browser: the http handler, else Microsoft Edge, else the file
+  association), Window Position, About Multiplot.
+The Axis menu no longer has *Auto Scale REDLINEs*: redline markers (FR-MRK-010) are not part of
+autoscaling.
 Every toggle shows its check state for the active plot (or global default when no plot is active);
 with *Apply Changes Globally* the action applies to all plots.
 
 **FR-UI-003 (accelerators)** Arrows = pan (Shift/Ctrl variants identical); PgUp/PgDn = zoom Y in/out;
-Insert/Delete = zoom X in/out; Home = auto range X/Y; Backspace = revert zoom; Enter = Parameter
+Insert/Delete = zoom X in/out; Home = auto range X/Y once (FR-PLT-017); Backspace = revert zoom; Enter = Parameter
 Selection; Esc = toggle presentation mode; Ctrl+Esc = break-out (stop current long operation);
 Space = script pause/resume, Ctrl+Space = resume; Ctrl+Tab / Shift+Tab = next/previous window;
-Ctrl+D = draw markers; Ctrl+J = save JPEG; Ctrl+R = refresh windows; Alt+F1..F5 = user buttons
+Ctrl+D = Add Event Marker; Ctrl+O = File → Open; Ctrl+J = save JPEG; Ctrl+R = refresh windows; Alt+F1..F5 = user buttons
 1..5; Ctrl+Alt+Home = bring main window to the primary screen *(inferred from `ID_WINDOW_BRINGHOME` — verify)*; (F1 help and Ctrl+E/Ctrl+P EMF are out of scope).
 
-**FR-UI-004 (toolbars)** 19 toolbar bands named File, Edit, Script, Parameter, Timeslice, View, Axis,
-Pan/Zoom, Style, Style2, Nomenclature, Markers, Options, Options2, User, Window, Data, Realtime, Help,
-each showable/hidable, re-orderable (band order persisted), and editable (*Toolbars → Edit*: choose
-buttons per band from the command catalogue with their image indices). User toolbar shows 5
-user buttons with their labels. Persistence: registry `Toolbars` and optional INI `ButtonSetNN`
-(FR-CFG-012, FR-CFG-030). Default button sets are defined in `src/Multiplot.Core/ToolbarDefaults.cs`.
+**FR-UI-004 (no toolbars)** The main window has no toolbars, so that the plot area gets the
+screen space; every command is reachable from the main menu, a plot popup menu or an accelerator.
+(The former toolbar-only buttons were either out of scope — print, print setup, colour print,
+landscape, margins, copy, EMF aspect, external command poll, query, help contents — or duplicated by
+a menu: the Multi-Y group-by picker by *Axis → Multi Y → Group By ▸*.) Toolbar settings in INI files
+and the registry are ignored (FR-CFG-012, FR-CFG-030); the user buttons stay in the *User* menu.
+
+**FR-UI-007 (first plot)** After an interactive file open (*File → Open*, *File → Add*, *Recent Files*,
+drag-and-drop of a data file) that leaves data files open but no plot window, the Parameter
+Selection dialog opens (FR-LOAD-030). Not while a script runs, in hidden mode or for files given on
+the command line.
 
 **FR-UI-005 (status bar)** Panes: message text (help/coordinates/progress), CPU load %, memory load %
 (updated by a timer when *Show System Load*), current real-time GMT. Messages used by operations
 (e.g. `Initializing <file>`, `Retrieving…`, `Calculating expression …`, `calculating spline (%n)`,
 `Paused n...`) shall be shown.
 
-**FR-UI-006 (presentation mode)** Presentation mode hides menus, toolbars, status bar and window
+**FR-UI-006 (presentation mode)** Presentation mode hides menus, status bar and window
 borders (Esc toggles); *Full Screen* additionally maximises to the whole monitor (`MaxPresentation`).
 Caption bars of plots can be disabled (`NoCaptionBar`).
 
 **FR-UI-007 (window captions)** Plot caption source (`CaptionSource`): parameter set (default), plot
-number, title, sub-title, script name, or user text (`CAPTION USER text`).
+number, title, sub-title, script name, or the plot window title (user text, *Set Plot Window
+Title...*, `CAPTION USER text`).
 
 **FR-UI-008 (busy behaviour)** Long operations (loading, expression evaluation, spline, import, export,
 refresh) run asynchronously with progress in the status bar and a wait cursor; the UI shall not
@@ -113,15 +124,16 @@ freeze; re-entrant load commands are refused with `Can't execute, data/file load
   minor ticks.
 * **X scale labels** and the **X axis label** (X nomenclature string, FR-PLT-040), clock format when
   *Clock Time*.
-* **Footer** (small font, half the label size): left = stream certification text, `    >> Contains
-  time shifted parameters`, `    *Data is Averaged to %d points` / `    *Data is Sampled to %d points`;
-  above the plot's top-right = `Script: <script>` and/or version string; top-right corner =
-  `page <plot number>` (Show Page No); user name at top-left (or bottom-left when no legend); bottom
-  right = plot creation date/time (Time Stamp).
-* **Test info** (if on): three rows `Test:`, `Engine:`, `Shutdown:` with one column per group
-  (group name, engine serial, cutoff).
-Minimum left offset = `GridOffset` % of the width. Font height (screen) = max(5·fontSize,
-min(1.5·H, W)/(30 + 10·(4 − fontSize))), min 12 px; title size scales with the title/label font ratio.
+* **Footer** (bottom line): with *Test Info* on, the test title in the label font at the bottom-left
+  corner — the trimmed first line of `FileInfo.Title` of the first curve's source file (for curves
+  without one, the first file of the curve's group); one label line is reserved for it. Then, in the
+  small font (half the label size), the stream certification text, `    >> Contains time shifted
+  parameters`, `    *Data is Averaged to %d points` / `    *Data is Sampled to %d points`. The version,
+  script name, page number, user name and creation time stamp are no longer drawn.
+Minimum left offset = `GridOffset` % of the width. Text cell height (FR-UI-029) for a font of p points
+= max(1.2·p, min(1.5·H, W)·p/500) px (`PlotRenderer.FontCellHeight`): the label font sets the legend,
+scale and marker text, the title font the title and subtitle; at min(1.5·H, W) ≈ 768 px the text is
+about its point size. Legend rows per column ≤ clamp(160/p_label, 4, 30).
 
 **FR-PLT-002 (title keywords)** Title, sub-title, user-defined (udef) texts and captions support
 keywords (case-insensitive), replaced repeatedly until none remain, each value trimmed and `\`
@@ -131,7 +143,8 @@ the reference curve's file), `[date]` (`  Month dd, yyyy`), `[time]` (`h:mmAM|PM
 (unique curve names, comma-separated), `[pidname] [pidunits] [piddescription]`, `[dbname]` (first
 group name), `[timeslice]` (`start,stop,ref`), `[timestart] [timestop] [timeref]`, `[filename]`
 (file name without path and import suffix), `[scriptname]`, `[currentvalue]`, `[currenttime]` (last
-point, data/time precision), `[groupname]` (plot group name). An empty result becomes `" "`.
+point, data/time precision), `[groupname]` (empty: plot group names were removed). An empty result
+becomes `" "`.
 
 **FR-PLT-003 (plot creation stamp)** Each plot stores its creation date/time string (`plotDate`) used
 in the footer and in SUN export history.
@@ -167,8 +180,28 @@ decimals) with golden reference values for 10,000 random and edge ranges.
 
 **FR-PLT-015 (autoscale sources)** Auto X = union of curve time ranges (end-to-end: total accumulated
 duration; *IgnoreStatic* excludes static curves for real-time plots). Auto Y = union of curve
-min/max within the visible X range when *FixXautoY* (or zooming), else over all data; redline markers
-included when *Scale REDLINEs*. Persistent (fixed `p`) scales survive new data.
+min/max within the visible X range (FR-PLT-017); Home fits Y over all data.
+
+**FR-PLT-017 (autoscale switches)** Each plot has two switches, `PlotConfig.AutoScaleX` and
+`AutoScaleY` (defaults for new plots from the session defaults, INI `AutoScaleX`/`AutoScaleY`, both
+on; a persistent Fix X / Fix Y range starts the plot with the switch off). Menu items show the
+active plot's state with a check mark; `AUTOSCALE X|Y|XY [ON|OFF]` sets them (recorded
+`AUTOSCALE X|Y ON|OFF`); `FIXX AUTO` / `FIXY AUTO` = `AUTOSCALE X|Y ON`. Turning a switch on rescales
+that axis at once.
+* *Auto Scale X* on: the time axis spans all data and, on refresh, extends to the newest data. Off:
+  on refresh the visible span is kept and slides so its right edge is the newest data — only if the
+  newest data was in view before the refresh; a view of older data does not move.
+* *Auto Scale Y* on: the value axes fit the data within the visible time range, after every refresh
+  and every change of the time range. Off: the value axes keep their scale.
+* Manual ranges switch the axis's autoscale off for that plot: X zoom/pan (keys, wheel, zoom box,
+  middle-button pan), Fix X; Y zoom/pan, Fix Y; *Revert Scales* switches both off. A manual X change
+  with *Auto Scale Y* on refits Y to the new time range.
+* *Auto Range X/Y Once* (Home, `RESCALE`): fit X over all data and Y over all values once, then switch
+  both off.
+* Plots without a time axis (parameter-versus-parameter, tabular) ignore the switches: a refresh keeps
+  their scales (tabular displays still follow the newest time); Home fits them.
+* Retired: *Auto Y on Change in X* (`FIXXAUTOY`), *Sliding Scales* (`TIMESLIDE`), one-shot *Auto Range X*
+  / *Auto Range Y*; the per-scale "persist" flag no longer decides real-time rescaling.
 
 **FR-PLT-016 (multi-Y)** Multi-Y assigns curves to scales by *Group By*: Independent (one scale per
 curve), Name, Units, Description, User-defined (`\GROUP` id); max 10 scales (more → single scale);
@@ -206,7 +239,7 @@ style 1–5 (solid, dash, dot, dash-dot, dash-dot-dot), symbols on/off, symbol i
 tab legend, tab format, logic label set.
 
 **FR-PLT-023 (redlines)** Curves from `redline()` are drawn as lines with redline glyphs (MAX: ticks
-above, MIN: ticks below) and shown accordingly in the legend; redline markers likewise (FR-MRK).
+above, MIN: ticks below) and shown accordingly in the legend.
 
 **FR-PLT-024 (data reduction for display)**
 * *Optimized draw* (default): per pixel column keep entry, exit, min, max (and dropouts) of the points
@@ -259,16 +292,16 @@ bar; tabular plots show layout coordinates ` X=n Y=n`.
 ## 8.6 Context menus (plot regions)
 
 **FR-PLT-036** Regions and menus (`IDR_XHEADING`): **title/legend area** (Set Title, Y Axis
-Labeling, Font ▸, Version, Script Name, User Name, Colors ▸, Legend ▸, Presentation Mode, Window ▸,
+Labeling, Font ▸, Colors ▸, Legend ▸, Presentation Mode, Window ▸,
 Properties); **Y scale area** (Set Sub-Title, Font ▸, Multi-Y, Multi-Y Shift Left, Colors ▸, Minimum
 Grid Offset, Presentation Mode, Window ▸, Properties); **footer/X area** (X Axis Labeling, Font ▸, Show
-Time as GMT, GMT/Clock Format, Time Stamp, Test Info, Font Scaling ▸, Colors ▸, Presentation Mode,
-Window ▸, Properties); **plot area 2D** and **3D** (Symbols ▸, Markers ▸, Font Scaling ▸, Colors ▸,
+Time as GMT, GMT/Clock Format, Test Info (Test Title), Colors ▸, Presentation Mode,
+Window ▸, Properties); **plot area 2D** and **3D** (Symbols ▸, Markers ▸, Colors ▸,
 End to End, Scales ▸ (Auto X/Y, Auto X, Auto Y, Fix X, Fix Y, Revert), Font ▸, Add Parameter, View
 Tabulation, Presentation Mode, Window ▸, plus 3D line widths for 3D); **tabular** (layout, add
 parameter, colour text, clock time, …). Popup actions apply to the clicked plot only unless *Popups
 Global* and *Apply Globally* are on (never for parameter-vs-parameter or end-to-end plots). The
-Window ▸ submenu: Maximize, Minimize, Move, Tile, Tile By Group, Set Caption, Close.
+Window ▸ submenu: Maximize, Minimize, Move, Tile, Set Plot Window Title..., Close.
 
 ---
 
@@ -287,33 +320,74 @@ format and logic label sets; *Apply all* option.
 
 ---
 
-## 8.8 Markers
+## 8.8 Event markers
 
-**FR-MRK-001 (model)** Up to 1000 markers per plot plus a master set (applied to new plots when
-*Continue Markers* is on). Marker = {valid, type, x1, y1, x2, y2, colour index (0–99, GRID, LABEL,
-BACKGROUND), label}. Types: TEXT, LINE, BOX, CIRCLE, EVENT, REDLINE, IMAGE.
+**FR-MRK-001 (model)** Markers are event markers only: {timestamp, text, position (top | bottom,
+default top)}. Up to 1000 markers per plot (`PlotDocument.Markers`, a list) plus a master set that new
+plots copy when *Continue Markers* is on. An identical marker (same timestamp, text and position) is
+not added twice. Text, line, box, circle and image markers and the coordinate-based redline markers no
+longer exist; value-axis redline markers are FR-MRK-010.
 
-**FR-MRK-002 (coordinates)** Data coordinates on the X and first Y scale (log-transformed when log
-axes), or percentages of the plot area when the label contains `\%`. IMAGE: corners normalised; both
-x = 0 → full width, both y = 0 → full height; drawn stretched with a border unless colour = background
-or full-width. REDLINE: line from (x1,y1) to (x2,y2) with MAX/MIN glyphs every 5 symbol sizes (label
-`MAX`/`MIN`). EVENT: label = event name / GMT / time (optionally `name"display text"`); resolved via
-FR-LOAD-021 against the plot's reference; drawn as a full-height vertical line; unresolved → `<label>:
-event marker GMT not found\nMarker disabled.` (except while real-time data is loaded); invalid
-`d/…` syntax → `: Invalid syntax for TIME/GMT\nMarker disabled.`.
-**FR-MRK-003 (label flags)** In the label: `\v` keep label visible inside the plot; `\l` left of point;
-`\r` right; `\t` above; `\b` / `\a` below; `\h` hide label; `\%` percent coordinates; `\g` (commands
-only) global; `"text"` display text override. Defaults: TEXT centred at (x2,y2) (tabular: anchored
-like values); vertical markers/events: label above/below the line end; others: right of (x2,y2). A
-horizontal line with `\v` and a side label is shortened so it does not overlap the label. Events draw
-their line around the label.
-**FR-MRK-004 (order)** Markers draw beneath the data unless *Topmost*.
-**FR-MRK-005 (interactive)** *Markers → Draw ▸ type* lets the user place a marker with the mouse
-(Ctrl+D), *Edit* opens the Marker Edit dialog (marker number spin 1..1000, type radio buttons, X1/Y1/
-X2/Y2, as-percent, colour spin (Line n / Grid / Label / None), label combo with type-specific choices:
-MIN/MAX for redline, event names from open files for events, `- Browse -` and known bitmaps for
-images), *Clear All*, *Save*/*Load* `.markers` (FR-LOAD-060/061). Recording emits `marker …`,
-`clear marker n`, `clear markers all`, `markerset save|load`.
+**FR-MRK-002 (timestamps and resolution)** A timestamp is a GMT (`ddd/hh:mm:ss[.mmm]`, `hh:mm:ss[.mmm]`
+on the file reference day, `ddd/msec[.usec]`), a number of seconds on the plot's time axis, an
+`[events]` name, or `START`/`EOF`/`CUTOFF`, each with an optional `±seconds` offset (FR-LOAD-021). It is
+resolved against the plot's time reference on every draw, first in the groups shown by the plot,
+then in the other groups (`EventMarkers.Resolve`). Unresolved markers are not drawn and reappear
+when they resolve (real-time data reaching a GMT); no message is shown while drawing.
+
+**FR-MRK-003 (file events)** With *Show File Events* (`MARKERSET FILEEVENTS`, INI `ShowFileEvents`,
+default on), the `[events]` entries of the files of the plot's groups are drawn as markers with the
+event name as text, at the top: SUN files from the comment block `[events]` section, Parquet files
+from the `multiplot.events` metadata (both exposed as `IDataFile.Events`). `FILE_REF`, `EOF` and
+entries flagged `(invalid)` are not drawn; the same name and GMT is drawn once. Events added by a
+refresh of a dynamic file appear at the next draw.
+
+**FR-MRK-004 (drawing)** Each resolved marker inside the visible X range (`GraphLeft..GraphRight`) is
+drawn as a vertical line over the full plot-area height in the marker colour (`ColorIndex.Marker`,
+FR-MRK-012; mono colour for monochrome plots), with the text right of the line at the top or bottom of the plot area (left of
+the line when it would cross the right edge). Markers outside the visible range are not drawn, so
+during sliding real-time updates they move with their timestamp and leave the window with it.
+Markers are drawn beneath the data unless *Topmost*. Tabular displays, parameter-versus-parameter
+plots and end-to-end plots draw no markers.
+
+**FR-MRK-005 (interactive)** *Markers → Add Event Marker...* (Ctrl+D) asks for timestamp (editable
+list of the file event names, preset to the centre of the visible X range in seconds), text and
+position (the preset is skipped on log-X and end-to-end plots). *Edit...* lists the active plot's markers with Add / Update / Delete / Delete All and
+applies the list on OK. When data files are open (and no real-time data is loaded) a timestamp
+that does not resolve asks whether to keep the marker. Changes go to the active plot (all plots
+with *Apply Changes Globally*) and the master set. *Clear All*, *Save*/*Load* `.markers`
+(FR-LOAD-060/061). Recording emits `marker <timestamp>,<text>[,BOTTOM]`, `clear markers all` (Edit
+records `clear markers all` followed by the list), `markerset save|load`, `MARKERSET TOPMOST|FILEEVENTS ON|OFF`.
+*Clear All* also clears the redline markers (FR-MRK-011).
+
+**FR-MRK-010 (redline markers)** A redline marker is {value (double), text, position (left | right,
+default left)} (`RedlineMarker`). Up to 1000 per plot (`PlotDocument.Redlines`) plus a master set
+(`Session.MasterRedlines`) that new plots copy when *Continue Markers* is on; an identical redline is
+not added twice. Each redline is drawn as a horizontal line over the full plot-area width at the
+value, measured on the selected value axis (`YScales[SelectedAxis]`, clamped as for the grid: axis 0
+unless multiple-Y is on and another axis was selected by clicking it), with the text above the line
+(below when it would cross the top of the plot area) at the left or right end. Mapping as for curves:
+`y = GraphBottom − (v − RMin)·Factor`, with `ln v` on log-Y axes (values ≤ 0 not drawn). Redlines
+whose value is outside the visible value range are not drawn, so they move with the value scale on
+pan, zoom, Fix Y and autoscaling and disappear while the value is out of view; autoscaling does not
+include redline values. Colour `ColorIndex.Redline` (FR-MRK-012; mono colour for monochrome plots).
+Redlines are drawn with the event markers (beneath the data unless *Topmost*). Tabular, logic and 3D
+plots draw no redlines; parameter-versus-parameter and end-to-end plots do.
+
+**FR-MRK-011 (redline commands)** `REDLINE <value>,<text>[,LEFT|RIGHT]` (FR-SCR-241); `CLEAR
+REDLINES [ALL]` / `CLEAR REDLINE[S] n[,m…]`; *Markers → Add Redline Marker...* (value preset to the
+centre of the visible range of the selected value axis, text, Left/Right) and *Edit Redlines...*
+(Add / Update / Delete / Delete All, applied on OK). Changes go to the active plot (all plots with
+*Apply Changes Globally*) and the master set. Recording emits `redline <value>,<text>[,RIGHT]` and,
+for Edit, `clear redlines all` followed by the list. `.markers` and `.wpd` files hold redlines as
+`redline <value>,<text>[,LEFT|RIGHT]` lines (FR-LOAD-060/061, FR-LOAD-040).
+
+**FR-MRK-012 (marker colours)** Event markers and redline markers have their own colour-table entries,
+independent of the grid colour: `ColorIndex.Marker` (105, default 0x808080) and `ColorIndex.Redline`
+(106, default 0x3C14DC crimson, RGB 220,20,60 — deliberately not a curve palette colour so click identification by colour never mistakes a redline for a curve). Set with *Colors ▸ Marker Color / Redline Color* (Style menu and every
+plot context-menu Colors ▸ submenu, also *Markers → Marker Color... / Redline Color...*) or `SET COLOR
+MARKER|REDLINE,r,g,b [GLOBAL]`; recorded as `set color MARKER|REDLINE,r,g,b`. Saved in the INI
+`Colors` table (FR-CFG); *Restore Colors* and *Load Color Table* include them.
 
 ---
 
@@ -351,8 +425,8 @@ Attributes allows X/Y position, legend and format edits; *Copy to File → as WP
 | FR-UI-025 | **Trace Attributes** | Per-trace attributes FR-PLT-022 + tab X/Y position; trace number combo; *Apply all*; controls enabled per style (tabular: position/legend/format; logic: logic label; 3D: no symbols/scatter). Title `Trace Attributes - <name>`. |
 | FR-UI-026 | **Nomenclature** | FR-PLT-040 |
 | FR-UI-027 | **Fix X / Fix Y** | Min, Max, Increment (blank = best fit), persist; multi-Y per axis; apply all. |
-| FR-UI-028 | **Colors** | Line colour table (100), label, title, grid, background (system colour picker); Restore colours; *Load Color Table* (ColorPrinter.wps). |
-| FR-UI-029 | **Fonts** | Title and label font pickers (face, weight, italic, …); screen scaling 1..4; enlarge/reduce. |
+| FR-UI-028 | **Colors** | Line colour table (100), label, title, grid, marker, redline, background, each chosen in the Windows colour dialog (`ColorDialog`, FullOpen, custom colours = curve colours 1–16, COLORREF via `ColorTranslator`); Restore colours; *Load Color Table* (ColorPrinter.wps). Default curve colours: `PlotColors.Palette` (25 colours, no black/white, no duplicates) repeated for 1..100; the shipped `Multiplot.ini` and `ColorPrinter.wps` use the same palette. |
+| FR-UI-029 | **Fonts** | Title and label fonts chosen in the Windows font dialog (`FontDialog`: face, regular/bold/italic, size 4–200 pt; no effects/colour). Applied to the active plot (all plots with apply-global) and the defaults; stored as point size ×10 in `PlotConfig.TitlePointSize` / `LabelPointSize`. The screen scaling items (Screen Scaling 1..4, Scale Up/Down, Font Scaling ▸) are removed; `FONTSIZE` is accepted and ignored. |
 | FR-UI-030 | **File Properties** | List of files `group (group:g file:f) : name`; details: path, signature `%08X`, type, header reference time, items, points/updates, rate, cutoff, title, comment, serial, stand, position, type, number, comment block, stream events; Remove file (`Plot Windows will be closed` OK/Cancel); Copy, Copy all, Save (`File Details.txt`). |
 | FR-UI-031 | **Parameter Properties** | `Plot #n: m parameter(s)`, `Curve i:  <file>name`; details: name, file, units, description, scale ID, reference GMT/TIME/file reference, retrieved points, rate (Unknown/Variable/%g), type id, sequence number (16-bit when rate-packed), min/max value and offset, time shift; remove curve (`Can't remove last parameter`), move up/down, copy, save. |
 | FR-UI-032 | **Slice Average** | FR-XPT-042 |
@@ -369,4 +443,5 @@ Attributes allows X/Y position, legend and format edits; *Copy to File → as WP
 | FR-UI-043 | **Window list** | select a plot window from a list. |
 | FR-UI-044 | **Input / message dialogs** | generic text input with optional drop-down choices and apply-all checkbox, used for many single-value prompts (legend columns, grid offset, symbol density, GMT format, Z angle, group name, user caption…). |
 | FR-UI-045 | **About** | product name, version, build date, data-access and plugin versions. |
+| FR-UI-046 | **Appearance** | *View → Appearance → Light / Dark* (checked), `APPEARANCE LIGHT\|DARK`, INI `[interface] Appearance`; default Light. Sets `Application.ThemeMode` (Fluent Light / Dark) for menus, dialogs and frames, and `UiTheme` for the MDI area, plot window chrome, zoom/cross-hair overlays and the identification pop-up. Plot colours are mapped at draw time by `PlotColors.Map` (identity in Light; in Dark a background with luminance ≥ 0.18 is scaled by 30/255, other entries are mixed towards white until their relative luminance reaches 0.55 text/mono, 0.25 marker, 0.18 curves/redline, 0.10 grid); the colour tables are unchanged. Saved/copied pictures follow the appearance; curve identification by pixel colour compares mapped colours. |
 | FR-UI-046 | **Help → Window Position** | move the main window back onto the visible desktop. |

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core;
 using Multiplot.Core.Model;
 using Multiplot.Plugins;
@@ -151,67 +154,6 @@ public static class CommandParsers
             }
         } while (assigned);
         return errors;
-    }
-
-    /// <summary>
-    /// Marker command parsing (FR-SCR-240): returns the zero-based marker number or −1 on error.
-    /// </summary>
-    public static int ParseMarker(string markerCmd, Marker marker, out bool global)
-    {
-        int color = -1, type = MarkerType.Text, m = 0;
-        string cmd = ScriptKeywords.TrimRightC(markerCmd);
-        if (cmd.Contains("\\g") || cmd.Contains("\\G"))
-        {
-            global = true;
-            cmd = cmd.Replace("\\g", "").Replace("\\G", "");
-        }
-        else global = false;
-
-        string label = cmd[(cmd.LastIndexOf(',') + 1)..];
-        float x1 = 0, y1 = 0, x2 = 0, y2 = 0;
-        var tok = new Strtok(cmd);
-        string? ptr = tok.Next(",");
-        bool error = true;
-        if (ptr != null && (m = Crt.Atoi(ptr)) >= 1 && m <= Marker.MaxMarkers)
-        {
-            ptr = tok.Next(",");
-            if (ptr != null)
-            {
-                type = ptr.ToUpperInvariant() switch
-                {
-                    "TEXT" => MarkerType.Text,
-                    "REDLINE" => MarkerType.Redline,
-                    "LINE" => MarkerType.Line,
-                    "BOX" => MarkerType.Box,
-                    "CIRCLE" => MarkerType.Circle,
-                    "EVENT" => MarkerType.Event,
-                    "IMAGE" => MarkerType.Image,
-                    _ => Crt.Atoi(ptr) >= 0 && Crt.Atoi(ptr) <= MarkerType.Max - 1 ? Crt.Atoi(ptr) : MarkerType.Text,
-                };
-            }
-            if ((ptr = tok.Next(",")) != null) x1 = (float)Crt.Atof(ptr);
-            if ((ptr = tok.Next(",")) != null) y1 = (float)Crt.Atof(ptr);
-            if ((ptr = tok.Next(",")) != null) x2 = (float)Crt.Atof(ptr);
-            if ((ptr = tok.Next(",")) != null) y2 = (float)Crt.Atof(ptr);
-            if ((ptr = tok.Next(",")) != null)
-            {
-                color = ptr.ToUpperInvariant() switch
-                {
-                    "GRID" => ColorIndex.Grid,
-                    "LABEL" => ColorIndex.Label,
-                    "BACKGROUND" => ColorIndex.Background,
-                    _ => Crt.Atoi(ptr) >= 1 && Crt.Atoi(ptr) <= ColorIndex.MaxColors + 3 ? Crt.Atoi(ptr) - 1 : ColorIndex.Label,
-                };
-            }
-            label = tok.Next(",") != null ? ScriptKeywords.TrimC(label) : "";
-            if (color >= 0)
-            {
-                error = false;
-                marker.Set(x1, y1, x2, y2, color, type, label);
-                m--;
-            }
-        }
-        return error ? -1 : m;
     }
 
     /// <summary>FIXX/FIXY argument parsing (FR-SCR-171).</summary>
@@ -438,12 +380,17 @@ public static class CommandParsers
         return (Lookup(s[..i]), Lookup(ScriptKeywords.TrimLeftC(s[(i + 1)..])));
     }
 
-    /// <summary><c>SET COLOR</c> target/value parsing. Returns false on syntax error.</summary>
+    /// <summary>
+    /// <c>SET COLOR n|GRID|REDLINE|MARKER|LABEL|TITLE|BACKGROUND,r,g,b [GLOBAL]</c> target/value parsing.
+    /// Returns false on syntax error.
+    /// </summary>
     public static bool ParseSetColor(string arg, out int colorNo, out int rgb, out bool global)
     {
         string s = arg.ToUpperInvariant();
         colorNo = -1; rgb = 0; global = s.Contains("GLOBAL");
         if (s.Contains("GRID")) colorNo = ColorIndex.Grid;
+        else if (s.Contains("REDLINE")) colorNo = ColorIndex.Redline;
+        else if (s.Contains("MARKER")) colorNo = ColorIndex.Marker;
         else if (s.Contains("LABEL")) colorNo = ColorIndex.Label;
         else if (s.Contains("TITLE")) colorNo = ColorIndex.Title;
         else if (s.Contains("BACKGROUND")) colorNo = ColorIndex.Background;

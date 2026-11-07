@@ -111,7 +111,7 @@ reference, and `EOF` plus event names for start/stop; `TIME MULTI` opens a per-g
 
 ## 7.3 Loading parameters into a plot
 
-**FR-LOAD-030 (Plot command)** *Plot* (toolbar/menu/`PLOT`): refuse re-entry while loading
+**FR-LOAD-030 (Plot command)** *Plot* (menu/`PLOT`): refuse re-entry while loading
 (`Can't execute, data/file load in progress`); if no files are open and dialogs are allowed open the
 File Open dialog; if the Y list is empty and dialogs are allowed open the Parameter Select dialog;
 then load and display. Auto refresh is paused during the load and restored afterwards.
@@ -141,8 +141,8 @@ X vs X end-to-end is not allowed (end-to-end turned off).
 
 **FR-LOAD-035 (placeholder)** With `USEPLACEHOLDER ON` and a script running, when a plot cannot be
 produced a placeholder plot is created from the constant expression `-1.40130E-45` (a dropout) named
-`* Placeholder for {<Y list>} *`, tabular style, frozen, showing image marker `NoData.bmp` (searched on
-`MULTIPLOTPATH`, i.e. installation folder). If even that fails: `Failed to generate data for Placeholder
+`* Placeholder for {<Y list>} *`, tabular style, frozen (image markers no longer exist, so no `NoData.bmp` image is shown). If even
+that fails: `Failed to generate data for Placeholder
 plot.\nVerify validity of file parameter 1.` with Abort (abort script) / Retry / Ignore (turn script
 prompting off).
 
@@ -170,10 +170,11 @@ and persisted in the registry (`Recent Parameters`).
 | `coloredtext ON|OFF` | legend/value text in curve colour |
 | `ynomen <items>` | Y nomenclature (FR-SCR-230) for this display |
 | `display <item>@<x>,<y> [COLOR_INDEX=n] [TAB_LEGEND=0|1] [TAB_FORMAT=fmt]` | item to load (expression, function, `file:name`, …) positioned at (x,y) on the 4096 grid; must contain `@` and `,` |
-| `marker <marker command>` | as `MARKER` arguments (FR-SCR-240); invalid → `Invalid marker command in WPD file\nCommand: <line>` |
+| `marker <timestamp>,<text>[,TOP\|BOTTOM]` | as `MARKER` arguments (FR-SCR-240), added to the master set used for the display; invalid → `Invalid marker command in WPD file\nCommand: <line>` |
+| `redline <value>,<text>[,LEFT\|RIGHT]` | as `REDLINE` arguments (FR-SCR-241), added to the master redline set used for the display; invalid → `Invalid redline command in WPD file\nCommand: <line>` |
 All `display` items form the Y list; after loading, each curve is matched to the first unused display
 line by name (case-insensitive) or, for `file:name` items without brackets, by file/group name match,
-and receives its position and options. The plot is forced to tabular style. The global marker set and
+and receives its position and options. The plot is forced to tabular style. The global marker and redline sets and
 Y nomenclature are restored after the WPD plot is created. Failure to open:
 `Failed to open Multiplot display file (.wpd)`.
 `COLOR_INDEX=` and `TAB_FORMAT=DECn` are applied as documented — see DEV-TAB-001 / OQ-008.
@@ -197,10 +198,15 @@ plot's caption/title. The dialog allows browsing for another favourites file.
 
 ## 7.6 Marker files (`.markers`)
 
-**FR-LOAD-060 (read)** Each line whose text before `=` is (case-insensitively) `marker`:
-`Marker = <n> <valid> <type> <x1> <y1> <x2> <y2> <color> <label…>` (space-separated; label is the
-rest of the line). n is 1-based (1..1000). `valid=0` markers are loaded but inactive. Loaded active
-markers are applied to the master set and to the active plot (all plots with apply-global).
+**FR-LOAD-060 (read)** Text file, one event marker per line in the `MARKER` argument form
+`<timestamp>,<text>[,TOP|BOTTOM]` (FR-SCR-240), or one redline marker per line as
+`redline <value>,<text>[,LEFT|RIGHT]` (FR-SCR-241; keyword case-insensitive; added to the master
+redline set and the target plots like the event markers). Blank lines and lines starting with `;` or `#` are
+ignored. Invalid lines — including lines of the retired format `Marker = n valid type x1 y1 x2 y2
+color label` — are skipped and reported once: `<n> invalid line(s) in marker file skipped (first:
+line <k>).\nExpected: <timestamp>,<text>[,TOP|BOTTOM]\nor: redline <value>,<text>[,LEFT|RIGHT]`. The markers read are added to the master set
+and to the active plot (all plots with apply-global); identical markers are not added twice.
 Failure: `Failed to open 'Marker' file`.
-**FR-LOAD-061 (write)** Writes every valid marker of the active plot (or master set if none) as
-`Marker = %d %d %d %f %f %f %f %d %s\r\n`.
+**FR-LOAD-061 (write)** Writes a `;` comment header line, then every marker of the active plot (or the
+master set if none) as `<timestamp>,<text>[,BOTTOM]\r\n`, then every redline as
+`redline <value>,<text>[,RIGHT]\r\n` (value in round-trip invariant format).

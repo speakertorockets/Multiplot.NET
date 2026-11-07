@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;

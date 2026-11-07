@@ -20,6 +20,11 @@ These commands work with the INI:
 
 An empty boolean value such as `Symbols=` counts as **true**.
 
+`Appearance = Light|Dark` in `[interface]` stores the light or dark appearance (*View → Appearance*).
+`Colors` in `[plot style]` stores the colour table: 100 curve colours, then grid, label, background,
+monochrome, title, event marker and redline colours. The shipped `Multiplot.ini` has the default
+palette (see [Colors and appearance](plot-windows.md#colors-and-appearance)).
+
 ## Registry
 
 Multiplot.NET keeps the following under `HKEY_CURRENT_USER\Software\Multiplot`:
@@ -27,8 +32,7 @@ Multiplot.NET keeps the following under `HKEY_CURRENT_USER\Software\Multiplot`:
 * recent files and recently used parameter lists
 * the favourites file
 * window position
-* toolbar layout and band order
-* user buttons
+* user buttons (kept under the `Toolbars` key for compatibility)
 * blocked plugins (`Plugins\Blocked`) and the user-folder plugin switch (`Plugins\UserFolder`)
 * time-slice history
 
@@ -66,7 +70,7 @@ If you used WinPlot before, Multiplot.NET can take over its settings:
   This replaces the current Multiplot.NET settings.
 
 The import takes the INI settings, the WinPlot favourites file, and the registry settings under
-`HKEY_CURRENT_USER\Software\WinPlot` (recent files, recent parameter lists, toolbars, user buttons
+`HKEY_CURRENT_USER\Software\WinPlot` (recent files, recent parameter lists, user buttons
 and plugin settings). WinPlot's own files and registry key are not changed. Blocked plugins and the
 window position take effect the next time Multiplot.NET starts.
 

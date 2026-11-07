@@ -154,5 +154,12 @@ contains the xUnit test project.
 
 ## License
 
-No license file is currently included in this repository. Add or consult the repository's licensing
-terms before redistributing the software.
+Multiplot.NET is released under the [MIT License](LICENSE). Every source file starts with the
+copyright line and the SPDX license identifier:
+
+```csharp
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+```
+
+Add the same two lines (with `#` comments in Python scripts) to new source files.

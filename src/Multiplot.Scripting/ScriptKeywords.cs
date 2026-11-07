@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 namespace Multiplot.Scripting;
 
 /// <summary>Script command keys (same numeric values).</summary>
@@ -13,18 +16,18 @@ public enum Cmd
     Landscape, FilePath, DbPath, ScriptPath, LoadSettings, ShowVersion,
     LegendShift, Tile, Export, Caption, ShowScript, SymbolSize,
     ExportPath, ClearList, Tabulate, PauseMode, Marker,
-    Enable, Disable, TimeSlide, Toolbar, ClockTime, Tab, AutoRun,
+    Enable, Disable, ClockTime, Tab, AutoRun,
     SaveSettings, ShowUserName, AutoTab, Set, StairStep, ApplyGlobal,
     LogX, LogY, MinorTics, GridOffset, EmfWide, Favorites, AutoLabel,
     Freeze, Zoom, Pan, IgnoreStatic, MarkerSet, StatusBar, PresentationMode,
     AlignClosest, AutoCompact, OptimizedDraw, RetainMtGmt, CopyJpeg,
-    GmtFormat, DropoutIgnore, DropoutMarker, UseIniToolbar, SaveParmList,
+    GmtFormat, DropoutIgnore, DropoutMarker, SaveParmList,
     SaveFileDetails, SaveParmDetails, AutoDiscard, UsePlaceholder, IncludeGmt,
-    ScaleGroup, ShowPageNo, ScriptLog, FixXAutoY, CalcEveryTime,
+    ScaleGroup, ShowPageNo, ScriptLog, CalcEveryTime,
     WpdPath, PlaySound, LibCommand, Prompt, Input, ExtCmdPolling, StreamCert,
     PresentationFull, Mci, TabHistory, DefTabTime, AddParameter, CopyBmp,
     FirstOccurrence, Extrapolate, SavePic, SystemLoad, SaveSun, EmbeddedScript,
-    DataStats, Bit64Time, TabStepRate, ShowCoord, ScaleRedlines, SharedTime,
+    DataStats, Bit64Time, TabStepRate, ShowCoord, SharedTime, AutoScale, Redline, Appearance,
 }
 
 /// <summary>Keyword table and command word lookup (<c>GetCmdKey</c>).</summary>
@@ -42,18 +45,18 @@ public static class ScriptKeywords
         "landscape", "filepath", "dbpath", "scriptpath", "loadsettings", "showversion",
         "legendshift", "tile", "export", "caption", "showscript", "symbolsize",
         "exportpath", "clearlist", "tabulate", "pausemode", "marker",
-        "enable", "disable", "timeslide", "toolbar", "clocktime", "tab", "autorun",
+        "enable", "disable", "clocktime", "tab", "autorun",
         "savesettings", "showusername", "autotab", "set", "stairstep", "applyglobal",
         "logx", "logy", "minortics", "gridoffset", "emfwide", "favorites", "autolabel",
         "freeze", "zoom", "pan", "ignorestatic", "markerset", "statusbar", "presentationmode",
         "alignclosest", "autocompact", "optimizeddraw", "retainmtgmt", "copyjpeg",
-        "gmtformat", "dropoutignore", "dropoutmarker", "useinitoolbar", "saveparmlist",
+        "gmtformat", "dropoutignore", "dropoutmarker", "saveparmlist",
         "savefiledetails", "saveparmdetails", "autodiscard", "useplaceholder", "includegmt",
-        "scalegroup", "showpageno", "scriptlog", "fixxautoy", "calceverytime",
+        "scalegroup", "showpageno", "scriptlog", "calceverytime",
         "wpdpath", "playsound", "libcommand", "prompt", "input", "extcmdpolling", "streamcert",
         "presentationfull", "mci", "tabhistory", "deftabtime", "addparameter", "copybmp",
         "firstoccurrence", "extrapolate", "savepic", "systemload", "savesun", "embeddedscript",
-        "datastats", "64bittime", "tabsteprate", "showcoord", "scaleredlines", "sharedtime",
+        "datastats", "64bittime", "tabsteprate", "showcoord", "sharedtime", "autoscale", "redline", "appearance",
     };
 
     /// <summary>

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core.Model;
 using Multiplot.Scripting;
 
@@ -113,19 +116,66 @@ public class ParserTests
     }
 
     [Fact]
-    public void ParseMarker_RequiresColor()
+    public void ParseRedline_ValueTextPosition()
     {
-        var m = new Marker();
-        Assert.Equal(-1, CommandParsers.ParseMarker("1,TEXT,1,2,3,4", m, out _));
-        Assert.Equal(2, CommandParsers.ParseMarker("3,redline,0,10,100,10,LABEL,MAX\\g", m, out bool g));
-        Assert.True(g);
-        Assert.Equal(MarkerType.Redline, m.Type);
-        Assert.Equal(ColorIndex.Label, m.Color);
-        Assert.Equal("MAX", m.Label);
-        Assert.Equal(0, CommandParsers.ParseMarker("1,9,1,2,3,4,5", m, out _));
-        Assert.Equal(MarkerType.Text, m.Type);
-        Assert.Equal(4, m.Color);
-        Assert.Equal("", m.Label);
+        var r = RedlineMarker.Parse("450, Max temperature")!;
+        Assert.Equal((450.0, "Max temperature", false), (r.Value, r.Text, r.Right));
+        r = RedlineMarker.Parse("-1.5e3,Low limit, stage 2,right")!;
+        Assert.Equal((-1500.0, "Low limit, stage 2", true), (r.Value, r.Text, r.Right));
+        r = RedlineMarker.Parse("0.25,Limit,LEFT")!;
+        Assert.Equal((0.25, "Limit", false), (r.Value, r.Text, r.Right));
+        Assert.Equal("0.25,Limit", r.ToSpec());
+        Assert.Equal("redline 12.5,a,RIGHT", new RedlineMarker(12.5, "a", true).ToCommand());
+        Assert.Equal("RIGHT", RedlineMarker.Parse("1,RIGHT")!.Text); // a lone word is the text, not a position
+
+        Assert.Null(RedlineMarker.Parse(""));
+        Assert.Null(RedlineMarker.Parse("12.5"));          // no text
+        Assert.Null(RedlineMarker.Parse("12.5,"));         // empty text
+        Assert.Null(RedlineMarker.Parse("abc,text"));      // value not a number
+        Assert.Null(RedlineMarker.Parse("NaN,text"));      // value not finite
+
+        Assert.True(RedlineMarker.TryParseCommand("REDLINE 3,Three", out var c));
+        Assert.Equal((3.0, "Three"), (c!.Value, c.Text));
+        Assert.True(RedlineMarker.TryParseCommand("redline x,bad", out c));
+        Assert.Null(c);
+        Assert.False(RedlineMarker.TryParseCommand("100/12:00:05,Ignition", out _));
+        Assert.Equal(Cmd.Redline, ScriptKeywords.GetCmdKey("REDLINE 1,a"));
+    }
+
+    [Fact]
+    public void ParseMarker_TimestampTextPosition()
+    {
+        var m = Marker.Parse("100/12:00:05.250, Ignition")!;
+        Assert.Equal(("100/12:00:05.250", "Ignition", false), (m.Time, m.Text, m.Bottom));
+        m = Marker.Parse("IGNITION+2.5,Valve open, stage 2,bottom")!;
+        Assert.Equal(("IGNITION+2.5", "Valve open, stage 2", true), (m.Time, m.Text, m.Bottom));
+        m = Marker.Parse("12.5,Shutdown,TOP")!;
+        Assert.Equal(("12.5", "Shutdown", false), (m.Time, m.Text, m.Bottom));
+        Assert.Equal("12.5,Shutdown", m.ToSpec());
+        Assert.Equal("1,a,BOTTOM", new Marker("1", "a", true).ToSpec());
+
+        Assert.Null(Marker.Parse(""));
+        Assert.Null(Marker.Parse("12.5"));                 // no text
+        Assert.Null(Marker.Parse("12.5,"));                // empty text
+        Assert.Null(Marker.Parse(",text"));                // no timestamp
+        Assert.Equal("BOTTOM", Marker.Parse("12.5,BOTTOM")!.Text); // a lone word is the text, not a position
+        Assert.Null(Marker.Parse("Marker = 1 1 4 0 0 0 0 1 EOF")); // old .markers format is rejected
+        Assert.Null(Marker.Parse("1,EVENT,0,0,0,0,GRID,IGN"));  // old MARKER command format is rejected
+        Assert.Null(Marker.Parse("x y,z"));                // white space in timestamp
+    }
+
+    [Fact]
+    public void Marker_SetsIgnoreDuplicatesAndReservedEvents()
+    {
+        var set = new List<Marker>();
+        Assert.True(Marker.AddTo(set, new Marker("10", "A")));
+        Assert.False(Marker.AddTo(set, new Marker("10", "A")));
+        Assert.True(Marker.AddTo(set, new Marker("10", "A", true)));
+        Assert.Equal(2, set.Count);
+        Assert.True(Marker.IsReservedEvent("FILE_REF"));
+        Assert.True(Marker.IsReservedEvent("eof"));
+        Assert.True(Marker.IsReservedEvent("BAD(invalid)"));
+        Assert.False(Marker.IsReservedEvent("IGNITION"));
     }
 
     [Fact]
@@ -148,5 +198,9 @@ public class ParserTests
         Assert.True(CommandParsers.ParseSetColor(" GRID,255,0,1 GLOBAL", out int no, out int rgb, out bool g));
         Assert.Equal((ColorIndex.Grid, 0x0100FF, true), (no, rgb, g));
         Assert.False(CommandParsers.ParseSetColor(" 3,1,2", out _, out _, out _));
+        Assert.True(CommandParsers.ParseSetColor(" MARKER,0,128,0", out no, out rgb, out g));
+        Assert.Equal((ColorIndex.Marker, 0x008000, false), (no, rgb, g));
+        Assert.True(CommandParsers.ParseSetColor(" redline,255,0,0 GLOBAL", out no, out rgb, out g));
+        Assert.Equal((ColorIndex.Redline, 0x0000FF, true), (no, rgb, g));
     }
 }

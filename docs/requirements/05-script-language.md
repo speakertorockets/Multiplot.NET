@@ -12,11 +12,11 @@ sources, with identical semantics:
 
 | Source | Entry point | Notes |
 |---|---|---|
-| Script file run from menu / toolbar / drag-drop / command line | script runner | `.wps` |
+| Script file run from menu / drag-drop / command line | script runner | `.wps` |
 | `CALL file` inside a script | script runner via script stack | |
 | AutoRun on event (real-time) | real-time refresh → script runner | see 11-realtime |
 | Embedded `[script]` section of a data file's comment block | embedded-script handler | only if `EMBEDDEDSCRIPT ON`; runs after a group finishes loading |
-| User toolbar buttons 1–5 (`SET USERn`) | user button handler | runs with `ScriptPrompt` forced on, script name `*internal`; a `CALL x` is queued as a script |
+| User buttons 1–5 (*User* menu, Alt+F1..F5, `SET USERn`) | user button handler | runs with `ScriptPrompt` forced on, script name `*internal`; a `CALL x` is queued as a script |
 | `SET COLOR PRINTERTABLE` | runs `ColorPrinter.wps` from the user folder, else `%MULTIPLOTPATH%` | |
 | `INPUT`, `MCI` | re-enter the interpreter with a synthesized `SET` command | |
 
@@ -77,7 +77,7 @@ implement pause/resume and `CALL`:
 * `CALL file` → push current frame (`resume=true`) and a new frame for `file` at offset 0, then start
   the top frame (asynchronously, after the current command completes).
 * At natural EOF, if the stack is non-empty and the top frame has `resume=true`, resume it automatically.
-* *Resume* (menu, Space while Idle with a paused script, toolbar) pops and continues the top frame.
+* *Resume* (menu, Space while Idle with a paused script) pops and continues the top frame.
 * *Next* (step) sets "pause after next command" (mode per `PAUSEMODE`) then resumes.
 * *Abort* asks "Cancel script execution?" (Running) or "Cancel paused scripts?" (stack non-empty)
   and clears the stack.
@@ -129,34 +129,35 @@ CRLF. *Stop Recording* closes the file. The menu text shows `&Stop Recording [<f
 
 **FR-SCR-041** The canonical recorded forms shall be exactly those produced by
 recording calls (they are valid input to the interpreter). Complete list (format strings):
-`64BITTIME %s`, `AUTORUN %s`, `AUTORUN clear`, `AlignClosest %s`, `AutoTab %d %s`, `AutoTab %d`,
-`AutoTab OFF`, `CAPTION USER %s`, `CLEAR FILES`, `CalcEveryTime %s`, `Caption %s|PARMSET|PLOTNO|SCRIPT|SUBTITLE|TITLE|USER`,
+`64BITTIME %s`, `AUTORUN %s`, `AUTORUN clear`, `AlignClosest %s`, `AutoTab %d`,
+`CAPTION USER %s`, `CLEAR FILES`, `CalcEveryTime %s`, `Caption %s|PARMSET|PLOTNO|SCRIPT|SUBTITLE|TITLE|USER`,
 `ClearList`, `ColorPrinter %s`, `DATARATE 3D %d`, `DATARATE REBUILD %s`, `DBpath %s`, `DefTabTime %s`,
-`DropoutIgnore %s`, `DropoutMarker %s`, `EMFWIDE %s`, `ExportPath %s`, `FIXXAUTOY %s`, `FilePath %s`,
-`FirstOccurrence %s`, `FontSize %d`, `GMTFORMAT %s`, `GridOffset %d`, `INCLUDEGMT %s`, `IgnoreStatic %s`,
-`LEGEND COLUMNS %d`, `LandScape %s`, `LegendShift %s`, `LoadSettings %s`, `MARKERSET TOPMOST %s`,
+`AUTOSCALE X %s`, `AUTOSCALE Y %s`, `DropoutIgnore %s`, `DropoutMarker %s`, `EMFWIDE %s`, `ExportPath %s`, `FilePath %s`,
+`FirstOccurrence %s`, `GMTFORMAT %s`, `GridOffset %d`, `INCLUDEGMT %s`, `IgnoreStatic %s`,
+`LEGEND COLUMNS %d`, `LandScape %s`, `LegendShift %s`, `LoadSettings %s`, `MARKERSET FILEEVENTS %s`, `MARKERSET TOPMOST %s`,
+`redline %s`, `clear redlines all`, `set color MARKER,%d,%d,%d`, `set color REDLINE,%d,%d,%d`,
 `OPEN %s`, `OptimizedDraw %s`, `PAN DOWN`, `PAN LEFT%s`, `PAN RIGHT%s`, `PAN UP`, `PLOT %s`,
-`PresentationMode %s`, `PrinterMargin %.1f`, `SAVESUN %s`, `SCALEGROUP %s`, `SCALEREDLINES %s`,
+`PresentationMode %s`, `PrinterMargin %.1f`, `SAVESUN %s`, `SCALEGROUP %s`,
 `SCRIPTLOG %s`, `SCRIPTLOG OFF`, `SET BACKGROUND %s`, `SET COLOR PRINTERTABLE`, `SET COLOR RESTORE`,
-`SET GROUPNAME %s%s`, `SET LOGIC INDEX %d`, `SET LOGIC TEXT %d %s,%s`, `SET PRECISION %s %s`,
+`SET LOGIC INDEX %d`, `SET LOGIC TEXT %d %s,%s`, `SET PRECISION %s %s`,
 `SET TRACE %d,LINE_SIZE=%d,LINE_STYLE=%d,USE_SYMBOLS=%d,SYMBOL_ID=%d,SCATTER_PLOT=%d,COLOR_INDEX=%d,TAB_LEGEND=%d,TAB_FORMAT=%s,LOGIC_INDEX=%d`,
 `SET USER%d %s,%s`, `SHAREDTIME %s`, `SHOWCOORD %s`, `STATUSBAR %s`, `STREAMCERT %s`, `SYSTEMLOAD %s`,
-`ScriptPath %s`, `ShowPageNo %s`, `ShowScript %s`, `ShowVersion %s`, `SymbolSize LARGE|NORMAL|SMALL`,
-`Symbols %d`, `TAB NEXT`, `TAB PREVIOUS`, `TABHISTORY %s`, `TOOLBAR %s`, `TabStepRate %g`,
+`ScriptPath %s`, `SymbolSize LARGE|NORMAL|SMALL`,
+`Symbols %d`, `TAB NEXT`, `TAB PREVIOUS`, `TABHISTORY %s`, `TabStepRate %g`,
 `WINDOW %d,%d,%d,%d`, `WPDpath %s`, `ZOOM IN X`, `ZOOM IN Y`, `ZOOM OUT X`, `ZOOM OUT Y`,
 `applyglobal %s`, `autocompact %u %g`, `autodiscard %u`, `autolabel %s`, `boldframe %s`, `clear $$`,
-`clear last`, `clear marker %d`, `clear markers all`, `clear plots`, `clocktime %s`, `copybmp CLIPBOARD`,
+`clear last`, `clear markers all`, `clear plots`, `clocktime %s`, `copybmp CLIPBOARD`,
 `datarate AVERAGE %d`, `datarate FULL`, `datarate SAMPLE %d`, `embeddedscript %s`, `endtoend %s`,
 `export %s`, `export CLIPBOARD`, `extrapolate %s`, `fixx %g,%g`, `fixx %g,%g,%g`, `fixx AUTO`,
-`fixy %g,%g`, `fixy AUTO`, `freeze %s`, `gridlines DASHED|DOTTED|OFF|SOLID`, `import CLIPBOARD`,
+`fixy %g,%g`, `freeze %s`, `gridlines DASHED|DOTTED|OFF|SOLID`, `import CLIPBOARD`,
 `legend %s`, `legend reserve %d`, `linesize %d`, `linesize 3DMEDIUM|3DTHIN|3DWIDE`, `loadsettings %s`,
-`logX %s`, `logY %s`, `marker %d,%s,%f,%f,%f,%f,%s,%s%s`, `markerset load %s`, `markerset save %s`,
+`logX %s`, `logY %s`, `marker %s,%s[,BOTTOM]`, `markerset load %s`, `markerset save %s`,
 `minortics %s`, `multiy %s`, `pausemode %s`, `plot`, `rescale`, `refresh %g`, `refresh OFF`,
 `savepic %s %s`, `savepic JPEG %s`, `scriptprompt %s`, `set color %s,%d,%d,%d %s`,
-`set color LABEL,%d,%d,%d %s`, `set color TITLE,%d,%d,%d %s`, `showUserName %s`, `stairstep %s`,
+`set color LABEL,%d,%d,%d %s`, `set color TITLE,%d,%d,%d %s`, `stairstep %s`,
 `style 2DLINE|2DSCATTER|3DAREA|3DLINE|LOGIC|TABULAR`, `symbols %s`, `tabulate`, `testinfo %s`,
-`tile %s|cascade|horizontal|stacked|vertical`, `time %s,%s,%s`, `timeslide %s`, `timestamp %s`,
-`useINItoolbar %s`, `usePlaceholder %s`, `xaxis %s`, `xtitle %s`, `xtitle`, `yaxis %s`, `ytitle %s`,
+`tile %s|cascade|horizontal|stacked|vertical`, `time %s,%s,%s`, 
+`usePlaceholder %s`, `xaxis %s`, `xtitle %s`, `xtitle`, `yaxis %s`, `ytitle %s`,
 `ytitle`, `enable|disable titles|subtitles` (`"%s titles"`). Recording of out-of-scope features
 (print, EMF, mailslot) is not required.
 *Acceptance:* TST-SCR-010 — record a session exercising every UI action; replaying the recording
@@ -266,7 +267,7 @@ and status bar; no error), **D** = deprecated (error message shown).
 |---|---|---|---|---|
 | FR-SCR-120 | `OPEN` | `OPEN spec[,spec…] [ASDATABASE [id]]` | Load file(s)/group(s) (FR-LOAD). Without `ASDATABASE` the argument is passed to the group loader (a data file, a `.flt` filter, a group file, or a comma list). With `ASDATABASE`, the comma list before the keyword becomes **one** group named `id` (or derived from the first file name: text between last `\` and first `.`, max 12 chars; or `File Group` if id given empty) via a temporary group file `~id` in the temp folder, deleted after loading. If the list is empty a file dialog opens in group mode. Load failure (−1) aborts the script. Empty argument → Open dialog. | S |
 | FR-SCR-121 | `NEW` | as OPEN | closes all files first (`CLEAR FILES`) then OPEN | S |
-| FR-SCR-122 | `CLEAR` | `[PLOTS]` \| `FILES` \| `LAST` \| `MARKERS ALL` \| `MARKERS n[,m…]` \| `$name` \| `$$` | close all plot windows / close all files / close last opened file / clear markers (global set and active plot) / symbols. Argument is lower-cased, `markers` matched by substring; marker numbers parsed from char 8 then after each comma. | S |
+| FR-SCR-122 | `CLEAR` | `[PLOTS]` \| `FILES` \| `LAST` \| `MARKERS [ALL]` \| `MARKER[S] n[,m…]` \| `REDLINES [ALL]` \| `REDLINE[S] n[,m…]` \| `$name` \| `$$` | close all plot windows / close all files / close last opened file / clear markers / symbols. Argument is lower-cased. `MARKERS ALL` (or `MARKERS` alone) clears the master set and the active plot (all plots with apply-global); `MARKER[S] n[,m…]` removes markers by 1-based position in the active plot's list and in the master set. | S |
 | FR-SCR-123 | `PLOT` | `PLOT [parmlist]` | sets the Y parameter list (cleaned, FR-SCR-130) and adds it to the remembered list, then creates a plot window with current settings. Empty → plot current list. | S |
 | FR-SCR-124 | `YAXIS` | `YAXIS [parmlist]` | set Y list without plotting; empty clears it | S |
 | FR-SCR-125 | `XAXIS` | `XAXIS [parm]` | set X parameter (parameter vs parameter); empty → `(default)` i.e. time | S |
@@ -319,19 +320,19 @@ preserve; users write times as `ddd/msec` or with a group prefix).
 | ID | Command | Syntax | Semantics | Status |
 |---|---|---|---|---|
 | FR-SCR-170 | `FIXX` / `FIXY` | `lo,hi[,inc][,p]` \| `AUTO` \| (FIXY only) `MULTI lo,hi,inc|a[,lo,hi,inc|a…][ p]` | see FR-SCR-171 | S |
-| FR-SCR-172 | `FIXXAUTOY` | ON/OFF | when X is fixed, autoscale Y to visible data | S |
-| FR-SCR-173 | `RESCALE` | | reset both axes to auto | S |
+| FR-SCR-172 | `AUTOSCALE` | `X\|Y\|XY [ON\|OFF]` (default ON) | autoscale switches of the active plot (all plots with apply-global) and the default for new plots (FR-PLT-017); `FIXXAUTOY` is **removed** | S |
+| FR-SCR-173 | `RESCALE` | | fit both axes once to all values, then switch both autoscale switches off (Home) | S |
 | FR-SCR-174 | `ZOOM` | `[IN\|OUT] [X\|Y]` | argument lower-cased; contains `out` → zoom out, else contains `in` → zoom in; then `x`/`y` substring selects the axis, else both; empty → zoom in both | S |
 | FR-SCR-175 | `PAN` | `LEFT\|RIGHT [PAGE\|FULL]` \| `UP` \| `DOWN` | shift X by increment / page / to min-max; shift Y | S |
 | FR-SCR-176 | `MULTIY` | ON/OFF \| `GROUPBY_NAME\|UNITS\|DESCRIPTION\|UDEF\|INDEPENDENT\|<n>` | multiple Y scales and grouping (any other `GROUPBY_x` → INDEPENDENT; numeric = command id, FR-CFG-040) | S |
 | FR-SCR-177 | `LOGX` / `LOGY` | ON/OFF | log axis | S |
 | FR-SCR-178 | `ENDTOEND` | ON/OFF | end-to-end display of multiple files (FR-PLT) | S |
 | FR-SCR-179 | `SCALEGROUP` | ON/OFF | use `\GROUP` scale ids from descriptions | S |
-| FR-SCR-180 | `SCALEREDLINES` | ON/OFF | include redline markers in autoscale | S |
+| FR-SCR-180 | `SCALEREDLINES` | — | **removed** (redline markers, FR-MRK-010, are not part of autoscaling); unknown command | — |
 | FR-SCR-181 | `CLOCKTIME` | ON/OFF | X axis in clock (GMT) format | S |
 | FR-SCR-182 | `GMTFORMAT` | `[fmt]` | clock format; user tokens `DDD/`, `HR`, `MN`, `SC`, `.MIL`, `DDD` converted to C format (`MAKE_C_FMT`); empty → `%03u/%02u:%02u:%02u.%03u` | S |
 | FR-SCR-183 | `INCLUDEGMT` | ON/OFF | include GMT column in tabular/export | S |
-| FR-SCR-184 | `TIMESLIDE` | ON/OFF | real-time X window slides with new data | S |
+| FR-SCR-184 | `TIMESLIDE` | — | **removed**: with `AUTOSCALE X OFF` the time window slides with new data (FR-PLT-017); unknown command | — |
 | FR-SCR-185 | `FREEZE` | ON/OFF | freeze active real-time plot; not real-time → `current data not realtime` | S |
 
 **FR-SCR-171 (FIXX/FIXY parsing)** Argument lower-cased.
@@ -357,7 +358,7 @@ preserve; users write times as `ddd/msec` or with a group prefix).
 | FR-SCR-203 | `GRIDOFFSET` | `n` | minimum grid offset, |n| clamped to 90 (pixels/percent per FR-PLT) | S |
 | FR-SCR-204 | `MINORTICS` | ON/OFF | | S |
 | FR-SCR-205 | `BOLDFRAME` | ON/OFF | | S |
-| FR-SCR-206 | `FONTSIZE` | `1..4` | else `out of range` | S |
+| FR-SCR-206 | `FONTSIZE` | any | **retired**: accepted and ignored (text size = label/title font point sizes, FR-UI-029) | — |
 | FR-SCR-207 | `LINESIZE` | `d` (single digit) \| `3DTHIN\|3DMEDIUM\|3DWIDE` | 2D line width / 3D depth (3,2,1) | S |
 | FR-SCR-208 | `SYMBOLS` | `ON` \| `OFF` \| `0` \| `n>0` | n sets density (every n-th point) and turns symbols on | S |
 | FR-SCR-209 | `SYMBOLSIZE` | `NORMAL\|SMALL\|LARGE` | | S |
@@ -369,13 +370,15 @@ preserve; users write times as `ddd/msec` or with a group prefix).
 | FR-SCR-215 | `XTITLE` / `YTITLE` | `ON`\|`OFF`\|`CLEAR`\|`[next=]text` | plot title / subtitle; `next=` (case-insensitive, removed from text) sets it only for subsequent plots; otherwise applies to current plot(s) and, unless apply-global, does not change the *continue* flag. Text supports title keywords and `\n`, `\t` (FR-PLT-001, FR-PLT-002) | S |
 | FR-SCR-216 | `ENABLE` / `DISABLE` | `MARKERS`\|`TITLES`\|`SUBTITLES`\|`PCGHISTORY`\|`PLUGIN name` | marker usage; title continuation; stream history; plugin block list (registry, FR-PLG) | S |
 | FR-SCR-217 | `AUTOLABEL` | ON/OFF | automatic axis labels | S |
-| FR-SCR-218 | `TIMESTAMP`, `TESTINFO`, `SHOWVERSION`, `SHOWUSERNAME`, `SHOWPAGENO`, `SHOWSCRIPT` | ON/OFF | plot footer items | S |
+| FR-SCR-218 | `TESTINFO` | ON/OFF | test title in the bottom-left corner (FR-PLT) | S |
+| FR-SCR-218a | `TIMESTAMP`, `SHOWVERSION`, `SHOWUSERNAME`, `SHOWPAGENO`, `SHOWSCRIPT` | any | **retired**: accepted and ignored (texts no longer drawn) | — |
 | FR-SCR-219 | `CAPTION` | `PARMSET\|PLOTNO\|SUBTITLE\|TITLE\|SCRIPT\|USER [text]\|ON\|OFF` | window caption source; `USER text` sets the caption of the current plot; `OFF`/`ON` hide/show caption bars | S |
 | FR-SCR-220 | `SET` (style forms) | see §5.6.7 | | S |
 | FR-SCR-221 | `APPLYGLOBAL` | ON/OFF | apply style commands to all plots | S |
 | FR-SCR-222 | `DROPOUTIGNORE` / `DROPOUTMARKER` | ON/OFF | dropout drawing (FR-PLT) | S |
 | FR-SCR-223 | `MARKER` | §5.6.6 | | S |
-| FR-SCR-224 | `MARKERSET` | `TOPMOST [OFF]` \| `SAVE file` \| `LOAD file` | marker draw order; `.markers` file I/O (FR-MRK); argument must be > 5 chars else `incomplete command` | S |
+| FR-SCR-223a | `REDLINE` | §5.6.6 (FR-SCR-241) | redline marker on the value axis (FR-MRK-010) | S |
+| FR-SCR-224 | `MARKERSET` | `TOPMOST [OFF]` \| `FILEEVENTS [OFF]` \| `SAVE file` \| `LOAD file` | marker draw order; draw the data files' `[events]` as markers (FR-MRK-003); `.markers` file I/O (FR-LOAD-060/061); argument must be > 5 chars else `incomplete command` | S |
 | FR-SCR-225 | `OPTIMIZEDDRAW` | ON/OFF | pixel min/max reduction (FR-PLT) | S |
 | FR-SCR-226 | `SHOWCOORD` | ON/OFF | cursor coordinates in status bar | S |
 | FR-SCR-227 | `EMFWIDE` | ON/OFF | | I |
@@ -391,17 +394,24 @@ items' positions in the text, remaining items keep the default order
 
 ### 5.6.6 MARKER
 
-**FR-SCR-240** `MARKER n,type,x1,y1,x2,y2,color,label[\g]`
-* `\g` or `\G` anywhere → global (apply to all plots); removed before parsing.
-* `n` 1..1000 (else error).
-* `type`: `TEXT|REDLINE|LINE|BOX|CIRCLE|EVENT|IMAGE` (case-insensitive) or a number 0..6; anything
-  else → TEXT.
-* x1,y1,x2,y2: floats (data coordinates, or percent when the label carries `\%`, FR-MRK).
-* color: `GRID|LABEL|BACKGROUND` or 1..103 (→ index n−1); invalid → LABEL. **The marker is only
-  accepted if a color field is present.**
-* label: text after the **last** comma, trimmed (empty if absent). Hence labels cannot contain commas.
-* REDLINE markers on a non-fixed Y scale trigger an autoscale reset including redlines.
-* The master marker set is updated, as are the active plot (or all plots when global).
+**FR-SCR-240** `MARKER <timestamp>,<text>[,TOP|BOTTOM]` (`Marker.Parse`)
+* timestamp: everything before the first comma, trimmed; must be non-empty without white space, `=`
+  or `"` (forms: FR-MRK-002).
+* A trailing `,TOP` / `,BOTTOM` (case-insensitive) selects the text position (default top); the rest
+  is the text, which may contain commas and must not be empty.
+* The retired form `MARKER n,type,x1,y1,x2,y2,color,label[\g]` (second field a former marker type
+  followed by four numbers) is rejected, as is any invalid argument: script error
+  `invalid marker, expected: MARKER <timestamp>,<text>[,TOP|BOTTOM]`.
+* The marker is added to the master set and to the active plot (all plots with apply-global); an
+  identical marker is not added twice.
+
+**FR-SCR-241** `REDLINE <value>,<text>[,LEFT|RIGHT]` (`RedlineMarker.Parse`, FR-MRK-010/011)
+* value: everything before the first comma, a finite number in invariant-culture float syntax.
+* A trailing `,LEFT` / `,RIGHT` (case-insensitive) selects the text position (default left); the rest
+  is the text, which may contain commas and must not be empty.
+* Invalid arguments: script error `invalid redline, expected: REDLINE <value>,<text>[,LEFT|RIGHT]`.
+* The redline is added to the master redline set and to the active plot (all plots with
+  apply-global); an identical redline is not added twice.
 
 ### 5.6.7 SET
 
@@ -410,11 +420,11 @@ items' positions in the text, remaining items keep the default order
 | Form | Semantics |
 |---|---|
 | `SET TRACE …` / `SET LOGIC …` | FR-SCR-251 / FR-SCR-252 |
-| `SET COLOR …` | rest upper-cased. Contains `PRINTERTABLE` → run ColorPrinter.wps (saving current colours for RESTORE). Contains `RESTORE` → restore saved colour table. Else target: contains `GRID` / `LABEL` / `TITLE` / `BACKGROUND`, else `atoi−1` in 0..99. Then r,g,b after the 1st,2nd,3rd comma (`atoi % 256`). Missing any → error. `GLOBAL` anywhere (or apply-global on) → all plots. |
+| `SET COLOR …` | rest upper-cased. Contains `PRINTERTABLE` → run ColorPrinter.wps (saving current colours for RESTORE). Contains `RESTORE` → restore saved colour table. Else target: contains `GRID` / `REDLINE` / `MARKER` / `LABEL` / `TITLE` / `BACKGROUND` (first match in that order), else `atoi−1` in 0..99. Then r,g,b after the 1st,2nd,3rd comma (`atoi % 256`). Missing any → error. `GLOBAL` anywhere (or apply-global on) → all plots. |
 | `SET PRECISION t d` | t,d ∈ `HEX2 HEX4 HEX8 OCT3 OCT6 OCT12 GENERAL 0..7` (space or comma separated); sets tabular time and data formats (−7..7). Unknown tokens leave the value unchanged. |
 | `SET BACKGROUND file` | background bitmap for tabular display |
-| `SET GROUPNAME [next=\|all=]name` | `next=` sets the group name for subsequent plots; `all=` applies to all plots; otherwise current plot and default |
-| `SET USERn label,command` | n = 1..5 (else `invalid function number`); label and command required (else `missing parameter`); updates menu text and toolbar button |
+| `SET GROUPNAME …` | **retired**: accepted and ignored (plot group names were removed) |
+| `SET USERn label,command` | n = 1..5 (else `invalid function number`); label and command required (else `missing parameter`); updates the *User* menu text |
 | `SET NAME=value` | user symbol (FR-SCR-050) |
 | anything else | `invalid syntax` |
 
@@ -436,11 +446,12 @@ it to all traces of the active plot (and all plots if apply-global). `SET LOGIC 
 | ID | Command | Syntax | Semantics | Status |
 |---|---|---|---|---|
 | FR-SCR-260 | `WINDOW` | `MINIMIZE\|MAXIMIZE\|RESTORE\|l,t,r,b` | main window state/position (position requires all four values and t ≠ b) | S |
-| FR-SCR-261 | `TILE` | `HORIZONTAL`(default)\|`VERTICAL`\|`CASCADE`\|`STACKED`\|`OFF`\|`groupname` | arrange plot windows; `OFF` maximises active plot; other text tiles plots of that group | S |
+| FR-SCR-261 | `TILE` | `HORIZONTAL`(default)\|`VERTICAL`\|`CASCADE`\|`STACKED`\|`OFF` | arrange plot windows; `OFF` maximises active plot; any other text (formerly a group name) tiles horizontally | S |
 | FR-SCR-262 | `TAB` | `NEXT`(default)\|`PREVIOUS` | activate next/previous plot | S |
-| FR-SCR-263 | `AUTOTAB` | `seconds[ ,group]` | cycle plots on a timer (0 = off); optional group restriction | S |
-| FR-SCR-264 | `TOOLBAR` / `STATUSBAR` | ON/OFF (toggle-if-empty) | | S |
-| FR-SCR-265 | `USEINITOOLBAR` | ON/OFF | load toolbar layout from INI | S |
+| FR-SCR-263 | `AUTOTAB` | `seconds` | cycle plots on a timer (0 = off); a trailing group name (retired) is ignored | S |
+| FR-SCR-263a | `APPEARANCE` | `LIGHT`\|`DARK` | application and plot appearance (FR-UI-046); other text → error | S |
+| FR-SCR-264 | `STATUSBAR` | ON/OFF (toggle-if-empty) | `TOOLBAR` is **removed** (no toolbars, FR-UI-004); unknown command | S |
+| FR-SCR-265 | `USEINITOOLBAR` | — | **removed**; unknown command | — |
 | FR-SCR-266 | `PRESENTATIONMODE` / `PRESENTATIONFULL` | ON/OFF | full-screen presentation modes (FR-UI) | S |
 | FR-SCR-267 | `SYSTEMLOAD` | ON/OFF (anything ≠ OFF = ON) | CPU/memory in status bar | S |
 | FR-SCR-268 | `STREAMCERT` | ON/OFF (≠ OFF = ON) | stream certification status display (FR-RT) | S |
@@ -481,7 +492,7 @@ shown (TST-SCR-020).
 ## 5.8 Interpreter implementation requirements
 
 **NFR-SCR-001** The interpreter shall run on the UI dispatcher but must never block it: waits
-(`PAUSE n`, loading, refresh) are `async` and pump the dispatcher; Space/Esc and toolbar Pause/Abort
+(`PAUSE n`, loading, refresh) are `async` and pump the dispatcher; Space/Esc and the *Script* menu Pause/Abort
 remain responsive.
 **NFR-SCR-002** The parser shall be a separate, unit-testable component (`ScriptLexer`,
 `CommandParser`) that converts a raw line into a typed command object without touching UI state, so

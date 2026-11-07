@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System;using System.Windows;
 using System.Windows.Threading;
 using System.Windows.Media;       // <- for RenderOptions
@@ -96,6 +99,7 @@ public sealed class App : System.Windows.Application
             if (Environment.GetEnvironmentVariable("MULTIPLOTNET_SNAPSHOT") is { Length: > 0 } snap) ScheduleSnapshot(snap);
         }
         AppStartup.LoadInitialSettings(_session, cl);
+        _shell.SetAppearance(_session.Settings.DarkMode); // also when no INI was found (FR-UI-046)
         _main.RebuildCommands();
         Dispatcher.InvokeAsync(async () =>
         {

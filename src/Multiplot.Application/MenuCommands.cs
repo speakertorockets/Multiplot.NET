@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core;
 using Multiplot.Core.Model;
 using static Multiplot.Core.CommandIds;
@@ -5,18 +8,11 @@ using static Multiplot.Core.CommandIds;
 namespace Multiplot.Application;
 
 /// <summary>
-/// Dispatch of command ids (menus, toolbars, accelerators, popups) to the session handlers — the single
-/// command layer of ARC-010. Ids keep fixed values so INI/registry toolbar layouts round-trip (FR-CFG-040).
+/// Dispatch of command ids (menus, accelerators, popups) to the session handlers — the single
+/// command layer of ARC-010. Ids keep fixed values (FR-CFG-040).
 /// </summary>
 public sealed partial class Session
 {
-    /// <summary>Command ids that are out of scope (DEV-UI-002); toolbars skip them.</summary>
-    public static readonly HashSet<int> OutOfScopeCommands = new()
-    {
-        ID_DBFPRINT, ID_DBFPRINTSETUP, ID_COPYCLIPBOARD, ID_EMFASPECT, ID_EXT_CMD_POLL, ID_QUERY, ID_HELP_CONTENTS,
-        ID_COLORPRINT, ID_PRINTLAND, ID_PRINTMARGINS, ID_SAVEMETA,
-    };
-
     private bool ApplyAllGlobal => Settings.ApplyAll;
 
     /// <summary>Executes a command id; returns false when the id is unknown.</summary>
@@ -26,8 +22,8 @@ public sealed partial class Session
         switch (id)
         {
             // File
-            case ID_FILE_NEW: OpenFileDialog(true); break;
-            case ID_FILE_OPEN: OpenFileDialog(false); break;
+            case ID_FILE_NEW: if (OpenFileDialog(true)) PromptFirstPlot(); break;
+            case ID_FILE_OPEN: if (OpenFileDialog(false)) PromptFirstPlot(); break;
             case ID_IMPORT_FILE: ImportDialog(); break;
             case ID_CLOSELAST: CloseLast(); break;
             case ID_DBFCLOSE: CloseAllFiles(); break;
@@ -133,6 +129,8 @@ public sealed partial class Session
             case ID_VIEW_ASTABULATION: Tabulate(); break;
             case ID_VIEW_INFO: Shell.Dialogs.Show(this, DialogKind.ParameterProperties); break;
             case ID_PRESENTATION_MODE: TogglePresentationMode(); break;
+            case ID_APPEARANCE_LIGHT: if (Settings.DarkMode) SetAppearance(false); break;
+            case ID_APPEARANCE_DARK: if (!Settings.DarkMode) SetAppearance(true); break;
             case ID_MAX_PRES: Settings.MaxPresentation = !Settings.MaxPresentation; break;
 
             // Axis
@@ -146,12 +144,10 @@ public sealed partial class Session
             case ID_AXIS_ENDTOEND: SetEndToEnd(null); break;
             case ID_AXIS_LOGX: SetLog(false, null); break;
             case ID_AXIS_LOGY: SetLog(true, null); break;
-            case ID_FIXXAUTOY: Settings.FixXAutoY = !Settings.FixXAutoY; Record("FIXXAUTOY " + OnOff(Settings.FixXAutoY)); break;
-            case ID_AXIS_AUTOSCALEREDLINES: Settings.ScaleRedlines = !Settings.ScaleRedlines; Record("SCALEREDLINES " + OnOff(Settings.ScaleRedlines)); break;
             case ID_AXIS_FIXX: FixXDialog(); break;
             case ID_AXIS_FIXY: FixYDialog(); break;
-            case ID_XAXIS_RESCALE: RescaleX(); break;
-            case ID_YAXIS_RESCALE: RescaleY(); break;
+            case ID_XAXIS_RESCALE: SetAutoScaleX(null); break;
+            case ID_YAXIS_RESCALE: SetAutoScaleY(null); break;
             case ID_XYAXIS_RESCALE: RescaleXY(); break;
             case ID_UNDO_ZOOM: UndoZoom(); break;
             case ID_X_ZOOMIN: ZoomX(true); break;
@@ -210,6 +206,8 @@ public sealed partial class Session
             case ID_LABEL_COLOR: SetColor(ColorIndex.Label, ApplyAllGlobal); break;
             case ID_TITLE_COLOR: SetColor(ColorIndex.Title, ApplyAllGlobal); break;
             case ID_GRID_COLOR: SetColor(ColorIndex.Grid, ApplyAllGlobal); break;
+            case ID_MARKER_COLOR: SetColor(ColorIndex.Marker, ApplyAllGlobal); break;
+            case ID_REDLINE_COLOR: SetColor(ColorIndex.Redline, ApplyAllGlobal); break;
             case ID_BACKGROUND_COLOR: SetColor(ColorIndex.Background, ApplyAllGlobal); break;
             case ID_RESTORE_COLORS: RestoreColorTable(); break;
             case ID_LOADCOLORS: await LoadColorTableAsync(); break;
@@ -234,12 +232,6 @@ public sealed partial class Session
             // Nomenclature
             case ID_SETLFONT: Shell.Dialogs.Show(this, DialogKind.LabelFont); break;
             case ID_SETTFONT: Shell.Dialogs.Show(this, DialogKind.TitleFont); break;
-            case ID_EDIT_FONTSZ1: SetFontSize(1); break;
-            case ID_EDIT_FONTSZ2: SetFontSize(2); break;
-            case ID_EDIT_FONTSZ3: SetFontSize(3); break;
-            case ID_EDIT_FONTSZ4: SetFontSize(4); break;
-            case ID_REDUCE_FONTSZ: StepFontSize(-1); break;
-            case ID_ENLARGE_FONTSZ: StepFontSize(1); break;
             case ID_AXIS_XNOMEN: Shell.Dialogs.Show(this, DialogKind.XNomenclature); break;
             case ID_AXIS_YNOMEN: Shell.Dialogs.Show(this, DialogKind.YNomenclature); break;
             case ID_AXIS_XTITLE: ApplyTitle(false, true); break;
@@ -247,33 +239,17 @@ public sealed partial class Session
             case ID_CLOCKTIME: SetClockTime(null); break;
             case ID_GMTFORMAT: SetGmtFormat(null); break;
             case ID_STYLE_SCALEGROUP: SetScaleGroup(null); break;
-            case ID_SHOWVERSION: SetShowVersion(null); break;
-            case ID_SHOWSCRIPTNAME: SetShowScript(null); break;
-            case ID_SHOWUSERNAME: SetShowUserName(null); break;
-            case ID_SHOWPAGENUMBER: SetShowPageNo(null); break;
-            case ID_STYLE_TIMESTAMP: SetTimeStamp(null); break;
             case ID_STYLE_TESTINFO: SetTestInfo(null); break;
             case ID_SETUSERCAPTION: SetUserCaption(null); break;
-            case ID_GROUPNAME: ApplyGroupName(null, true); break;
 
             // Markers
-            case ID_DRAW_TEXT: case ID_DRAW_LINE: case ID_DRAW_BOX: case ID_DRAW_CIRCLE:
-            case ID_DRAW_EVENT: case ID_DRAW_REDLINE: case ID_DRAW_IMAGE: case ID_DRAW_MARKERS:
-                PendingMarkerType = id switch
-                {
-                    ID_DRAW_LINE => MarkerType.Line,
-                    ID_DRAW_BOX => MarkerType.Box,
-                    ID_DRAW_CIRCLE => MarkerType.Circle,
-                    ID_DRAW_EVENT => MarkerType.Event,
-                    ID_DRAW_REDLINE => MarkerType.Redline,
-                    ID_DRAW_IMAGE => MarkerType.Image,
-                    _ => MarkerType.Text,
-                };
-                Shell.Dialogs.Show(this, DialogKind.MarkerDraw);
-                break;
+            case ID_DRAW_EVENT: Shell.Dialogs.Show(this, DialogKind.MarkerDraw); break;
             case ID_EDIT_MARKERS: Shell.Dialogs.Show(this, DialogKind.MarkerEdit); break;
+            case ID_DRAW_REDLINE: Shell.Dialogs.Show(this, DialogKind.RedlineDraw); break;
+            case ID_EDIT_REDLINES: Shell.Dialogs.Show(this, DialogKind.RedlineEdit); break;
+            case ID_SHOW_FILE_EVENTS: SetShowFileEvents(null); break;
             case ID_MARKERS_TOPMOST: SetMarkersTopmost(null); break;
-            case ID_CLEAR_MARKERS: ClearAllMarkers(); break;
+            case ID_CLEAR_MARKERS: ClearAllMarkersAndRedlines(); break;
             case ID_MARKER_SAVE:
                 {
                     string? fn = Shell.Dialogs.SaveFile("Save Marker File", "Multiplot Marker Files (*.markers)|*.markers|All Files (*.*)|*.*", null, Settings.ScriptDir.Split(';')[0]);
@@ -308,8 +284,6 @@ public sealed partial class Session
             case ID_SHOW_SYS_LOAD: SetSystemLoad(null); break;
             case ID_SHOWCOORD: Settings.ShowCoord = !Settings.ShowCoord; Record("SHOWCOORD " + OnOff(Settings.ShowCoord)); break;
             case ID_EDIT_STATUSBAR: SetStatusBarVisible(null); break;
-            case ID_EDIT_TOOLBAR: SetToolbarVisible(null); break;
-            case ID_CUSTOMIZE_TOOLBAR: Shell.Dialogs.Show(this, DialogKind.ToolbarEdit); break;
             case ID_VIEW_MAX: Settings.PlotMax = !Settings.PlotMax; break;
             case ID_LOADVARS: Settings.LoadSymbols = !Settings.LoadSymbols; break;
             case ID_MONITORS: Shell.Dialogs.Show(this, DialogKind.Monitors); break;
@@ -322,7 +296,6 @@ public sealed partial class Session
             case ID_APPLY_ALL: SetApplyAll(null); break;
             case ID_CAPTIONDISABLE: SetNoCaptionBar(null); break;
             case ID_WINDOWCAPTION: CaptionSourceDialog(); break;
-            case ID_INCLUDE_TOOLBARS: Settings.IncludeToolbar = !Settings.IncludeToolbar; Record("useINItoolbar " + OnOff(Settings.IncludeToolbar)); break;
             case ID_SAVE_SETTINGS: SaveSettings(); break;
             case ID_LOAD_SETTINGS: LoadSettingsDialog(); break;
             case ID_IMPORT_WINPLOT: ImportWinPlotSettingsDialog(); break;
@@ -342,7 +315,6 @@ public sealed partial class Session
             case ID_REFRESH: if (!Refreshing) RefreshNow(); break;
             case ID_REFRESH_TIMER: RefreshIntervalDialog(); break;
             case ID_REFRESHTOGGLE: ToggleRefresh(); break;
-            case ID_TIMESLIDE: SetTimeSlide(null); break;
             case ID_IGNORE_STATIC: SetIgnoreStatic(null); break;
             case ID_LOADONCE: Settings.FirstOccurrence = !Settings.FirstOccurrence; Record("FirstOccurrence " + OnOff(Settings.FirstOccurrence)); break;
             case ID_AUTORUN: Shell.Dialogs.Show(this, DialogKind.AutoRun); break;
@@ -357,17 +329,15 @@ public sealed partial class Session
             case ID_WINDOW_CASCADE: Arrange(WindowArrange.Cascade); break;
             case ID_WINDOW_TILE_HORZ: Arrange(WindowArrange.TileHorizontal); break;
             case ID_WINDOW_TILE_VERT: Arrange(WindowArrange.TileVertical); break;
-            case ID_WINDOW_TILE_GROUP: Arrange(WindowArrange.TileGroup); break;
             case ID_WINDOW_STACK_HORIZONTAL: Arrange(WindowArrange.Stack); break;
-            case ID_WINDOW_MAXIMIZE: Shell.Arrange(WindowArrange.MaximizeActive, null); break;
-            case ID_WINDOW_MINIMIZE: Shell.Arrange(WindowArrange.MinimizeActive, null); break;
+            case ID_WINDOW_MAXIMIZE: Shell.Arrange(WindowArrange.MaximizeActive); break;
+            case ID_WINDOW_MINIMIZE: Shell.Arrange(WindowArrange.MinimizeActive); break;
             case ID_MOVE_WINDOW: break;
             case ID_WINDOW_REFRESH: RefreshAllPlots(); break;
             case ID_PREV_WINDOW: PreviousWindow(); break;
             case ID_NEXT_WINDOW: NextWindow(); break;
             case ID_WINDOWLIST: Shell.Dialogs.Show(this, DialogKind.WindowList); break;
-            case ID_AUTOTAB: AutoTabDialog(false); break;
-            case ID_AUTOTAB_GROUP: AutoTabDialog(true); break;
+            case ID_AUTOTAB: AutoTabDialog(); break;
             case ID_WINDOW_ONTOP: KeepOnTop = !KeepOnTop; Shell.RefreshCommands(); break;
             case ID_WINDOW_CLOSE: if (plot != null) RemovePlot(plot); break;
             case ID_WINDOW_CLOSEALL: CloseAllPlots(); break;
@@ -375,6 +345,7 @@ public sealed partial class Session
 
             // Help
             case ID_APP_ABOUT: Shell.Dialogs.Show(this, DialogKind.About); break;
+            case ID_HELP_CONTENTS: OpenUserGuide(); break;
 
             // misc accelerators
             case ID_SAVEJPEG: AutoSaveJpeg(); break;
@@ -388,7 +359,7 @@ public sealed partial class Session
                     int n = id - ID_RECENT0;
                     if (n < RecentFiles.Count)
                     {
-                        if (LoadFileGroup(RecentFiles[n]) == 0) Record("OPEN " + RecentFiles[n].Replace(";", "\\;"));
+                        if (LoadFileGroup(RecentFiles[n]) == 0) { Record("OPEN " + RecentFiles[n].Replace(";", "\\;")); PromptFirstPlot(); }
                     }
                     break;
                 }
@@ -398,8 +369,17 @@ public sealed partial class Session
         return true;
     }
 
-    /// <summary>Marker type chosen by Markers → Draw (consumed by the plot window's marker placement).</summary>
-    public int PendingMarkerType = MarkerType.Text;
+    /// <summary>Help → User Guide: opens the user guide shipped next to the executable in the web browser.</summary>
+    public void OpenUserGuide()
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "docs", "user-guide", "README.md");
+        if (!File.Exists(path))
+        {
+            Message("User guide not found:\n" + path);
+            return;
+        }
+        if (!Shell.OpenInBrowser(path)) Message("Could not open the web browser for:\n" + path);
+    }
 
     /// <summary>Runs a User's Choice entry.</summary>
     public async Task UserButtonAsync(int n)
@@ -442,8 +422,8 @@ public sealed partial class Session
             ID_AXIS_ENDTOEND => c.EndToEnd,
             ID_AXIS_LOGX => c.LogX,
             ID_AXIS_LOGY => c.LogY,
-            ID_FIXXAUTOY => Settings.FixXAutoY,
-            ID_AXIS_AUTOSCALEREDLINES => Settings.ScaleRedlines,
+            ID_XAXIS_RESCALE => c.AutoScaleX,
+            ID_YAXIS_RESCALE => c.AutoScaleY,
             ID_STYLE_2DLINE => c.Style == PlotStyle.Line2D,
             ID_STYLE_2DSCATTER => c.Style == PlotStyle.Scatter2D,
             ID_STYLE_3DLINE => c.Style == PlotStyle.Line3D,
@@ -461,19 +441,11 @@ public sealed partial class Session
             ID_STYLE_LEGEND => c.Legend,
             ID_LEGENDSHIFT => c.LegendShift,
             ID_USECURVECOLOR => c.LegendColor,
-            ID_EDIT_FONTSZ1 => c.FontSize == 1,
-            ID_EDIT_FONTSZ2 => c.FontSize == 2,
-            ID_EDIT_FONTSZ3 => c.FontSize == 3,
-            ID_EDIT_FONTSZ4 => c.FontSize == 4,
             ID_CLOCKTIME => c.ClockTime,
             ID_STYLE_SCALEGROUP => c.GroupId,
-            ID_SHOWVERSION => c.ShowVersion,
-            ID_SHOWSCRIPTNAME => c.ShowScript,
-            ID_SHOWUSERNAME => c.ShowUserName,
-            ID_SHOWPAGENUMBER => c.ShowPageNo,
-            ID_STYLE_TIMESTAMP => c.TimeStamp,
             ID_STYLE_TESTINFO => c.TestInfo,
             ID_MARKERS_TOPMOST => c.MarkersTopmost,
+            ID_SHOW_FILE_EVENTS => c.ShowFileEvents,
             ID_SHOWGMT => Settings.ShowGmt,
             ID_TAB_SGL_TIME => Settings.SharedTabTime,
             ID_DATA_ALIGNMENT => Settings.AlignClosest,
@@ -483,7 +455,6 @@ public sealed partial class Session
             ID_SHOW_SYS_LOAD => Settings.ShowSysLoad,
             ID_SHOWCOORD => Settings.ShowCoord,
             ID_EDIT_STATUSBAR => Settings.ShowStatusBar,
-            ID_EDIT_TOOLBAR => Settings.ShowToolBar,
             ID_VIEW_MAX => Settings.PlotMax,
             ID_LOADVARS => Settings.LoadSymbols,
             ID_POS_SAVE => Settings.AutoSave,
@@ -493,15 +464,15 @@ public sealed partial class Session
             ID_USEMARKERS => Settings.UseMarkers,
             ID_AUTOGEN => Settings.AllowAutoLabel,
             ID_APPLY_ALL => Settings.ApplyAll,
+            ID_APPEARANCE_LIGHT => !Settings.DarkMode,
+            ID_APPEARANCE_DARK => Settings.DarkMode,
             ID_CAPTIONDISABLE => Settings.NoCaptionBar != 0,
-            ID_INCLUDE_TOOLBARS => Settings.IncludeToolbar,
             ID_REBUILD_RATE => Settings.RebuildRate,
             ID_EXTRAPOLATE => Settings.Extrapolate,
             ID_64_BIT_TIMING => c.Use64BitTime,
             ID_DROPOUT_IGNORE => c.DropoutIgnore,
             ID_DROPOUT_MARKER => c.DropoutMarker,
             ID_REFRESH_TIMER => AutoRefresh != 0,
-            ID_TIMESLIDE => ActivePlot?.TimeSlide ?? Settings.TimeSlide,
             ID_IGNORE_STATIC => ActivePlot?.IgnoreStatic ?? Settings.IgnoreStatic,
             ID_LOADONCE => Settings.FirstOccurrence,
             ID_CERTSTATUS => Settings.StreamCert,

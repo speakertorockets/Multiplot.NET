@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;

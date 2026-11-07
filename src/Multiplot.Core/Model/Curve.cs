@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Plugins;
 
 namespace Multiplot.Core.Model;
@@ -122,12 +125,12 @@ public interface IPlotHost
     string[] LogicTxtTrue { get; }
     /// <summary>Logic "false" labels.</summary>
     string[] LogicTxtFalse { get; }
-    /// <summary>Include redline markers in autoscale.</summary>
-    bool ScaleRedlines { get; }
     /// <summary>Version string.</summary>
     string Version { get; }
     /// <summary>Presentation mode.</summary>
     bool PresentationMode { get; }
+    /// <summary>Dark appearance: plot colours are adapted with <see cref="PlotColors.Map"/>.</summary>
+    bool DarkAppearance => false;
     /// <summary>Tabular layout grid spacing (0 off).</summary>
     int LayoutGridSpacing { get; }
     /// <summary>Snap to grid.</summary>
@@ -150,6 +153,4 @@ public interface IPlotHost
     bool ResolveTime(int group, string spec, string tRef, out double time);
     /// <summary>Shows a message.</summary>
     void ShowMessage(string text);
-    /// <summary>Disables a marker of the master set.</summary>
-    void DisableGlobalMarker(int markerNo);
 }

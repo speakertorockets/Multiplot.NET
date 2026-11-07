@@ -1,3 +1,6 @@
+# Copyright (c) 2026 speakertorockets
+# SPDX-License-Identifier: MIT
+
 """Generates the Multiplot.NET application icon: several coloured curves over a plot grid."""
 import math, sys
 from PIL import Image, ImageDraw

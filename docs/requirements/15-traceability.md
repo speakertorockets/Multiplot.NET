@@ -10,7 +10,7 @@ Every source file of Multiplot.NET is mapped to the requirement areas it impleme
 | `Multiplot.Application/Session.cs` | session state, messages, diagnostic log, script recording, system symbols | ARC-010, FR-SCR-040, FR-SCR-050..053, NFR-LOG-001 |
 | `Multiplot.Application/CommandProcessor.cs` | script command interpreter, `SET` commands | 05 (all FR-SCR) |
 | `Multiplot.Application/ScriptRunner.cs` | script files, `CALL` stack, pause/resume/abort | FR-SCR-010/011, FR-SCR-100..114 |
-| `Multiplot.Application/MenuCommands.cs` | command-id dispatch for menus, toolbars, accelerators, popups | ARC-010, FR-UI-002..004, FR-CFG-040 |
+| `Multiplot.Application/MenuCommands.cs` | command-id dispatch for menus, accelerators, popups | ARC-010, FR-UI-002..004, FR-CFG-040 |
 | `Multiplot.Application/Loading.cs` | file groups, parameter loading, temporary groups, WPD loading, recent files | 07 FR-LOAD-*, FR-PLG-010..013 |
 | `Multiplot.Application/Handlers.Axis.cs` | fix X/Y, multi-Y, log, zoom/pan, rescale | FR-PLT-015/016, FR-UI-027 |
 | `Multiplot.Application/Handlers.Style.cs` | style toggles, colours, fonts, nomenclature, captions, precision | FR-PLT-020..023, FR-PLT-040 |
@@ -28,7 +28,10 @@ Every source file of Multiplot.NET is mapped to the requirement areas it impleme
 | `Multiplot.Core/ParameterOps.cs` | min/max, append, average, quantize, full-rate rebuild, compaction | FR-ACC-002, FR-FN-030, FR-SUN-076, FR-RT-031 |
 | `Multiplot.Core/TimeReference.cs`, `TimeParse.cs`, `Formatting.cs` | time slices and references, time strings, value formatting | FR-LOAD-020/021, FR-XPT-001 |
 | `Multiplot.Core/Crt.cs`, `Strtok.cs`, `AnsiText.cs` | C runtime number semantics, tokenizer, text encoding | NFR-COMP-001/002 |
-| `Multiplot.Core/CommandIds.cs`, `ToolbarDefaults.cs` | command ids, default toolbar bands | FR-CFG-040, FR-UI-004 |
+| `Multiplot.Core/CommandIds.cs` | command ids | FR-CFG-040 |
+| `Multiplot.Core/EventMarkers.cs`, `Model/Marker.cs` | event marker model, parsing and resolution (user markers and file `[events]`) | FR-MRK-001..003, FR-SCR-240, FR-LOAD-060 |
+| `Multiplot.Core/Model/RedlineMarker.cs` | redline marker model and parsing | FR-MRK-010, FR-SCR-241, FR-LOAD-060 |
+| `Multiplot.Core/Model/PlotColors.cs` | default curve palette, light/dark colour mapping | FR-UI-028, FR-UI-046 |
 | `Multiplot.Sun/*` | SUN reader/writer, LZH codec, comment blocks | 03 (all) |
 | `Multiplot.Plugins.Abstractions/*` | plugin contracts, data model, data types, error codes, time math | 04 FR-ACC-*, FR-PLG-*, FR-SUN-090, FR-TIM-* |
 | `Multiplot.DataAccess/DataAccessService.cs` | provider façade, plugin loading (including `Name\Name.dll` sub-folders) and blocking | 04 FR-ACC-*, FR-PLG-010..013 |
@@ -43,7 +46,7 @@ Every source file of Multiplot.NET is mapped to the requirement areas it impleme
 | `Multiplot.Settings/IniFile.cs`, `RegistryStore.cs` | INI reader/writer, registry adapter | 09 FR-CFG-010..040 |
 | `Multiplot.ImportExport/*` | ASCII import, CSV/TAB/SUN export, details files, statistics | 10 FR-IMP-*, FR-XPT-*, FR-SCR-157..159 |
 | `Multiplot.Rendering/*` | plot renderer, picture output | 08 FR-PLT-*, FR-TAB-*, FR-XPT-030 |
-| `Multiplot.App/*` | WPF shell, menus, toolbars, document area, dialogs | 08 FR-UI-*, DEV-UI-001..004 |
+| `Multiplot.App/*` | WPF shell, menus, document area, dialogs | 08 FR-UI-*, DEV-UI-001..004 |
 | `samples/MinimalPlugin` | plugin SDK sample | FR-PLG-030 |
 | `tools/MultiToParquet/*` | `multi2parquet` MULTITIME(64) → Parquet converter | FR-XPT-050, OQ-016 |
 | `tests/Multiplot.Tests/EndToEnd/ParquetPluginTests.cs` | Parquet plugin integration tests | TST-PLG-002 |

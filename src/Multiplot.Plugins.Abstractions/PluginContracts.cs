@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 namespace Multiplot.Plugins;
 
 /// <summary>Base contract of every plugin; discovered by reflection (public parameterless constructor).</summary>

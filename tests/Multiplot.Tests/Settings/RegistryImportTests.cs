@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Microsoft.Win32;
 using Multiplot.Core.Model;
 using Multiplot.Settings;
@@ -20,7 +23,7 @@ public class RegistryImportTests
                 k.SetValue("file2", "C:\\data\\b.sun");
             }
             using (var k = Registry.CurrentUser.CreateSubKey(src + "\\Toolbars"))
-                k.SetValue("File", new[] { "0", "57600 0", "57601 1" }, RegistryValueKind.MultiString);
+                k.SetValue("UserButton 1", new[] { "Go", "run go.wps" }, RegistryValueKind.MultiString);
             using (var k = Registry.CurrentUser.CreateSubKey(src + "\\Plugins\\Blocked"))
                 k.SetValue("Old.dll", new byte[] { 1 }, RegistryValueKind.Binary);
             using (var k = Registry.CurrentUser.CreateSubKey(src + "\\ParmSelect461"))
@@ -33,8 +36,8 @@ public class RegistryImportTests
             Assert.Equal(new[] { "C:\\data\\b.sun", "C:\\data\\a.sun" }, store.ReadRecentFiles());
             Assert.Contains("Old.dll", store.ReadBlockedPlugins());
             var s = new AppSettings();
-            Assert.True(store.ReadToolbars(s));
-            Assert.False(s.ToolbarEnabled[0]);
+            Assert.True(store.ReadUserButtons(s));
+            Assert.Equal(("Go", "run go.wps"), (s.UserButtons[0].Label, s.UserButtons[0].Command));
             using var skipped = Registry.CurrentUser.OpenSubKey(dst + "\\ParmSelect461");
             Assert.Null(skipped);
         }

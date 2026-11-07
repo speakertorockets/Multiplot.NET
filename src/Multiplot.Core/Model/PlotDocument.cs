@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core.Plotting;
 using Multiplot.Plugins;
 
@@ -26,17 +29,20 @@ public sealed class PlotDocument
     public List<Curve> Curves = new();
     public int NScales;
     public PlotConfig Config;
-    public Marker[] Markers;
+    /// <summary>Event markers of this plot (FR-MRK-001).</summary>
+    public List<Marker> Markers;
+    /// <summary>Redline markers of this plot (FR-MRK-010).</summary>
+    public List<RedlineMarker> Redlines = new();
     public string[] XAxisNomen = { "TIME", "Seconds", "Relative Time in Seconds" };
     public string XUdef = "", YUdef = "", XTitleFormat = "", YTitleFormat = "", XTitle = "", YTitle = "";
     public string TReference = "NONE", TSlice = "";
     public string PlotDate = "", ScriptFile = "(Interactive)", GmtFormat = "%03u/%02u:%02u:%02u.%03u", UserCaption = "";
-    public string BackgroundFile = "", GroupName = "";
+    public string BackgroundFile = "";
     public object? BackgroundImage;
     public Scale XScale = new();
     public List<Scale> YScales = new();
     public double XSetMin, XSetMax, YSetMin, YSetMax;
-    public bool TimeSlide, ForceReload, IgnoreStatic, UseTitle = true, UseSubTitle = true;
+    public bool ForceReload, IgnoreStatic, UseTitle = true, UseSubTitle = true;
     public int TimeFreeze;
     public int MultiGroupBy = GroupBy.Independent;
     public int PrevXNomen;
@@ -56,7 +62,7 @@ public sealed class PlotDocument
     public int NCurves => Curves.Count;
 
     /// <summary>Creates a plot: curves get independent scales.</summary>
-    public PlotDocument(IPlotHost host, IList<Curve> curves, PlotConfig config, Marker[]? markers,
+    public PlotDocument(IPlotHost host, IList<Curve> curves, PlotConfig config, IEnumerable<Marker>? markers,
         string[] xAxis, string xUdef, string yUdef, string xTitle, string yTitle, string tRef, string tSlice)
     {
         Host = host;
@@ -70,7 +76,7 @@ public sealed class PlotDocument
             Curves[i].ScaleIndex = i;
             YScales.Add(new Scale());
         }
-        Markers = markers != null ? Marker.CopySet(markers) : Marker.NewSet();
+        Markers = markers != null ? Marker.CopySet(markers) : new List<Marker>();
         XAxisNomen = (string[])xAxis.Clone();
         XUdef = xUdef;
         YUdef = yUdef;
@@ -81,11 +87,10 @@ public sealed class PlotDocument
     }
 
     /// <summary>Plot window initialisation (captions, titles, initial scaling).</summary>
-    public void Initialize(int plotNo, string groupName, int multiGroupBy, string gmtFormat, string userCaption, string? scriptFile,
-        bool continueTitle, bool continueSubTitle, bool timeSlide, bool ignoreStatic, FixedScaleDefaults fix, DateTime now)
+    public void Initialize(int plotNo, int multiGroupBy, string gmtFormat, string userCaption, string? scriptFile,
+        bool continueTitle, bool continueSubTitle, bool ignoreStatic, FixedScaleDefaults fix, DateTime now)
     {
         PlotNo = plotNo;
-        GroupName = groupName;
         MultiGroupBy = multiGroupBy;
         GmtFormat = gmtFormat;
         PlotDate = ValueFormat.FormatTimeStamp(now);
@@ -104,7 +109,6 @@ public sealed class PlotDocument
             CaptionSource.User => UserCaption,
             _ => ParseStringKeywords("[parameter]", -1, now),
         };
-        TimeSlide = timeSlide;
         IgnoreStatic = ignoreStatic;
 
         if (fix.FixXPersist)
@@ -113,6 +117,7 @@ public sealed class PlotDocument
             XSetMax = fix.XSetMax;
             if (XScale.FixedScale = fix.FixedScaleX) XScale.Graduation = fix.XSetGrad;
             XScale.Persist = true;
+            Config.AutoScaleX = false; // a persistent Fix X range is a manual range
             if (Config.EndToEnd) GetCurveInfo();
         }
         else
@@ -136,8 +141,44 @@ public sealed class PlotDocument
                 }
                 if (YScales[i].FixedScale = fix.FixedScaleY[i]) YScales[i].Graduation = fix.YSetGrad[i];
                 YScales[i].Persist = true;
+                Config.AutoScaleY = false; // a persistent Fix Y range is a manual range
             }
         }
+    }
+
+    /// <summary>True when the X axis is time (not parameter-versus-parameter, not tabular): the autoscale toggles apply.</summary>
+    public bool HasTimeAxis => !Config.PidVsPid && Config.Style != PlotStyle.Tabular;
+
+    /// <summary>Latest time of all curves (−∞ when there is no data).</summary>
+    public double LastTime()
+    {
+        double m = double.NegativeInfinity;
+        foreach (var c in Curves)
+            if (c.Points > 0 && c.Time[c.Points - 1] > m) m = c.Time[c.Points - 1];
+        return m;
+    }
+
+    /// <summary>
+    /// Scaling after new data arrived (real-time refresh): with Auto Scale X the time axis spans all data;
+    /// without it the visible span is kept and slides along with the newest data, but only while the newest
+    /// data was in view (<paramref name="previousLast"/> ≤ right edge), so a view of older data stays put.
+    /// With Auto Scale Y the value axes fit the data inside the visible time range; without it they keep
+    /// their scale. Plots without a time axis keep their scales.
+    /// </summary>
+    public void ScaleAfterNewData(double previousLast)
+    {
+        if (!HasTimeAxis || NCurves == 0) return;
+        if (Config.AutoScaleX) ResetMinMax(1, false);
+        else
+        {
+            double span = XSetMax - XSetMin, last = LastTime();
+            if (span > 0 && last > XSetMax && previousLast <= XSetMax + span * 1e-6)
+            {
+                XSetMax = last;
+                XSetMin = last - span;
+            }
+        }
+        if (Config.AutoScaleY) ResetMinMax(0x0202, false);
     }
 
     /// <summary>Builds the Multi-Y groups.</summary>
@@ -356,20 +397,6 @@ public sealed class PlotDocument
 
                     if (yRangeUpdated != 0 && inSubRange)
                     {
-                        if (Host.ScaleRedlines)
-                        {
-                            foreach (var m in Markers)
-                            {
-                                if (m.Valid && m.Type == MarkerType.Redline)
-                                {
-                                    if (InRange(XSetMin, m.X1, m.X2) || InRange(XSetMax, m.X1, m.X2) || !((m.X2 < XSetMin) || (m.X1 > XSetMax)))
-                                    {
-                                        if (c.VMin > m.Y1 || c.VMin > m.Y2) c.VMin = (m.Y1 < m.Y2 ? m.Y1 : m.Y2) - .01;
-                                        if (c.VMax < m.Y1 || c.VMax < m.Y2) c.VMax = (m.Y1 > m.Y2 ? m.Y1 : m.Y2) + .01;
-                                    }
-                                }
-                            }
-                        }
                         if (yRangeUpdated == 1)
                         {
                             YSetMin = c.VMin;
@@ -392,8 +419,6 @@ public sealed class PlotDocument
         if ((whichAxis & 1) != 0) TabTime = 3e38f;
         SetMultiYGroups();
     }
-
-    private static bool InRange(double a, double b, double c) => a >= b && a <= c;
 
     /// <summary>File index lookup (loop down to 1, default 0).</summary>
     public int FileIndexOf(IDataFile? f)
@@ -627,7 +652,7 @@ public sealed class PlotDocument
                     string fmt = Host.TimePrecision == -1 ? "%f" : Crt.Sprintf("%%.%df", Host.TimePrecision);
                     return Crt.Sprintf(fmt, (double)p.Time[p.Points - 1]);
                 }
-            case 22: return GroupName;
+            case 22: return ""; // [groupname]: plot group names were removed
             default: return "";
         }
     }

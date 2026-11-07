@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Text.Json;
 using Multiplot.Core;
 using Multiplot.Plugins;

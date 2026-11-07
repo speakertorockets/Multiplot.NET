@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using Multiplot.Core;
 
 namespace Multiplot.App;
@@ -21,7 +24,7 @@ public static class MenuDefinitions
     {
         new("&File", new MenuNode[]
         {
-            new("&New", CommandIds.ID_FILE_NEW),
+            new("&Open", CommandIds.ID_FILE_NEW),
             new("&Add", CommandIds.ID_FILE_OPEN),
             new("&Import Tabular", CommandIds.ID_IMPORT_FILE),
             new("Recent &Files", new MenuNode[]
@@ -87,6 +90,8 @@ public static class MenuDefinitions
             new("Filter &Helper", CommandIds.ID_FILTERS),
             new("&Add to Plot", CommandIds.ID_ADDPARAMETER),
             new("Select &WPD", CommandIds.ID_WPDSELECT),
+            MenuNode.Sep,
+            new("Parameter P&roperties", CommandIds.ID_VIEW_INFO),
         }),
         new("&TimeSlice", new MenuNode[]
         {
@@ -101,13 +106,15 @@ public static class MenuDefinitions
             MenuNode.Sep,
             new("&Tabulation", CommandIds.ID_VIEW_ASTABULATION),
             MenuNode.Sep,
-            new("P&arameter Properties", CommandIds.ID_VIEW_INFO),
-            new("F&ile Properties", CommandIds.ID_FILELIST),
-            MenuNode.Sep,
             new("Presentation &Mode", new MenuNode[]
             {
                 new("&Enable", CommandIds.ID_PRESENTATION_MODE),
                 new("&Full Screen", CommandIds.ID_MAX_PRES),
+            }),
+            new("&Appearance", new MenuNode[]
+            {
+                new("&Light", CommandIds.ID_APPEARANCE_LIGHT),
+                new("&Dark", CommandIds.ID_APPEARANCE_DARK),
             }),
         }),
         new("&Axis", new MenuNode[]
@@ -129,13 +136,11 @@ public static class MenuDefinitions
             new("&Log X", CommandIds.ID_AXIS_LOGX),
             new("L&og Y", CommandIds.ID_AXIS_LOGY),
             MenuNode.Sep,
-            new("Auto Y on &Change in X", CommandIds.ID_FIXXAUTOY),
-            new("Auto Scale &REDLINEs", CommandIds.ID_AXIS_AUTOSCALEREDLINES),
+            new("&Auto Scale X (Time Axis)", CommandIds.ID_XAXIS_RESCALE),
+            new("A&uto Scale Y (Value Axis)", CommandIds.ID_YAXIS_RESCALE),
+            new("Auto &Range X/Y Once\tHome Key", CommandIds.ID_XYAXIS_RESCALE),
             new("Fix &X", CommandIds.ID_AXIS_FIXX),
             new("Fix &Y", CommandIds.ID_AXIS_FIXY),
-            new("&Auto Range X Axis ", CommandIds.ID_XAXIS_RESCALE),
-            new("A&uto Range Y Axis", CommandIds.ID_YAXIS_RESCALE),
-            new("Auto Range X/Y Axis\tHome Key", CommandIds.ID_XYAXIS_RESCALE),
             new("Revert Scales\tBackspace", CommandIds.ID_UNDO_ZOOM),
             MenuNode.Sep,
             new("Zoom In X Axis\tInsert", CommandIds.ID_X_ZOOMIN),
@@ -178,6 +183,8 @@ public static class MenuDefinitions
                 new("L&abel Color", CommandIds.ID_LABEL_COLOR),
                 new("&Title Color", CommandIds.ID_TITLE_COLOR),
                 new("&Grid Color", CommandIds.ID_GRID_COLOR),
+                new("&Marker Color", CommandIds.ID_MARKER_COLOR),
+                new("Re&dline Color", CommandIds.ID_REDLINE_COLOR),
                 new("&Background Color", CommandIds.ID_BACKGROUND_COLOR),
                 new("&Restore Colors", CommandIds.ID_RESTORE_COLORS),
                 new("Load Color &Table", CommandIds.ID_LOADCOLORS),
@@ -214,15 +221,8 @@ public static class MenuDefinitions
         {
             new("&Fonts", new MenuNode[]
             {
-                new("&Labels", CommandIds.ID_SETLFONT),
-                new("Titles", CommandIds.ID_SETTFONT),
-                new("&Screen Scaling", new MenuNode[]
-                {
-                    new("&1", CommandIds.ID_EDIT_FONTSZ1),
-                    new("&2", CommandIds.ID_EDIT_FONTSZ2),
-                    new("&3", CommandIds.ID_EDIT_FONTSZ3),
-                    new("&4", CommandIds.ID_EDIT_FONTSZ4),
-                }),
+                new("&Labels...", CommandIds.ID_SETLFONT),
+                new("&Titles...", CommandIds.ID_SETTFONT),
             }),
             new("&X Axis/Legend Labeling", CommandIds.ID_AXIS_XNOMEN),
             new("&Y Axis/Legend Labeling", CommandIds.ID_AXIS_YNOMEN),
@@ -231,29 +231,19 @@ public static class MenuDefinitions
             new("Show Time as &GMT/Clock", CommandIds.ID_CLOCKTIME),
             new("Set G&MT Format", CommandIds.ID_GMTFORMAT),
             new("Scale G&roup ID", CommandIds.ID_STYLE_SCALEGROUP),
-            new("&Version", CommandIds.ID_SHOWVERSION),
-            new("S&cript Name", CommandIds.ID_SHOWSCRIPTNAME),
-            new("&User Name", CommandIds.ID_SHOWUSERNAME),
-            new("Page &Number", CommandIds.ID_SHOWPAGENUMBER),
-            new("&Time Stamp", CommandIds.ID_STYLE_TIMESTAMP),
-            new("Test &Info", CommandIds.ID_STYLE_TESTINFO),
-            new("Set User &Caption Text", CommandIds.ID_SETUSERCAPTION),
-            new("Set Gr&oup Name", CommandIds.ID_GROUPNAME),
+            new("Test &Info (Test Title)", CommandIds.ID_STYLE_TESTINFO),
+            new("Set Plot &Window Title...", CommandIds.ID_SETUSERCAPTION),
         }),
         new("&Markers", new MenuNode[]
         {
-            new("&Draw", new MenuNode[]
-            {
-                new("&Text", CommandIds.ID_DRAW_TEXT),
-                new("&Line", CommandIds.ID_DRAW_LINE),
-                new("&Box", CommandIds.ID_DRAW_BOX),
-                new("&Circle", CommandIds.ID_DRAW_CIRCLE),
-                new("&Event ", CommandIds.ID_DRAW_EVENT),
-                new("&Redline", CommandIds.ID_DRAW_REDLINE),
-                new("&Image", CommandIds.ID_DRAW_IMAGE),
-            }),
-            new("&Edit", CommandIds.ID_EDIT_MARKERS),
+            new("&Add Event Marker...\tCtrl+D", CommandIds.ID_DRAW_EVENT),
+            new("&Edit...", CommandIds.ID_EDIT_MARKERS),
+            new("Add &Redline Marker...", CommandIds.ID_DRAW_REDLINE),
+            new("Edit Redl&ines...", CommandIds.ID_EDIT_REDLINES),
+            new("Show &File Events", CommandIds.ID_SHOW_FILE_EVENTS),
             new("&Topmost", CommandIds.ID_MARKERS_TOPMOST),
+            new("&Marker Color...", CommandIds.ID_MARKER_COLOR),
+            new("Re&dline Color...", CommandIds.ID_REDLINE_COLOR),
             MenuNode.Sep,
             new("&Clear All", CommandIds.ID_CLEAR_MARKERS),
             new("&Save", CommandIds.ID_MARKER_SAVE),
@@ -295,11 +285,6 @@ public static class MenuDefinitions
             new("Show System &Load", CommandIds.ID_SHOW_SYS_LOAD),
             new("&Show Coordinates", CommandIds.ID_SHOWCOORD),
             new("S&how Status Bar", CommandIds.ID_EDIT_STATUSBAR),
-            new("T&oolbars", new MenuNode[]
-            {
-                new("&Show", CommandIds.ID_EDIT_TOOLBAR),
-                new("&Edit", CommandIds.ID_CUSTOMIZE_TOOLBAR),
-            }),
             new("&Maximized Plots", CommandIds.ID_VIEW_MAX),
             new("Load &Symbolic Names", CommandIds.ID_LOADVARS),
             new("&Number of Monitors", CommandIds.ID_MONITORS),
@@ -318,7 +303,6 @@ public static class MenuDefinitions
                 new("&Source", CommandIds.ID_WINDOWCAPTION),
             }),
             MenuNode.Sep,
-            new("Include Toolbars", CommandIds.ID_INCLUDE_TOOLBARS),
             new("Sa&ve Settings", CommandIds.ID_SAVE_SETTINGS),
             new("&Load Settings", CommandIds.ID_LOAD_SETTINGS),
             new("&Import WinPlot Settings...", CommandIds.ID_IMPORT_WINPLOT),
@@ -347,7 +331,6 @@ public static class MenuDefinitions
             {
                 new("&Refresh", CommandIds.ID_REFRESH),
                 new("&Auto Refresh", CommandIds.ID_REFRESH_TIMER),
-                new("&Sliding Scales", CommandIds.ID_TIMESLIDE),
                 new("&Ignore Static Data", CommandIds.ID_IGNORE_STATIC),
                 new("&First Occurence", CommandIds.ID_LOADONCE),
                 new("Auto Ru&n", CommandIds.ID_AUTORUN),
@@ -367,7 +350,6 @@ public static class MenuDefinitions
             new("&Cascade", CommandIds.ID_WINDOW_CASCADE),
             new("Tile &Horizontally", CommandIds.ID_WINDOW_TILE_HORZ),
             new("Tile &Vertically", CommandIds.ID_WINDOW_TILE_VERT),
-            new("Tile By &Group", CommandIds.ID_WINDOW_TILE_GROUP),
             new("&Stack Horizontally", CommandIds.ID_WINDOW_STACK_HORIZONTAL),
             new("&Maximize", CommandIds.ID_WINDOW_MAXIMIZE),
             new("M&inimize", CommandIds.ID_WINDOW_MINIMIZE),
@@ -378,11 +360,7 @@ public static class MenuDefinitions
             new("&Next", CommandIds.ID_NEXT_WINDOW),
             new("&Select", CommandIds.ID_WINDOWLIST),
             MenuNode.Sep,
-            new("&Auto Tab", new MenuNode[]
-            {
-                new("&All Plots", CommandIds.ID_AUTOTAB),
-                new("By &Group", CommandIds.ID_AUTOTAB_GROUP),
-            }),
+            new("&Auto Tab", CommandIds.ID_AUTOTAB),
             MenuNode.Sep,
             new("&Keep on Top", CommandIds.ID_WINDOW_ONTOP),
             MenuNode.Sep,
@@ -391,6 +369,8 @@ public static class MenuDefinitions
         }),
         new("&Help", new MenuNode[]
         {
+            new("&User Guide", CommandIds.ID_HELP_CONTENTS),
+            MenuNode.Sep,
             new("&Window Position", CommandIds.ID_WIN_POS),
             new("&About Multiplot...", CommandIds.ID_APP_ABOUT),
         }),
@@ -405,21 +385,17 @@ public static class MenuDefinitions
             new("&Y Axis Labeling", CommandIds.ID_AXIS_YNOMEN),
             new("&Font", new MenuNode[]
             {
-                new("&Title/Subtitle", CommandIds.ID_SETTFONT),
-                new("&Legend/Scale", CommandIds.ID_SETLFONT),
-                MenuNode.Sep,
-                new("Scale &Down", CommandIds.ID_REDUCE_FONTSZ),
-                new("Scale &Up", CommandIds.ID_ENLARGE_FONTSZ),
+                new("&Title/Subtitle...", CommandIds.ID_SETTFONT),
+                new("&Legend/Scale...", CommandIds.ID_SETLFONT),
             }),
-            new("&Version", CommandIds.ID_SHOWVERSION),
-            new("S&cript Name", CommandIds.ID_SHOWSCRIPTNAME),
-            new("&User Name", CommandIds.ID_SHOWUSERNAME),
             new("&Colors", new MenuNode[]
             {
                 new("&Line Colors", CommandIds.ID_LINE_COLOR),
                 new("&Label Color", CommandIds.ID_LABEL_COLOR),
                 new("&Title Color", CommandIds.ID_TITLE_COLOR),
                 new("&Grid Color", CommandIds.ID_GRID_COLOR),
+                new("&Marker Color", CommandIds.ID_MARKER_COLOR),
+                new("Re&dline Color", CommandIds.ID_REDLINE_COLOR),
                 new("&Background Color", CommandIds.ID_BACKGROUND_COLOR),
             }),
             new("&Legend", new MenuNode[]
@@ -436,8 +412,7 @@ public static class MenuDefinitions
                 new("M&inimize", CommandIds.ID_WINDOW_MINIMIZE),
                 new("&Move", CommandIds.ID_MOVE_WINDOW),
                 new("&Tile", CommandIds.ID_WINDOW_TILE_HORZ),
-                new("Tile By &Group", CommandIds.ID_WINDOW_TILE_GROUP),
-                new("&Set Caption", CommandIds.ID_SETUSERCAPTION),
+                new("&Set Plot Window Title...", CommandIds.ID_SETUSERCAPTION),
                 new("&Close", CommandIds.ID_WINDOW_CLOSE),
             }),
             MenuNode.Sep,
@@ -448,11 +423,8 @@ public static class MenuDefinitions
             new("Set &Sub-Title", CommandIds.ID_AXIS_YTITLE),
             new("&Font", new MenuNode[]
             {
-                new("&Title/Subtitle", CommandIds.ID_SETTFONT),
-                new("&Legend/Scale", CommandIds.ID_SETLFONT),
-                MenuNode.Sep,
-                new("Scale &Down", CommandIds.ID_REDUCE_FONTSZ),
-                new("Scale &Up", CommandIds.ID_ENLARGE_FONTSZ),
+                new("&Title/Subtitle...", CommandIds.ID_SETTFONT),
+                new("&Legend/Scale...", CommandIds.ID_SETLFONT),
             }),
             new("&Multi-Y", CommandIds.ID_AXIS_MULTIY),
             new("Multi-Y Shift &Left", CommandIds.ID_LEGENDSHIFT),
@@ -462,6 +434,8 @@ public static class MenuDefinitions
                 new("&Label Color", CommandIds.ID_LABEL_COLOR),
                 new("&Title Color", CommandIds.ID_TITLE_COLOR),
                 new("&Grid Color", CommandIds.ID_GRID_COLOR),
+                new("&Marker Color", CommandIds.ID_MARKER_COLOR),
+                new("Re&dline Color", CommandIds.ID_REDLINE_COLOR),
                 new("&Background Color", CommandIds.ID_BACKGROUND_COLOR),
             }),
             new("Minimum &Grid Offset", CommandIds.ID_MINGRIDOFFSET),
@@ -472,8 +446,7 @@ public static class MenuDefinitions
                 new("M&inimize", CommandIds.ID_WINDOW_MINIMIZE),
                 new("&Move", CommandIds.ID_MOVE_WINDOW),
                 new("&Tile", CommandIds.ID_WINDOW_TILE_HORZ),
-                new("Tile By &Group", CommandIds.ID_WINDOW_TILE_GROUP),
-                new("&Set Caption", CommandIds.ID_SETUSERCAPTION),
+                new("&Set Plot Window Title...", CommandIds.ID_SETUSERCAPTION),
                 new("&Close", CommandIds.ID_WINDOW_CLOSE),
             }),
             MenuNode.Sep,
@@ -484,27 +457,20 @@ public static class MenuDefinitions
             new("&X Axis Labeling", CommandIds.ID_AXIS_XNOMEN),
             new("&Font", new MenuNode[]
             {
-                new("&Title/Subtitle", CommandIds.ID_SETTFONT),
-                new("&Legend/Scale", CommandIds.ID_SETLFONT),
-                MenuNode.Sep,
-                new("Scale &Down", CommandIds.ID_REDUCE_FONTSZ),
-                new("Scale &Up", CommandIds.ID_ENLARGE_FONTSZ),
+                new("&Title/Subtitle...", CommandIds.ID_SETTFONT),
+                new("&Legend/Scale...", CommandIds.ID_SETLFONT),
             }),
             new("Show Time as &GMT", CommandIds.ID_CLOCKTIME),
             new("GMT/Clock Format", CommandIds.ID_GMTFORMAT),
-            new("&Time Stamp", CommandIds.ID_STYLE_TIMESTAMP),
-            new("Test &Info", CommandIds.ID_STYLE_TESTINFO),
-            new("&Font Scaling", new MenuNode[]
-            {
-                new("&Reduce", CommandIds.ID_REDUCE_FONTSZ),
-                new("&Enlarge", CommandIds.ID_ENLARGE_FONTSZ),
-            }),
+            new("Test &Info (Test Title)", CommandIds.ID_STYLE_TESTINFO),
             new("&Colors", new MenuNode[]
             {
                 new("&Line Colors", CommandIds.ID_LINE_COLOR),
                 new("&Label Color", CommandIds.ID_LABEL_COLOR),
                 new("&Title Color", CommandIds.ID_TITLE_COLOR),
                 new("&Grid Color", CommandIds.ID_GRID_COLOR),
+                new("&Marker Color", CommandIds.ID_MARKER_COLOR),
+                new("Re&dline Color", CommandIds.ID_REDLINE_COLOR),
                 new("&Background Color", CommandIds.ID_BACKGROUND_COLOR),
             }),
             new("Presentation &Mode", CommandIds.ID_PRESENTATION_MODE),
@@ -514,8 +480,7 @@ public static class MenuDefinitions
                 new("M&inimize", CommandIds.ID_WINDOW_MINIMIZE),
                 new("&Move", CommandIds.ID_MOVE_WINDOW),
                 new("&Tile", CommandIds.ID_WINDOW_TILE_HORZ),
-                new("Tile By &Group", CommandIds.ID_WINDOW_TILE_GROUP),
-                new("&Set Caption", CommandIds.ID_SETUSERCAPTION),
+                new("&Set Plot Window Title...", CommandIds.ID_SETUSERCAPTION),
                 new("&Close", CommandIds.ID_WINDOW_CLOSE),
             }),
             MenuNode.Sep,
@@ -536,26 +501,15 @@ public static class MenuDefinitions
             }),
             new("Markers", new MenuNode[]
             {
-                new("&Draw", new MenuNode[]
-                {
-                    new("&Text", CommandIds.ID_DRAW_TEXT),
-                    new("&Line", CommandIds.ID_DRAW_LINE),
-                    new("&Box", CommandIds.ID_DRAW_BOX),
-                    new("&Circle", CommandIds.ID_DRAW_CIRCLE),
-                    new("&Event", CommandIds.ID_DRAW_EVENT),
-                    new("&Redline", CommandIds.ID_DRAW_REDLINE),
-                    new("&Image", CommandIds.ID_DRAW_IMAGE),
-                }),
-                new("&Edit", CommandIds.ID_EDIT_MARKERS),
+                new("&Add Event Marker...", CommandIds.ID_DRAW_EVENT),
+                new("&Edit...", CommandIds.ID_EDIT_MARKERS),
+                new("Add &Redline Marker...", CommandIds.ID_DRAW_REDLINE),
+                new("Edit Redl&ines...", CommandIds.ID_EDIT_REDLINES),
+                new("Show &File Events", CommandIds.ID_SHOW_FILE_EVENTS),
                 new("&Clear All", CommandIds.ID_CLEAR_MARKERS),
                 MenuNode.Sep,
                 new("&Save", CommandIds.ID_MARKER_SAVE),
                 new("&Load", CommandIds.ID_MARKER_LOAD),
-            }),
-            new("&Font Scaling", new MenuNode[]
-            {
-                new("&Reduce", CommandIds.ID_REDUCE_FONTSZ),
-                new("&Enlarge", CommandIds.ID_ENLARGE_FONTSZ),
             }),
             new("&Colors", new MenuNode[]
             {
@@ -563,25 +517,24 @@ public static class MenuDefinitions
                 new("&Label Color", CommandIds.ID_LABEL_COLOR),
                 new("&Title Color", CommandIds.ID_TITLE_COLOR),
                 new("&Grid Color", CommandIds.ID_GRID_COLOR),
+                new("&Marker Color", CommandIds.ID_MARKER_COLOR),
+                new("Re&dline Color", CommandIds.ID_REDLINE_COLOR),
                 new("&Background Color", CommandIds.ID_BACKGROUND_COLOR),
             }),
             new("&End to End", CommandIds.ID_AXIS_ENDTOEND),
             new("Scales", new MenuNode[]
             {
-                new("Auto Range X and Y", CommandIds.ID_XYAXIS_RESCALE),
-                new("Auto Range X", CommandIds.ID_XAXIS_RESCALE),
-                new("Auto Range Y", CommandIds.ID_YAXIS_RESCALE),
+                new("Auto Scale X (Time Axis)", CommandIds.ID_XAXIS_RESCALE),
+                new("Auto Scale Y (Value Axis)", CommandIds.ID_YAXIS_RESCALE),
+                new("Auto Range X/Y Once", CommandIds.ID_XYAXIS_RESCALE),
                 new("Fix &X", CommandIds.ID_AXIS_FIXX),
                 new("Fix &Y", CommandIds.ID_AXIS_FIXY),
                 new("&Revert", CommandIds.ID_UNDO_ZOOM),
             }),
             new("&Font", new MenuNode[]
             {
-                new("&Title/Subtitle", CommandIds.ID_SETTFONT),
-                new("&Legend/Scale", CommandIds.ID_SETLFONT),
-                MenuNode.Sep,
-                new("Scale &Down", CommandIds.ID_REDUCE_FONTSZ),
-                new("Scale &Up", CommandIds.ID_ENLARGE_FONTSZ),
+                new("&Title/Subtitle...", CommandIds.ID_SETTFONT),
+                new("&Legend/Scale...", CommandIds.ID_SETLFONT),
             }),
             MenuNode.Sep,
             new("&Add Parameter", CommandIds.ID_ADDPARAMETER),
@@ -594,8 +547,7 @@ public static class MenuDefinitions
                 new("M&inimize", CommandIds.ID_WINDOW_MINIMIZE),
                 new("&Move", CommandIds.ID_MOVE_WINDOW),
                 new("&Tile", CommandIds.ID_WINDOW_TILE_HORZ),
-                new("Tile By &Group", CommandIds.ID_WINDOW_TILE_GROUP),
-                new("&Set Caption", CommandIds.ID_SETUSERCAPTION),
+                new("&Set Plot Window Title...", CommandIds.ID_SETUSERCAPTION),
                 new("&Close", CommandIds.ID_WINDOW_CLOSE),
             }),
             MenuNode.Sep,
@@ -608,17 +560,9 @@ public static class MenuDefinitions
             new("&Show Symbols", CommandIds.ID_STYLE_SYMBOLS),
             new("Markers", new MenuNode[]
             {
-                new("&Draw", new MenuNode[]
-                {
-                    new("&Text", CommandIds.ID_DRAW_TEXT),
-                    new("&Line", CommandIds.ID_DRAW_LINE),
-                    new("&Box", CommandIds.ID_DRAW_BOX),
-                    new("&Circle", CommandIds.ID_DRAW_CIRCLE),
-                    new("&Event", CommandIds.ID_DRAW_EVENT),
-                    new("&Redline", CommandIds.ID_DRAW_REDLINE),
-                    new("&Image", CommandIds.ID_DRAW_IMAGE),
-                }),
-                new("&Edit", CommandIds.ID_EDIT_MARKERS),
+                new("&Add Event Marker...", CommandIds.ID_DRAW_EVENT),
+                new("&Edit...", CommandIds.ID_EDIT_MARKERS),
+                new("Show &File Events", CommandIds.ID_SHOW_FILE_EVENTS),
                 new("&Clear All", CommandIds.ID_CLEAR_MARKERS),
                 MenuNode.Sep,
                 new("&Save", CommandIds.ID_MARKER_SAVE),
@@ -631,24 +575,23 @@ public static class MenuDefinitions
                 new("&Label Color", CommandIds.ID_LABEL_COLOR),
                 new("&Title Color", CommandIds.ID_TITLE_COLOR),
                 new("&Grid Color", CommandIds.ID_GRID_COLOR),
+                new("&Marker Color", CommandIds.ID_MARKER_COLOR),
+                new("Re&dline Color", CommandIds.ID_REDLINE_COLOR),
                 new("&Background Color", CommandIds.ID_BACKGROUND_COLOR),
             }),
             new("Scales", new MenuNode[]
             {
-                new("Auto Range X and Y", CommandIds.ID_XYAXIS_RESCALE),
-                new("Auto Range X", CommandIds.ID_XAXIS_RESCALE),
-                new("Auto Range Y", CommandIds.ID_YAXIS_RESCALE),
+                new("Auto Scale X (Time Axis)", CommandIds.ID_XAXIS_RESCALE),
+                new("Auto Scale Y (Value Axis)", CommandIds.ID_YAXIS_RESCALE),
+                new("Auto Range X/Y Once", CommandIds.ID_XYAXIS_RESCALE),
                 new("Fix &X", CommandIds.ID_AXIS_FIXX),
                 new("Fix &Y", CommandIds.ID_AXIS_FIXY),
                 new("&Revert", CommandIds.ID_UNDO_ZOOM),
             }),
             new("&Font", new MenuNode[]
             {
-                new("&Title/Subtitle", CommandIds.ID_SETTFONT),
-                new("&Legend/Scale", CommandIds.ID_SETLFONT),
-                MenuNode.Sep,
-                new("Scale &Down", CommandIds.ID_REDUCE_FONTSZ),
-                new("Scale &Up", CommandIds.ID_ENLARGE_FONTSZ),
+                new("&Title/Subtitle...", CommandIds.ID_SETTFONT),
+                new("&Legend/Scale...", CommandIds.ID_SETLFONT),
             }),
             MenuNode.Sep,
             new("&Add Parameter", CommandIds.ID_ADDPARAMETER),
@@ -661,8 +604,7 @@ public static class MenuDefinitions
                 new("M&inimize", CommandIds.ID_WINDOW_MINIMIZE),
                 new("&Move", CommandIds.ID_MOVE_WINDOW),
                 new("&Tile", CommandIds.ID_WINDOW_TILE_HORZ),
-                new("Tile By &Group", CommandIds.ID_WINDOW_TILE_GROUP),
-                new("&Set Caption", CommandIds.ID_SETUSERCAPTION),
+                new("&Set Plot Window Title...", CommandIds.ID_SETUSERCAPTION),
                 new("&Close", CommandIds.ID_WINDOW_CLOSE),
             }),
             MenuNode.Sep,
@@ -673,36 +615,14 @@ public static class MenuDefinitions
             new("&Nomenclature", CommandIds.ID_AXIS_YNOMEN),
             new("&Font", new MenuNode[]
             {
-                new("&Title/Subtitle", CommandIds.ID_SETTFONT),
-                new("&Legend/Scale", CommandIds.ID_SETLFONT),
-                MenuNode.Sep,
-                new("Scale &Down", CommandIds.ID_REDUCE_FONTSZ),
-                new("Scale &Up", CommandIds.ID_ENLARGE_FONTSZ),
+                new("&Title/Subtitle...", CommandIds.ID_SETTFONT),
+                new("&Legend/Scale...", CommandIds.ID_SETLFONT),
             }),
             new("Text in &Curve Color", CommandIds.ID_USECURVECOLOR),
             new("Set Background &Bitmap", CommandIds.ID_TAB_BACKGROUND),
             new("&Decimal Places", CommandIds.ID_EXTPRECISION),
             new("&Default Time Stamp", CommandIds.ID_DEF_TAB_TIME),
             new("Show Time as &GMT", CommandIds.ID_CLOCKTIME),
-            MenuNode.Sep,
-            new("Markers", new MenuNode[]
-            {
-                new("&Draw", new MenuNode[]
-                {
-                    new("&Text", CommandIds.ID_DRAW_TEXT),
-                    new("&Line", CommandIds.ID_DRAW_LINE),
-                    new("&Box", CommandIds.ID_DRAW_BOX),
-                    new("&Circle", CommandIds.ID_DRAW_CIRCLE),
-                    new("&Event", CommandIds.ID_DRAW_EVENT),
-                    new("&Redline", CommandIds.ID_DRAW_REDLINE),
-                    new("&Image", CommandIds.ID_DRAW_IMAGE),
-                }),
-                new("&Edit", CommandIds.ID_EDIT_MARKERS),
-                new("&Clear All", CommandIds.ID_CLEAR_MARKERS),
-                MenuNode.Sep,
-                new("&Save", CommandIds.ID_MARKER_SAVE),
-                new("&Load", CommandIds.ID_MARKER_LOAD),
-            }),
             MenuNode.Sep,
             new("Presentation &Mode", CommandIds.ID_PRESENTATION_MODE),
             new("&Window", new MenuNode[]
@@ -711,8 +631,7 @@ public static class MenuDefinitions
                 new("M&inimize", CommandIds.ID_WINDOW_MINIMIZE),
                 new("&Move", CommandIds.ID_MOVE_WINDOW),
                 new("&Tile", CommandIds.ID_WINDOW_TILE_HORZ),
-                new("Tile By &Group", CommandIds.ID_WINDOW_TILE_GROUP),
-                new("&Set Caption", CommandIds.ID_SETUSERCAPTION),
+                new("&Set Plot Window Title...", CommandIds.ID_SETUSERCAPTION),
                 new("&Close", CommandIds.ID_WINDOW_CLOSE),
             }),
             MenuNode.Sep,

@@ -51,7 +51,7 @@ analysing and plotting engineering test data. The document set is self-contained
 | EXP | Expression syntax and evaluation | 06 |
 | FN | Expression functions | 06 |
 | LOAD | Data loading, groups, time references, filters | 07 |
-| UI | Main window, menus, toolbars, dialogs | 08 |
+| UI | Main window, menus, dialogs | 08 |
 | PLT | Plot window rendering, scaling, interaction | 08 |
 | MRK | Markers | 08 |
 | TAB | Tabular (WPD) displays | 08 |
@@ -91,9 +91,8 @@ Some large tables are normative **by reference** rather than copied into this sp
 
 | Artefact | Used for |
 |---|---|
-| `src/Multiplot.Core/CommandIds.cs` | command ids ↔ commands (toolbars, INI `ButtonSetNN`, `CaptionSource`, `GroupBy`, `MULTIY GROUPBY_n`) — FR-CFG-040 |
+| `src/Multiplot.Core/CommandIds.cs` | command ids ↔ commands (`CaptionSource`, `GroupBy`, `MULTIY GROUPBY_n`) — FR-CFG-040 |
 | `src/Multiplot.App/MenuDefinitions.cs`, `src/Multiplot.App/CommandPrompts.cs` | menu captions, status-bar prompts and tooltips — FR-UI-002 |
-| `src/Multiplot.Core/ToolbarDefaults.cs` | default button sets and band names, toolbar image strip order — FR-UI-004 |
 | `src/Multiplot.Plugins.Abstractions/SunError.cs` | error enum values and message strings — FR-SUN-090 |
 | `src/Multiplot.Sun/Lzh.cs`, `LzhEncoder.cs` | LZH codec — FR-LZH-001..006 |
 | `src/Multiplot.Core/ParameterOps.cs` | `average`, `quantize`, interpolation, full-rate rebuild — FR-FN-030, FR-SUN-076 |

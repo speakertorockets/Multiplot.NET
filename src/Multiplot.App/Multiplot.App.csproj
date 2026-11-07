@@ -2,6 +2,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
+    <!-- Windows Forms only for the Windows font dialog (FontDialog); its namespaces are not imported globally -->
+    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>Multiplot.App</RootNamespace>
     <AssemblyName>Multiplot</AssemblyName>
     <ApplicationIcon>Resources\Multiplot.ico</ApplicationIcon>
@@ -10,6 +12,10 @@
     <Product>Multiplot.NET</Product>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Multiplot.Application\Multiplot.Application.csproj" />
     <!-- bundled plugin: built first, deployed to plugins\Multiplot.Parquet\ (not referenced) -->
@@ -31,9 +37,10 @@
     <Copy SourceFiles="@(ParquetPluginPublishFiles)" DestinationFiles="@(ParquetPluginPublishFiles->'$(PublishDir)plugins\Multiplot.Parquet\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
   <ItemGroup>
-    <Resource Include="Resources\*.bmp" />
     <Resource Include="Resources\Multiplot.ico" />
     <None Update="Multiplot.ini" CopyToOutputDirectory="PreserveNewest" />
     <None Update="ColorPrinter.wps" CopyToOutputDirectory="PreserveNewest" />
+    <!-- user guide, opened in the browser by Help > User Guide -->
+    <None Include="..\..\docs\user-guide\**\*" Link="docs\user-guide\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

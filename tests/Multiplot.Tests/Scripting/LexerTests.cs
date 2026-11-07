@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Text;
 using Multiplot.Scripting;
 
@@ -33,7 +36,7 @@ public class LexerTests
     [Fact]
     public void Keywords_TableMatchesEnum()
     {
-        Assert.Equal((int)Cmd.SharedTime + 1, ScriptKeywords.Words.Length);
+        Assert.Equal((int)Cmd.Appearance + 1, ScriptKeywords.Words.Length);
         Assert.Equal("64bittime", ScriptKeywords.Words[(int)Cmd.Bit64Time]);
         Assert.Equal("savesun", ScriptKeywords.Words[(int)Cmd.SaveSun]);
     }

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -81,7 +84,7 @@ public sealed class WpfDialogs : IDialogs
     public bool Import(AsciiImporter importer) => !_hidden && ImportWindow.Ask(Owner, importer);
 
     /// <inheritdoc/>
-    public int? ChooseColor(int initialColorRef, int[] customColors) => _hidden ? null : ColorDialog.Ask(Owner, initialColorRef, customColors);
+    public int? ChooseColor(int initialColorRef, int[] customColors) => _hidden ? null : ColorWindow.Ask(Owner, initialColorRef, customColors);
 
     /// <inheritdoc/>
     public bool Show(Session s, DialogKind kind)
@@ -94,8 +97,10 @@ public sealed class WpfDialogs : IDialogs
             case DialogKind.DataPick: return DataPickWindow.Show(o, s);
             case DialogKind.XNomenclature: return NomenWindow.Show(o, s, false);
             case DialogKind.YNomenclature: return NomenWindow.Show(o, s, true);
-            case DialogKind.MarkerEdit: return MarkerWindow.Show(o, s, null);
-            case DialogKind.MarkerDraw: return MarkerWindow.Show(o, s, s.PendingMarkerType);
+            case DialogKind.MarkerEdit: return MarkerWindow.Show(o, s, false);
+            case DialogKind.MarkerDraw: return MarkerWindow.Show(o, s, true);
+            case DialogKind.RedlineEdit: return RedlineWindow.Show(o, s, false);
+            case DialogKind.RedlineDraw: return RedlineWindow.Show(o, s, true);
             case DialogKind.Favorites: return FavoritesWindow.Show(o, s);
             case DialogKind.FilterHelper: return FilterWindow.Show(o, s);
             case DialogKind.FileProperties: return TextReportWindow.FileProperties(o, s);
@@ -110,7 +115,6 @@ public sealed class WpfDialogs : IDialogs
             case DialogKind.TimeAlign: return SimpleForms.TimeAlign(o, s);
             case DialogKind.LabelFont: return FontWindow.Show(o, s, false);
             case DialogKind.TitleFont: return FontWindow.Show(o, s, true);
-            case DialogKind.ToolbarEdit: return SimpleForms.ToolbarEdit(o, s, _main);
             case DialogKind.UserButtonAssign: return SimpleForms.UserButtons(o, s, _main);
             case DialogKind.WindowPosition:
                 _main.WindowState = WindowState.Normal;
@@ -167,80 +171,79 @@ public sealed class WpfDialogs : IDialogs
     }
 }
 
-/// <summary>Colour chooser.</summary>
-public sealed class ColorDialog : DialogBase
+/// <summary>Owner handle for the Windows common dialogs (colour and font).</summary>
+internal sealed class Win32Owner(IntPtr handle) : System.Windows.Forms.IWin32Window
 {
-    /// <summary>Shows the dialog; null when cancelled.</summary>
-    public static int? Ask(Window? owner, int initial, int[] table)
-    {
-        var d = new ColorDialog(owner, initial, table);
-        return d.ShowDialog() == true ? d._value : null;
-    }
+    public IntPtr Handle { get; } = handle;
 
-    private int _value;
-
-    private ColorDialog(Window? owner, int initial, int[] table) : base(owner, "Color", 420)
+    /// <summary>Shows a Windows Forms common dialog owned by <paramref name="owner"/>.</summary>
+    public static System.Windows.Forms.DialogResult Show(System.Windows.Forms.CommonDialog dlg, Window? owner)
     {
-        _value = initial;
-        var preview = new Border { Height = 30, BorderBrush = Brushes.Black, BorderThickness = new Thickness(1) };
-        var r = Text((initial & 0xff).ToString(System.Globalization.CultureInfo.InvariantCulture));
-        var g = Text(((initial >> 8) & 0xff).ToString(System.Globalization.CultureInfo.InvariantCulture));
-        var b = Text(((initial >> 16) & 0xff).ToString(System.Globalization.CultureInfo.InvariantCulture));
-        void Update()
-        {
-            _value = (Math.Clamp(Crt.Atoi(r.Text), 0, 255)) | (Math.Clamp(Crt.Atoi(g.Text), 0, 255) << 8) | (Math.Clamp(Crt.Atoi(b.Text), 0, 255) << 16);
-            preview.Background = new SolidColorBrush(Color.FromRgb((byte)(_value & 0xff), (byte)((_value >> 8) & 0xff), (byte)((_value >> 16) & 0xff)));
-        }
-        var palette = new WrapPanel();
-        int[] basic = { 0x000000, 0x000080, 0x008000, 0x008080, 0x800000, 0x800080, 0x808000, 0x808080, 0xc0c0c0, 0x0000ff, 0x00ff00, 0x00ffff, 0xff0000, 0xff00ff, 0xffff00, 0xffffff };
-        foreach (int c in basic.Concat(table.Take(25)).Distinct())
-        {
-            int cc = c;
-            var sw = new Button { Width = 22, Height = 22, Margin = new Thickness(1), Background = new SolidColorBrush(Color.FromRgb((byte)(c & 0xff), (byte)((c >> 8) & 0xff), (byte)((c >> 16) & 0xff))) };
-            sw.Click += (_, _) => { r.Text = (cc & 0xff).ToString(System.Globalization.CultureInfo.InvariantCulture); g.Text = ((cc >> 8) & 0xff).ToString(System.Globalization.CultureInfo.InvariantCulture); b.Text = ((cc >> 16) & 0xff).ToString(System.Globalization.CultureInfo.InvariantCulture); Update(); };
-            palette.Children.Add(sw);
-        }
-        Row("", palette);
-        Row("Red:", r).TextChanged += (_, _) => Update();
-        Row("Green:", g).TextChanged += (_, _) => Update();
-        Row("Blue:", b).TextChanged += (_, _) => Update();
-        Row("", preview);
-        Update();
-        OkCancel();
+        var hwnd = owner != null ? new System.Windows.Interop.WindowInteropHelper(owner).Handle : IntPtr.Zero;
+        return hwnd != IntPtr.Zero ? dlg.ShowDialog(new Win32Owner(hwnd)) : dlg.ShowDialog();
     }
 }
 
-/// <summary>Font dialog (labels / titles, FR-UI-029).</summary>
-public sealed class FontWindow : DialogBase
+/// <summary>
+/// Colour selection (FR-UI-028): the standard Windows colour dialog, opened with the custom colour editor.
+/// Its custom colours are the first 16 curve colours. Colours are COLORREF (0x00BBGGRR).
+/// </summary>
+public static class ColorWindow
 {
-    /// <summary>Shows the dialog and applies the font.</summary>
+    /// <summary>Shows the dialog; the chosen colour, or null when cancelled.</summary>
+    public static int? Ask(Window? owner, int initial, int[] table)
+    {
+        using var dlg = new System.Windows.Forms.ColorDialog
+        {
+            FullOpen = true,
+            AnyColor = true,
+            SolidColorOnly = true,
+            Color = System.Drawing.ColorTranslator.FromWin32(initial & 0xFFFFFF),
+            CustomColors = table.Take(16).Select(c => c & 0xFFFFFF).ToArray(),
+        };
+        if (Win32Owner.Show(dlg, owner) != System.Windows.Forms.DialogResult.OK) return null;
+        return System.Drawing.ColorTranslator.ToWin32(dlg.Color) & 0xFFFFFF;
+    }
+}
+
+/// <summary>
+/// Label and title fonts (FR-UI-029): the standard Windows font dialog (font, style and size). The chosen
+/// font applies to the active plot (all plots with Apply Changes Globally) and to new plots.
+/// </summary>
+public static class FontWindow
+{
+    /// <summary>Face shown in the dialog: fonts that are not installed (such as "Multiplot") show as Arial.</summary>
+    private static string InstalledFace(string face) =>
+        Fonts.SystemFontFamilies.Any(f => string.Equals(f.Source, face, StringComparison.OrdinalIgnoreCase)) ? face : "Arial";
+
+    /// <summary>Shows the Windows font dialog for the title or label font and applies the choice.</summary>
     public static bool Show(Window? owner, Session s, bool title)
     {
-        var plot = s.ActivePlot;
-        var lf = (plot?.Config ?? s.PlotConfig) is var c ? (title ? c.TitleFont : c.LabelFont) : null!;
-        var d = new FontWindow(owner, title ? "Title Font" : "Label Font", lf, s.Settings.ApplyAll);
-        if (d.ShowDialog() != true) return false;
-        var nf = lf.Clone();
-        nf.FaceName = d._face.Text;
-        nf.Weight = d._bold.IsChecked == true ? 700 : 400;
-        nf.Italic = (byte)(d._italic.IsChecked == true ? 1 : 0);
-        bool all = d._all.IsChecked == true;
-        void Apply(PlotConfig cfg) { if (title) cfg.TitleFont = nf.Clone(); else cfg.LabelFont = nf.Clone(); }
-        Apply(s.PlotConfig);
-        foreach (var p in s.TargetPlots(all)) { Apply(p.Config); s.Invalidate(p); }
+        var c = s.ActivePlot?.Config ?? s.PlotConfig;
+        var lf = title ? c.TitleFont : c.LabelFont;
+        int tenths = title ? c.TitlePointSize : c.LabelPointSize;
+        var style = System.Drawing.FontStyle.Regular;
+        if (lf.Weight >= 600 || lf.Weight == 0) style |= System.Drawing.FontStyle.Bold;
+        if (lf.Italic != 0) style |= System.Drawing.FontStyle.Italic;
+        float pt = Math.Clamp((tenths > 0 ? tenths : 100) / 10f, 4f, 200f);
+
+        using var initial = new System.Drawing.Font(InstalledFace(lf.FaceName), pt, style, System.Drawing.GraphicsUnit.Point);
+        using var dlg = new System.Windows.Forms.FontDialog
+        {
+            Font = initial,
+            ShowEffects = false,
+            ShowColor = false,
+            ShowApply = false,
+            AllowVerticalFonts = false,
+            AllowScriptChange = false,
+            FontMustExist = true,
+            MinSize = 4,
+            MaxSize = 200,
+        };
+        if (Win32Owner.Show(dlg, owner) != System.Windows.Forms.DialogResult.OK) return false;
+        var f = dlg.Font;
+        s.SetPlotFont(title, f.FontFamily.Name, (int)Math.Round(f.SizeInPoints * 10), f.Bold, f.Italic, s.Settings.ApplyAll);
         return true;
-    }
-
-    private readonly ComboBox _face;
-    private readonly CheckBox _bold, _italic, _all;
-
-    private FontWindow(Window? owner, string title, LogFont lf, bool applyAll) : base(owner, title, 380)
-    {
-        _face = Row("Face:", Combo(lf.FaceName, Fonts.SystemFontFamilies.Select(f => f.Source).OrderBy(x => x)));
-        _bold = Row("", Check("Bold", lf.Weight >= 600 || lf.Weight == 0));
-        _italic = Row("", Check("Italic", lf.Italic != 0));
-        _all = Row("", Check("Apply to all plots", applyAll));
-        OkCancel();
     }
 }
 
@@ -458,81 +461,252 @@ public sealed class NomenWindow : DialogBase
     }
 }
 
-/// <summary>Marker Edit dialog (FR-MRK-005).</summary>
+/// <summary>
+/// Event marker dialogs (FR-MRK-005): <i>Add Event Marker</i> (timestamp, text, top/bottom) and the
+/// <i>Edit</i> list editor for the markers of the active plot. Changes apply to the active plot, or to all
+/// plots with Apply Changes Globally, and to the master set.
+/// </summary>
 public sealed class MarkerWindow : DialogBase
 {
-    /// <summary>Shows the editor; <paramref name="drawType"/> pre-selects a new marker of that type (Markers → Draw).</summary>
-    public static bool Show(Window? owner, Session s, int? drawType)
+    private const string TimeHelp = "GMT (ddd/hh:mm:ss.mmm or hh:mm:ss), seconds on the time axis, or an [events] name; optional +/-seconds offset.";
+
+    /// <summary>Shows the add dialog (<paramref name="addOnly"/>) or the list editor.</summary>
+    public static bool Show(Window? owner, Session s, bool addOnly)
     {
-        var plot = s.ActivePlot;
-        var set = plot?.Markers ?? s.MasterMarkers;
-        int no = 0;
-        if (drawType != null)
-        {
-            for (int i = 0; i < Marker.MaxMarkers; i++) if (!set[i].Valid) { no = i; break; }
-        }
-        var d = new MarkerWindow(owner, s, plot, set, no, drawType);
+        var d = new MarkerWindow(owner, s, addOnly);
         return d.ShowDialog() == true;
     }
 
-    private MarkerWindow(Window? owner, Session s, PlotDocument? plot, Marker[] set, int startNo, int? drawType) : base(owner, "Marker Edit", 440)
+    private static IEnumerable<string> TimeChoices(Session s) =>
+        new[] { "START" }.Concat(s.Files.SelectMany(f => f.Events.Select(e => e.Name)).Where(n => !Marker.IsReservedEvent(n)))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+    private static string Display(Marker m) => m.Time + "    " + m.Text + (m.Bottom ? "    (bottom)" : "");
+
+    /// <summary>
+    /// Checks a marker before it is accepted: syntax, non-empty text, and (when data files are open and
+    /// no real-time data is loaded) that the timestamp resolves; an unresolved timestamp may still be kept.
+    /// </summary>
+    private static bool Validate(Session s, string time, string text)
     {
-        var num = Row("Marker number (1-1000):", Text((startNo + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)));
-        var type = Row("Type:", Combo("", MarkerType.Names, false));
-        var valid = Row("", Check("Active", true));
-        var x1 = Row("X1:", Text("0"));
-        var y1 = Row("Y1:", Text("0"));
-        var x2 = Row("X2:", Text("0"));
-        var y2 = Row("Y2:", Text("0"));
-        var pct = Row("", Check("Coordinates as percent of plot area", false));
-        var colors = new List<string>(Enumerable.Range(1, ColorIndex.MaxColors).Select(i => "Line " + i)) { "Grid", "Label", "None (background)" };
-        var color = Row("Color:", Combo("", colors, false));
-        var label = Row("Label:", Combo("", new[] { "MAX", "MIN" }.Concat(s.Files.SelectMany(f => f.Events.Select(e => e.Name))).Distinct()));
-        var all = Row("", Check("Apply to all plots", s.Settings.ApplyAll));
-        void Load(int n)
+        if (!Marker.IsValidTime(time)) { s.Message("Enter a timestamp:\n" + TimeHelp); return false; }
+        if (text.Trim().Length == 0) { s.Message("Enter the marker text."); return false; }
+        if (s.Files.Count > 0 && !s.RtLoaded)
         {
-            var m = set[n];
-            type.SelectedIndex = Math.Clamp(m.Valid ? m.Type : drawType ?? 0, 0, MarkerType.Max - 1);
-            valid.IsChecked = m.Valid || drawType != null;
-            bool p = m.Label.Contains("\\%");
-            pct.IsChecked = p;
-            if (!m.Valid && drawType != null && plot != null && plot.Config.Style != PlotStyle.Tabular)
-            {
-                double xs = plot.XScale.RMin, xe = plot.XScale.RMax, ys = plot.YScales.Count > 0 ? plot.YScales[0].RMin : 0, ye = plot.YScales.Count > 0 ? plot.YScales[0].RMax : 1;
-                x1.Text = Crt.Sprintf("%g", xs + (xe - xs) * .25); x2.Text = Crt.Sprintf("%g", xs + (xe - xs) * .75);
-                y1.Text = Crt.Sprintf("%g", ys + (ye - ys) * .25); y2.Text = Crt.Sprintf("%g", ys + (ye - ys) * .75);
-            }
-            else
-            {
-                x1.Text = Crt.Sprintf("%g", (double)m.X1); y1.Text = Crt.Sprintf("%g", (double)m.Y1);
-                x2.Text = Crt.Sprintf("%g", (double)m.X2); y2.Text = Crt.Sprintf("%g", (double)m.Y2);
-            }
-            color.SelectedIndex = Math.Clamp(m.Color, 0, colors.Count - 1);
-            label.Text = m.Label.Replace("\\%", "");
+            var plot = s.ActivePlot;
+            var groups = plot != null ? plot.Curves.Select(c => c.GroupNo).Distinct().ToList() : new List<int> { 0 };
+            var r = EventMarkers.Resolve(new[] { new Marker(time, text) }, false, s.Files, s.Groups, groups, plot?.TReference ?? "NONE");
+            if (r.Count == 0 &&
+                s.Message("Timestamp '" + time + "' was not found in the open files.\nKeep the marker anyway?", PromptButtons.YesNo, PromptIcon.Question, PromptResult.No) != PromptResult.Yes)
+                return false;
         }
-        int current = Math.Clamp(startNo, 0, Marker.MaxMarkers - 1);
-        Load(current);
-        num.LostFocus += (_, _) =>
+        return true;
+    }
+
+    private MarkerWindow(Window? owner, Session s, bool addOnly) : base(owner, addOnly ? "Add Event Marker" : "Event Markers", 520)
+    {
+        var plot = s.ActivePlot;
+        string scope = s.Settings.ApplyAll ? "all plots (Apply Changes Globally is on)" : plot != null ? "the active plot" : "new plots (no plot is open)";
+        ListBox? list = null;
+        var work = Marker.CopySet(plot?.Markers ?? s.MasterMarkers);
+        if (!addOnly)
         {
-            int n = Crt.Atoi(num.Text) - 1;
-            if (n >= 0 && n < Marker.MaxMarkers && n != current) { current = n; Load(n); }
+            list = StretchRow(new ListBox { FontFamily = new FontFamily("Consolas") }, 160);
+            foreach (var m in work) list.Items.Add(Display(m));
+        }
+        var time = Row("Timestamp:", Combo("", TimeChoices(s)));
+        time.ToolTip = TimeHelp;
+        var text = Row("Text:", Text(""));
+        var pos = Row("Text position:", Combo("Top", new[] { "Top", "Bottom" }, false));
+        Row("", new TextBlock { Text = "Applies to " + scope + ".", TextWrapping = TextWrapping.Wrap, Opacity = 0.75 });
+
+        if (addOnly && plot != null && plot.Config.Style != PlotStyle.Tabular && !plot.Config.PidVsPid && !plot.Config.LogX && !plot.Config.EndToEnd)
+            time.Text = Crt.Sprintf("%.3f", (plot.XScale.RMin + plot.XScale.RMax) / 2.0);
+
+        if (addOnly)
+        {
+            OkCancel(() =>
+            {
+                if (!Validate(s, time.Text, text.Text)) return false;
+                var m = new Marker(time.Text, text.Text, pos.SelectedIndex == 1);
+                s.AddMarker(m);
+                s.Record(Session.MarkerCommand(m));
+                return true;
+            });
+            return;
+        }
+
+        list!.SelectionChanged += (_, _) =>
+        {
+            int i = list.SelectedIndex;
+            if (i < 0 || i >= work.Count) return;
+            time.Text = work[i].Time;
+            text.Text = work[i].Text;
+            pos.SelectedIndex = work[i].Bottom ? 1 : 0;
         };
+        var edit = new StackPanel { Orientation = Orientation.Horizontal };
+        Button B(string caption, Action a)
+        {
+            var b = new Button { Content = caption, MinWidth = 80, Margin = new Thickness(0, 0, 6, 0), Padding = new Thickness(8, 2, 8, 2) };
+            b.Click += (_, _) => a();
+            edit.Children.Add(b);
+            return b;
+        }
+        B("_Add", () =>
+        {
+            if (!Validate(s, time.Text, text.Text)) return;
+            var m = new Marker(time.Text, text.Text, pos.SelectedIndex == 1);
+            if (work.Count >= Marker.MaxMarkers) { s.Message("At most " + Marker.MaxMarkers + " markers per plot."); return; }
+            if (work.Any(x => x.SameAs(m))) return;
+            work.Add(m);
+            list.Items.Add(Display(m));
+            list.SelectedIndex = work.Count - 1;
+        });
+        B("_Update", () =>
+        {
+            int i = list.SelectedIndex;
+            if (i < 0 || i >= work.Count || !Validate(s, time.Text, text.Text)) return;
+            work[i] = new Marker(time.Text, text.Text, pos.SelectedIndex == 1);
+            list.Items[i] = Display(work[i]);
+            list.SelectedIndex = i;
+        });
+        B("_Delete", () =>
+        {
+            int i = list.SelectedIndex;
+            if (i < 0 || i >= work.Count) return;
+            work.RemoveAt(i);
+            list.Items.RemoveAt(i);
+            if (work.Count > 0) list.SelectedIndex = Math.Min(i, work.Count - 1);
+        });
+        B("Delete A_ll", () => { work.Clear(); list.Items.Clear(); });
+        Row("", edit);
         OkCancel(() =>
         {
-            int n = Math.Clamp(Crt.Atoi(num.Text) - 1, 0, Marker.MaxMarkers - 1);
-            var m = new Marker();
-            string lbl = label.Text + (pct.IsChecked == true ? "\\%" : "");
-            m.Set((float)Crt.Atof(x1.Text), (float)Crt.Atof(y1.Text), (float)Crt.Atof(x2.Text), (float)Crt.Atof(y2.Text), color.SelectedIndex, type.SelectedIndex, lbl);
-            bool global = all.IsChecked == true;
-            if (valid.IsChecked != true)
-            {
-                m.UnSet();
-                s.Record(Crt.Sprintf("clear marker %d", n + 1));
-            }
-            else s.Record(Session.MarkerCommand(n, m, global));
-            s.SetMarker(n, m, global);
+            s.ReplaceMarkers(work);
             return true;
         });
+        Height = 520;
+    }
+}
+
+/// <summary>
+/// Redline marker dialogs (FR-MRK-011): <i>Add Redline Marker</i> (value, text, left/right) and the
+/// <i>Edit Redlines</i> list editor for the redlines of the active plot. Changes apply to the active plot, or
+/// to all plots with Apply Changes Globally, and to the master set.
+/// </summary>
+public sealed class RedlineWindow : DialogBase
+{
+    private const string ValueHelp = "A number on the value (Y) axis, for example 450 or -1.5e3. In multiple-Y mode it is measured on the selected axis.";
+
+    /// <summary>Shows the add dialog (<paramref name="addOnly"/>) or the list editor.</summary>
+    public static bool Show(Window? owner, Session s, bool addOnly)
+    {
+        var d = new RedlineWindow(owner, s, addOnly);
+        return d.ShowDialog() == true;
+    }
+
+    private static string Display(RedlineMarker r) => r.ValueText + "    " + r.Text + (r.Right ? "    (right)" : "");
+
+    /// <summary>Checks a redline before it is accepted: numeric value and non-empty text.</summary>
+    private static RedlineMarker? Build(Session s, string value, string text, bool right)
+    {
+        if (!RedlineMarker.TryParseValue(value, out double v)) { s.Message("Enter the redline value:\n" + ValueHelp); return null; }
+        if (text.Trim().Length == 0) { s.Message("Enter the redline text."); return null; }
+        if (text.Contains('\n') || text.Contains('\r')) { s.Message("The redline text must be a single line."); return null; }
+        return new RedlineMarker(v, text, right);
+    }
+
+    private RedlineWindow(Window? owner, Session s, bool addOnly) : base(owner, addOnly ? "Add Redline Marker" : "Redline Markers", 520)
+    {
+        var plot = s.ActivePlot;
+        string scope = s.Settings.ApplyAll ? "all plots (Apply Changes Globally is on)" : plot != null ? "the active plot" : "new plots (no plot is open)";
+        ListBox? list = null;
+        var work = RedlineMarker.CopySet(plot?.Redlines ?? s.MasterRedlines);
+        if (!addOnly)
+        {
+            list = StretchRow(new ListBox { FontFamily = new FontFamily("Consolas") }, 160);
+            foreach (var r in work) list.Items.Add(Display(r));
+        }
+        var value = Row("Value:", Text(""));
+        value.ToolTip = ValueHelp;
+        var text = Row("Text:", Text(""));
+        var pos = Row("Text position:", Combo("Left", new[] { "Left", "Right" }, false));
+        Row("", new TextBlock { Text = "Applies to " + scope + ".", TextWrapping = TextWrapping.Wrap, Opacity = 0.75 });
+
+        if (addOnly && plot != null && plot.YScales.Count > 0 && plot.Config.Style != PlotStyle.Tabular && plot.Config.Style != PlotStyle.Logic)
+        {
+            // start with the centre of the visible range of the selected value axis
+            int axis = plot.Config.Multi && plot.SelectedAxis >= 0 && plot.SelectedAxis < plot.YScales.Count ? plot.SelectedAxis : 0;
+            var ys = plot.YScales[axis];
+            double mid = (ys.RMin + ys.RMax) / 2.0;
+            if (plot.Config.LogY) mid = Math.Exp(mid);
+            if (double.IsFinite(mid)) value.Text = mid.ToString("G6", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        if (addOnly)
+        {
+            OkCancel(() =>
+            {
+                var r = Build(s, value.Text, text.Text, pos.SelectedIndex == 1);
+                if (r == null) return false;
+                s.AddRedline(r);
+                s.Record(r.ToCommand());
+                return true;
+            });
+            return;
+        }
+
+        list!.SelectionChanged += (_, _) =>
+        {
+            int i = list.SelectedIndex;
+            if (i < 0 || i >= work.Count) return;
+            value.Text = work[i].ValueText;
+            text.Text = work[i].Text;
+            pos.SelectedIndex = work[i].Right ? 1 : 0;
+        };
+        var edit = new StackPanel { Orientation = Orientation.Horizontal };
+        void B(string caption, Action a)
+        {
+            var b = new Button { Content = caption, MinWidth = 80, Margin = new Thickness(0, 0, 6, 0), Padding = new Thickness(8, 2, 8, 2) };
+            b.Click += (_, _) => a();
+            edit.Children.Add(b);
+        }
+        B("_Add", () =>
+        {
+            var r = Build(s, value.Text, text.Text, pos.SelectedIndex == 1);
+            if (r == null) return;
+            if (work.Count >= RedlineMarker.MaxRedlines) { s.Message("At most " + RedlineMarker.MaxRedlines + " redlines per plot."); return; }
+            if (work.Any(x => x.SameAs(r))) return;
+            work.Add(r);
+            list.Items.Add(Display(r));
+            list.SelectedIndex = work.Count - 1;
+        });
+        B("_Update", () =>
+        {
+            int i = list.SelectedIndex;
+            if (i < 0 || i >= work.Count) return;
+            var r = Build(s, value.Text, text.Text, pos.SelectedIndex == 1);
+            if (r == null) return;
+            work[i] = r;
+            list.Items[i] = Display(r);
+            list.SelectedIndex = i;
+        });
+        B("_Delete", () =>
+        {
+            int i = list.SelectedIndex;
+            if (i < 0 || i >= work.Count) return;
+            work.RemoveAt(i);
+            list.Items.RemoveAt(i);
+            if (work.Count > 0) list.SelectedIndex = Math.Min(i, work.Count - 1);
+        });
+        B("Delete A_ll", () => { work.Clear(); list.Items.Clear(); });
+        Row("", edit);
+        OkCancel(() =>
+        {
+            s.ReplaceRedlines(work);
+            return true;
+        });
+        Height = 520;
     }
 }
 
@@ -980,24 +1154,6 @@ public static class SimpleForms
             plot.ResetMinMax(3, false);
             s.Invalidate(plot);
         }
-        return true;
-    }
-
-    /// <summary>Toolbar editor (FR-UI-004, simplified: show/hide bands and reset to defaults).</summary>
-    public static bool ToolbarEdit(Window? owner, Session s, MainWindow main)
-    {
-        var f = new Form(owner, "Toolbars", 360);
-        var checks = new List<CheckBox>();
-        for (int i = 0; i < Core.Model.AppSettings.NToolbars; i++) checks.Add(f.R("", Form.C(ToolbarDefaults.Names[i], s.Settings.ToolbarEnabled[i])));
-        var reset = f.R("", Form.C("Reset button sets to defaults", false));
-        f.Ok();
-        if (f.ShowDialog() != true) return false;
-        for (int i = 0; i < checks.Count; i++)
-        {
-            s.Settings.ToolbarEnabled[i] = checks[i].IsChecked == true;
-            if (reset.IsChecked == true) Settings.IniFile.ToolbarDefault(s.Settings, i);
-        }
-        main.RebuildCommands();
         return true;
     }
 

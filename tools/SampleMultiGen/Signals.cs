@@ -1,3 +1,6 @@
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
+
 namespace SampleMultiGen;
 
 /// <summary>One synthetic channel. <see cref="Next"/> is called once per sample, in time order.</summary>

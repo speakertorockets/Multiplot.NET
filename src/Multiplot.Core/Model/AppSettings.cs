@@ -1,7 +1,7 @@
-namespace Multiplot.Core.Model;
+// Copyright (c) 2026 speakertorockets
+// SPDX-License-Identifier: MIT
 
-/// <summary>A toolbar button: command id and image index.</summary>
-public readonly record struct ToolbarButton(int EventId, int ImageIndex);
+namespace Multiplot.Core.Model;
 
 /// <summary>A user defined function button.</summary>
 public sealed class UserButton
@@ -27,8 +27,6 @@ public static class PauseMode
 /// </summary>
 public sealed class AppSettings
 {
-    /// <summary>Number of toolbar bands.</summary>
-    public const int NToolbars = 19;
     /// <summary>Number of user buttons.</summary>
     public const int NUserButtons = 5;
     /// <summary>Number of logic label sets.</summary>
@@ -62,7 +60,7 @@ public sealed class AppSettings
     public bool ColorPrinter = true, Landscape = true;
 
     // [realtime]
-    public bool TimeSlide, IgnoreStatic;
+    public bool IgnoreStatic;
     public uint CompactPoints, DiscardSeconds;
     public float CompactInterval;
     public int PreviousRefresh;
@@ -74,7 +72,7 @@ public sealed class AppSettings
 
     // [plot style] frame members
     public bool ContinueTitle = true, ContinueSubTitle = true, UseMarkers, EmfWide, AllowAutoLabel = true, ApplyAll;
-    public bool PlotMax = true, FixXAutoY, ScaleRedlines, ExtNomen, AltNames;
+    public bool PlotMax = true, ExtNomen, AltNames;
     public int ReservedLegend, MinGridOffset, MultiGroupBy = GroupBy.Independent, NoCaptionBar, LogicTxtIdx;
     public float TabStepRate = 1f;
     public readonly string[] LogicTxtTrue = { "ON", "OPEN", "HIGH", "TRUE" };
@@ -93,11 +91,10 @@ public sealed class AppSettings
     public bool ScriptPrompt = true, EmbeddedScript;
     public int PauseMode = Model.PauseMode.NextPlot;
 
-    // [toolbar]
-    public bool ShowToolBar = true, ShowStatusBar = true, IncludeToolbar;
-    public readonly bool[] ToolbarEnabled = Enumerable.Repeat(true, NToolbars).ToArray();
-    public readonly List<ToolbarButton>[] ToolbarSets = Enumerable.Range(0, NToolbars).Select(_ => new List<ToolbarButton>()).ToArray();
-    public readonly int[] ToolbarOrder = Enumerable.Range(0, NToolbars).ToArray();
+    // [interface]
+    public bool ShowStatusBar = true;
+    /// <summary>Dark appearance (application and plots, FR-UI-046); false = light.</summary>
+    public bool DarkMode;
     public readonly UserButton[] UserButtons = Enumerable.Range(0, NUserButtons).Select(_ => new UserButton()).ToArray();
 
     // [symbolics]

@@ -8,7 +8,8 @@ files.
 | Chapter | Contents |
 |---|---|
 | [Getting started](getting-started.md) | Installing, the main window, opening files, making a first plot |
-| [Plot windows](plot-windows.md) | Plot styles, mouse and keyboard, context menus, markers, tabular displays |
+| [Plot windows](plot-windows.md) | Plot styles, mouse and keyboard, context menus, scales, fonts, tabular displays |
+| [Event and redline markers](markers.md) | Timestamp markers and value-axis redlines on plots, `[events]` from SUN and Parquet files, `MARKER` and `REDLINE` commands, marker colours, `.markers` files |
 | [Parameter lists and expressions](expressions.md) | Parameter lists, expressions, operators and functions |
 | [Scripts](scripts.md) | The `.wps` language, symbols, recording, and a command reference |
 | [Import and export](import-export.md) | ASCII import, CSV/SUN export, converting `.multi` files to Parquet, pictures, statistics, details files |
@@ -16,6 +17,8 @@ files.
 | [Settings and files](settings.md) | User folder, `Multiplot.ini`, registry, command line |
 | [Plugins](plugins.md) | Managing plugins, the bundled Parquet plugin, writing a data-source plugin |
 | [Limitations and notes](limitations.md) | Unsupported features and behaviour notes |
+
+In the application, *Help → User Guide* opens this guide in your web browser.
 
 The Parquet archive layout is described in `docs/parquet-archive-format.md`. The detailed
 specification behind this guide is in `docs/requirements`. Each chapter there gives the exact rules (for example, the parsing rules for every script command).
