@@ -76,7 +76,7 @@ public sealed class ParameterSelectDialog : DialogBase
 {
     private static bool s_plot = true, s_alt, s_ext, s_dups, s_retainFilter;
     private static string s_filter = "";
-    private static int s_filterColumn = -1;
+    private static bool s_filterActive;
     private readonly Session _s;
     private readonly ParmSelectMode _mode;
     private readonly ComboBox _file, _x, _y;
@@ -118,11 +118,18 @@ public sealed class ParameterSelectDialog : DialogBase
         Row("", opts);
         var filterPanel = new DockPanel();
         var restore = new Button { Content = "Restore", Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(6, 0, 6, 0) };
+        var filter = new Button { Content = "Filter", Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(6, 0, 6, 0) };
         DockPanel.SetDock(restore, Dock.Right);
+        DockPanel.SetDock(filter, Dock.Right);
         filterPanel.Children.Add(restore);
+        filterPanel.Children.Add(filter);
         filterPanel.Children.Add(_filterBox);
         Row("Filter:", filterPanel);
-        restore.Click += (_, _) => { _filterBox.Text = ""; s_filterColumn = -1; Reload(); };
+        filter.Click += (_, _) => ApplyFilter();
+        // Enter in the filter box filters the list instead of pressing OK
+        _filterBox.PreviewKeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; ApplyFilter(); } };
+        // Restore shows the whole list again but keeps the filter text for another try
+        restore.Click += (_, _) => { s_filterActive = false; ApplyView(); };
         var gv = new GridView();
         string[] heads = { "Name", "Name (alt)", "Units", "Description", "Seq#", "Rate", "Type" };
         string[] props = { "Name", "AltName", "Units", "Description", "Seq", "Rate", "Type" };
@@ -146,7 +153,8 @@ public sealed class ParameterSelectDialog : DialogBase
         _alt.Click += (_, _) => SelectionToY();
         _ext.Click += (_, _) => Reload();
         _dups.Click += (_, _) => Reload();
-        if (s_retainFilter && s_filterColumn >= 0) _filterBox.Text = s_filter;
+        if (s_retainFilter && s_filterActive) _filterBox.Text = s_filter;
+        else s_filterActive = false;
         AddButton("X Axis", () =>
         {
             if (_list.SelectedItem is ParmRow r) _x.Text = _alt.IsChecked == true ? r.AltName : r.Name;
@@ -201,16 +209,16 @@ public sealed class ParameterSelectDialog : DialogBase
 
     private void HeaderClick(int col)
     {
-        if (_filterBox.Text.Trim().Length > 0)
-        {
-            s_filterColumn = col;
-            s_filter = _filterBox.Text;
-        }
-        else
-        {
-            if (_sortColumn == col) _sortDesc = !_sortDesc;
-            else { _sortColumn = col; _sortDesc = false; }
-        }
+        if (_sortColumn == col) _sortDesc = !_sortDesc;
+        else { _sortColumn = col; _sortDesc = false; }
+        ApplyView();
+    }
+
+    /// <summary>Filters the list to the parameters whose name holds the filter text; empty text shows them all.</summary>
+    private void ApplyFilter()
+    {
+        s_filter = _filterBox.Text;
+        s_filterActive = s_filter.Trim().Length > 0;
         ApplyView();
     }
 
@@ -222,18 +230,18 @@ public sealed class ParameterSelectDialog : DialogBase
     private void ApplyView()
     {
         IEnumerable<ParmRow> v = _rows;
-        if (s_filterColumn >= 0 && s_filter.Trim().Length > 0)
+        if (s_filterActive && s_filter.Trim().Length > 0)
         {
+            // space-separated terms, each a case-insensitive substring of the name or alt name; !term excludes
             var terms = s_filter.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             v = v.Where(r =>
             {
-                string cell = Cell(r, s_filterColumn);
                 foreach (var t in terms)
                 {
                     bool neg = t.StartsWith('!');
                     string tt = neg ? t[1..] : t;
                     if (tt.Length == 0) continue;
-                    bool has = cell.Contains(tt, StringComparison.OrdinalIgnoreCase);
+                    bool has = r.Name.Contains(tt, StringComparison.OrdinalIgnoreCase) || r.AltName.Contains(tt, StringComparison.OrdinalIgnoreCase);
                     if (neg ? has : !has) return false;
                 }
                 return true;
@@ -278,7 +286,7 @@ public sealed class ParameterSelectDialog : DialogBase
         s_ext = _ext.IsChecked == true;
         s_dups = _dups.IsChecked == true;
         s_retainFilter = _retain.IsChecked == true;
-        if (!s_retainFilter) s_filterColumn = -1;
+        if (!s_retainFilter) s_filterActive = false;
         _s.Settings.AltNames = s_alt;
         _s.Settings.ExtNomen = s_ext;
         _s.CurrentFile = _file.SelectedIndex - 1;
