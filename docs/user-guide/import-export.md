@@ -17,7 +17,7 @@ Script options:
 | `/In` | Index (time) column, starting at 1 |
 | `/Sn` | Number of lines to skip |
 | `/Tn` | Line that holds the titles |
-| `/G` | Create GMT time tags |
+| `/G` | Create UTC time tags |
 | `/F` | Write the standard COMMONTIME format instead of MULTITIME64 |
 | `/R ref` | Reference time |
 

@@ -62,7 +62,7 @@ public sealed class SunWriter : IDisposable
     private long[] _currentBlockAddr = Array.Empty<long>();
     private long _nextParmHeader;
     private List<string> _currentParmSet = new();
-    private TimeTag _revRefGmt;
+    private TimeTag _revRefUtc;
     private double[] _appendAfter = Array.Empty<double>();
     private bool _closed;
 
@@ -140,7 +140,7 @@ public sealed class SunWriter : IDisposable
         var w = new SunWriter { _name = fileName };
         using (var f = SunFile.Open(fileName, opt))
         {
-            w._revRefGmt = f.Info.RefGmt;
+            w._revRefUtc = f.Info.RefUtc;
             w._fileSig = f.Info.FileSig;
             w._nPoints = 0;
             if (SunSignatures.IsMultiTime(w._fileSig))
@@ -335,7 +335,7 @@ public sealed class SunWriter : IDisposable
             {
                 DataType.Float => ((float[])indexArray!)[lPoint],
                 DataType.Double => ((double[])indexArray!)[lPoint],
-                DataType.TimeTag => TimeMath.Time(((TimeTag[])indexArray!)[lPoint], _revRefGmt),
+                DataType.TimeTag => TimeMath.Time(((TimeTag[])indexArray!)[lPoint], _revRefUtc),
                 _ => ((uint[])indexArray!)[lPoint] / 1000.0,
             };
             if (dTime <= _appendAfter[ndx]) Fail(SunError.WrtInvalidIdx);
@@ -464,12 +464,12 @@ public sealed class SunWriter : IDisposable
                             indexType = (byte)DataType.PackedTime;
                             WriteTagBE(first, tags[0]);
                             WriteTagBE(last, tags[n - 1]);
-                            TimeTag refGmt = tags[0];
+                            TimeTag refUtc = tags[0];
                             var packed = new uint[n];
                             uint preTime = 0;
                             for (int j = 0; j < n; j++)
                             {
-                                uint rday = unchecked((uint)(tags[j].JulianDay - refGmt.JulianDay));
+                                uint rday = unchecked((uint)(tags[j].JulianDay - refUtc.JulianDay));
                                 uint mil = tags[j].MilliSeconds;
                                 packed[j] = (mil & 0x07FFFFFF) | (rday << 27);
                                 if (compress)

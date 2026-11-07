@@ -34,7 +34,7 @@ compare the signature (mismatch → −4), read header words 1..9 (failure −5)
 * changed `blockPoints` → update needed;
 * changed `refTime[0..5]` or item count → **reference change** (re-read the whole map, discard cached
   MULTITIME block lists) → result 2, else 1;
-* non-MULTITIME: reload cached TIME / GMT indexes (failure → −1);
+* non-MULTITIME: reload cached TIME / UTC indexes (failure → −1);
 * re-read events; if the count changed → OR 4.
 Not dynamic → −2; cannot open → −3; unchanged → 0.
 
@@ -44,7 +44,7 @@ Not dynamic → −2; cannot open → −3; unchanged → 0.
 clear stream events until the last of them); note *reference changed*, *event added*, and *dynamic
 event* (a stream event; triggers reload when any group uses reference `TIMEREF`). If any file updated
 or the time reference was changed by `TIME`, update the status-bar current time (first stream's
-current GMT, else first dynamic file's GMT index / `EOF` event) and, for every plot (stop early if
+current UTC, else first dynamic file's UTC index / `EOF` event) and, for every plot (stop early if
 paused), for every curve (last to first) whose source file updated:
 1. Determine the request start:
    * tabular style, not forced, *TabHistory* off → from the curve's last time, replace data;
@@ -83,7 +83,7 @@ Changing `TIME` unfreezes non-user-frozen plots and forces reload.
 ## 11.4 Data reduction
 
 **FR-RT-030 (discard)** Discard: start = first index with time ≥ last − N (mode −1); if start
-> 1024, shift time/data (and own GMT array for MULTITIME) down, adjust common-time offsets, recompute
+> 1024, shift time/data (and own UTC array for MULTITIME) down, adjust common-time offsets, recompute
 min/max offsets (and values unless Y persistent).
 
 **FR-RT-031 (compact)** Compaction of a curve over an interval: from the last packed position, partition into
@@ -97,7 +97,7 @@ point threshold (`0 (disable)`, 10000, 25000, 50000, 100000) and interval (.5, 1
 
 **FR-RT-040 (AutoRun)** The AutoRun list holds entries `EVENT,script.wps` (event upper-cased).
 After each refresh tick, for each entry in order and each **dynamic** file: if the event resolves in
-that file (strict GMT lookup, FR-LOAD-020), then
+that file (strict UTC lookup, FR-LOAD-020), then
 * if a script is running: count deferrals; when deferral × interval > 6000 ms ask `A running script is
   blocking a triggered AutoRun\nForce cancel?` (Yes → abort the running script); keep waiting;
 * else remove the entry (one-shot), wait for the refresh to finish, and run the script.
@@ -108,7 +108,7 @@ followed by `AUTORUN <entry>` lines).
 
 **FR-RT-050** Stream sources (signature `0xFFF0FFFF`) are provided by a plugin (FR-PLG-031). The host
 shall support for them: stream id per source (`header.blockPoints[1]`), stream events
-including `STREAMnnREF` used when the reference is `NONE`, `EOF` = stream current GMT, `TIMEREF`
+including `STREAMnnREF` used when the reference is `NONE`, `EOF` = stream current UTC, `TIMEREF`
 dynamic event, certification status text shown on plots when *StreamCert* is on, history access
 toggle (`ENABLE/DISABLE PCGHISTORY` → plugin command), cache size (`PcgCacheSize` → `cachesize n`),
 *FirstOccurrence* loading rule, and `@commands` via `LIBCOMMAND`. The exact protocol is unknown — OQ-001.

@@ -14,10 +14,10 @@ public interface IExpressionContext
     /// <summary>All groups.</summary>
     IReadOnlyList<FileGroup> Groups { get; }
     /// <summary>Reads a float parameter; null on failure (status in <see cref="LastStatus"/>).</summary>
-    ParameterData? Read(IDataFile file, string name, double start, double stop, double? refTime, TimeTag? refGmt, bool returnGmt);
+    ParameterData? Read(IDataFile file, string name, double start, double stop, double? refTime, TimeTag? refUtc, bool returnUtc);
     /// <summary>Status of the last failed read.</summary>
     int LastStatus { get; }
-    /// <summary>64-bit (GMT based) timing.</summary>
+    /// <summary>64-bit (UTC based) timing.</summary>
     bool Use64BitTime { get; }
     /// <summary>CALCEVERYTIME.</summary>
     bool CalcEveryInstance { get; }

@@ -154,7 +154,7 @@ public interface IPluginHost
 
 /// <summary>
 /// Optional: files with a common time index;
-/// used for EOF references and GMT → index time conversion.
+/// used for EOF references and UTC → index time conversion.
 /// </summary>
 public interface ITimeIndexedFile
 {
@@ -162,8 +162,8 @@ public interface ITimeIndexedFile
     bool HasCommonTimeIndex { get; }
     /// <summary>Last time value of the TIME index, null if unavailable.</summary>
     double? IndexEndTime();
-    /// <summary>TIME index value at the first point whose GMT is at/after <paramref name="gmt"/>; false if no GMT index.</summary>
-    bool TryIndexTimeAtGmt(TimeTag gmt, out double time);
+    /// <summary>TIME index value at the first point whose UTC is at/after <paramref name="utc"/>; false if no UTC index.</summary>
+    bool TryIndexTimeAtUtc(TimeTag utc, out double time);
     /// <summary>File data rate (forces the TIME index load when unknown).</summary>
     float FileRate { get; }
 }

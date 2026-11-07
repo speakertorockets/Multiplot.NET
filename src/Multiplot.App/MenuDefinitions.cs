@@ -229,8 +229,8 @@ public static class MenuDefinitions
             new("&Y Axis/Legend Labeling", CommandIds.ID_AXIS_YNOMEN),
             new("Set &Title (top center)", CommandIds.ID_AXIS_XTITLE),
             new("Set &Sub-Title (left center)", CommandIds.ID_AXIS_YTITLE),
-            new("Show Time as &GMT/Clock", CommandIds.ID_CLOCKTIME),
-            new("Set G&MT Format", CommandIds.ID_GMTFORMAT),
+            new("Show Time as &UTC/Clock", CommandIds.ID_CLOCKTIME),
+            new("Set UTC For&mat", CommandIds.ID_UTCFORMAT),
             new("Scale G&roup ID", CommandIds.ID_STYLE_SCALEGROUP),
             new("Test &Info (Test Title)", CommandIds.ID_STYLE_TESTINFO),
             new("Set Plot &Window Title...", CommandIds.ID_SETUSERCAPTION),
@@ -256,7 +256,7 @@ public static class MenuDefinitions
             new("&External Applications", new MenuNode[]
             {
                 new("&Assign", CommandIds.ID_EXTAPPS),
-                new("Include &GMTs", CommandIds.ID_SHOWGMT),
+                new("Include &UTCs", CommandIds.ID_SHOWUTC),
             }),
             MenuNode.Sep,
             new("Tabular Output/Exports", new MenuNode[]
@@ -461,8 +461,8 @@ public static class MenuDefinitions
                 new("&Title/Subtitle...", CommandIds.ID_SETTFONT),
                 new("&Legend/Scale...", CommandIds.ID_SETLFONT),
             }),
-            new("Show Time as &GMT", CommandIds.ID_CLOCKTIME),
-            new("GMT/Clock Format", CommandIds.ID_GMTFORMAT),
+            new("Show Time as &UTC", CommandIds.ID_CLOCKTIME),
+            new("UTC/Clock Format", CommandIds.ID_UTCFORMAT),
             new("Test &Info (Test Title)", CommandIds.ID_STYLE_TESTINFO),
             new("&Colors", new MenuNode[]
             {
@@ -624,7 +624,7 @@ public static class MenuDefinitions
             new("Set Background &Bitmap", CommandIds.ID_TAB_BACKGROUND),
             new("&Decimal Places", CommandIds.ID_EXTPRECISION),
             new("&Default Time Stamp", CommandIds.ID_DEF_TAB_TIME),
-            new("Show Time as &GMT", CommandIds.ID_CLOCKTIME),
+            new("Show Time as &UTC", CommandIds.ID_CLOCKTIME),
             MenuNode.Sep,
             new("Presentation &Mode", CommandIds.ID_PRESENTATION_MODE),
             new("&Window", new MenuNode[]

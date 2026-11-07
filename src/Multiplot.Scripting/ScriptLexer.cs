@@ -173,7 +173,7 @@ public sealed class SymbolTable
     {
         ("PRINT_APP", 10), ("VIEW_APP", 9), ("EXPORT_APP", 11), ("MAILSLOT_NAME", 14), ("SCRIPT_NAME", 12),
         ("SCRIPT_LINE", 12), ("CURRENT_FILE", 13), ("FILE_LIST", 10), ("FILE_REFERENCE", 15), ("EVENT_REFERENCE", 16),
-        ("GMT_REFERENCE", 16), ("SCALE_XMIN", 11), ("SCALE_XMAX", 11), ("SCALE_YMIN", 11), ("SCALE_YMAX", 11),
+        ("UTC_REFERENCE", 16), ("SCALE_XMIN", 11), ("SCALE_XMAX", 11), ("SCALE_YMIN", 11), ("SCALE_YMAX", 11),
         ("PLOT_X_EXTENTS", 15), ("PLOT_Y_EXTENTS", 15), ("PLOT_PARMS", 11), ("PLOT_SOURCE", 12), ("SYSTEM_TIME", 12),
         ("USERNAME", 9), ("USERFOLDER", 11), ("COMPUTER", 9), ("LAST_FILE_TIME", 15),
     };

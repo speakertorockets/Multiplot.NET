@@ -426,9 +426,9 @@ public sealed class PlotRenderer
         xs.GetScale();
         if (!xs.FixedScale && _c.ClockTime)
         {
-            var refG = PlotDocument.HeaderGmt(d.Curves[0].Data);
-            var cg = TimeMath.Gmt(xs.RMin, refG, false);
-            xs.AdjustToClockScale(cg.MilliSeconds, d.GmtFormat);
+            var refG = PlotDocument.HeaderUtc(d.Curves[0].Data);
+            var cg = TimeMath.Utc(xs.RMin, refG, false);
+            xs.AdjustToClockScale(cg.MilliSeconds, d.UtcFormat);
         }
 
         if (_c.Style == PlotStyle.Logic)
@@ -552,7 +552,7 @@ public sealed class PlotRenderer
             if (labelInterval == 0) labelInterval = 1;
         }
         g.TextColor = Col(ColorIndex.Label);
-        TimeTag clockRef = PlotDocument.HeaderGmt(d.Curves[0].Data);
+        TimeTag clockRef = PlotDocument.HeaderUtc(d.Curves[0].Data);
         for (int i = 0; i <= xs.Divisions; i++)
         {
             int xv = IntFloat((xs.Factor * (xs.Graduation * i)) + gLeft + (i == xs.Divisions ? .5 : 0.0));
@@ -562,11 +562,11 @@ public sealed class PlotRenderer
                 {
                     double dTime = xs.RMin + (xs.Graduation * i);
                     if (d.Curves[0].Data.RefTime.HasValue) dTime += d.Curves[0].Data.RefTime.Value;
-                    var cg = TimeMath.Gmt(dTime, clockRef, false);
+                    var cg = TimeMath.Utc(dTime, clockRef, false);
                     uint ms = cg.MilliSeconds;
-                    strBuf = d.GmtFormat.StartsWith("%03u", StringComparison.Ordinal)
-                        ? Crt.Sprintf(d.GmtFormat, (uint)cg.JulianDay, (ms / 3600000U) % 24, (ms % 3600000U) / 60000U, (ms % 60000U) / 1000U, ms % 1000U)
-                        : Crt.Sprintf(d.GmtFormat, (ms / 3600000U) % 24, (ms % 3600000U) / 60000U, (ms % 60000U) / 1000U, ms % 1000U);
+                    strBuf = d.UtcFormat.StartsWith("%03u", StringComparison.Ordinal)
+                        ? Crt.Sprintf(d.UtcFormat, (uint)cg.JulianDay, (ms / 3600000U) % 24, (ms % 3600000U) / 60000U, (ms % 60000U) / 1000U, ms % 1000U)
+                        : Crt.Sprintf(d.UtcFormat, (ms / 3600000U) % 24, (ms % 3600000U) / 60000U, (ms % 60000U) / 1000U, ms % 1000U);
                 }
                 else
                     strBuf = Crt.Sprintf(DspFmt(xs.EFormat), xs.DecimalPlaces, _c.LogX ? Math.Pow(10.0, xs.MinExp + i) : xs.RMin + (xs.Graduation * i));
@@ -892,7 +892,7 @@ public sealed class PlotRenderer
             var cv = d.Curves[p];
             var pd = cv.Data;
             if (pd.Points == 0) continue;
-            bool hrTime = !_c.PidVsPid && _c.Use64BitTime && pd.HasValidGmt;
+            bool hrTime = !_c.PidVsPid && _c.Use64BitTime && pd.HasValidUtc;
             int[]? iData = null;
             int sf = _c.Multi ? cv.ScaleIndex : 0;
             if (sf >= d.YScales.Count) sf = 0;
@@ -1022,8 +1022,8 @@ public sealed class PlotRenderer
                 double xVal;
                 if (hrTime)
                 {
-                    int gi = iData != null ? iData[tp] : tp + pd.GmtOffset;
-                    xVal = TimeMath.Time(pd.Gmt![gi], pd.RefGmt!.Value);
+                    int gi = iData != null ? iData[tp] : tp + pd.UtcOffset;
+                    xVal = TimeMath.Time(pd.Utc![gi], pd.RefUtc!.Value);
                     if (pd.RefTime.HasValue) xVal -= pd.RefTime.Value;
                 }
                 else
@@ -1262,9 +1262,9 @@ public sealed class PlotRenderer
             string tBuf;
             if (_c.ClockTime)
             {
-                var refG = PlotDocument.HeaderGmt(tc.Data);
+                var refG = PlotDocument.HeaderUtc(tc.Data);
                 double dTime = d.TabTime + (tc.Data.RefTime ?? 0.0);
-                tBuf = ValueFormat.ClockString(TimeMath.Gmt(dTime, refG, true), "TIME %03d/%02u:%02u:%02u.%03u");
+                tBuf = ValueFormat.ClockString(TimeMath.Utc(dTime, refG, true), "TIME %03d/%02u:%02u:%02u.%03u");
             }
             else
                 tBuf = Crt.Sprintf("TIME : %.3f", d.TabTime);
@@ -1538,7 +1538,7 @@ public sealed class PlotRenderer
         int maxPackSz = _compactBufSz - 4;
         int packedPos = 0, startPos = 0;
         int lastChange = -9999;
-        int baseIndex = startOffset + p.GmtOffset;
+        int baseIndex = startOffset + p.UtcOffset;
         bool logX = _c.LogX;
         for (int endPos = 1; endPos < pCount; endPos++)
         {

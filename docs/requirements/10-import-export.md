@@ -32,8 +32,8 @@ field is non-empty and (`atof ≠ 0` or starts with one of `0 . + - #` or equals
 a header line. The first data record determines the parameter count N. In it, the index column value
 determines the reference time:
 * contains `:` or `/` → clock `[ddd/|ddd ]hh:mm[:ss[.mmm[.uuu]|.ffffff]]` or TimeTag `ddd/msec[.usec]`
-  → reference GMT, TimeTags enabled;
-* numeric > 485,438,400 → Unix epoch seconds (UTC) → reference GMT, Unix-time mode, TimeTags enabled;
+  → reference UTC, TimeTags enabled;
+* numeric > 485,438,400 → Unix epoch seconds (UTC) → reference UTC, Unix-time mode, TimeTags enabled;
 * otherwise relative seconds; the default reference is the current local date/time.
 Header lines are assigned in order: **names** (first header line with N non-null fields, searching
 later header lines if needed; else none), **units**, **descriptions**, **alternate names** — each only
@@ -50,7 +50,7 @@ characters ends the data):
   TimeTag; `hh:mm…` → seconds since midnight relative to the first record; plain number → relative
   seconds as given (not referenced);
 * data column: empty → dropout; text starting `N`, `-N`, or `1.#QNAN` → dropout; else `atof`.
-* If TimeTags are generated and the record had no absolute time, TimeTag = GMT(relative − base, ref).
+* If TimeTags are generated and the record had no absolute time, TimeTag = UTC(relative − base, ref).
 If the index column is not 1, column data and nomenclature are swapped so that time becomes column 1.
 On 32-bit limits or allocation failure the point count is reduced by 2 % steps with the message
 `Unable to process complete file\nPoint count reduced from %d to %d` (OK/Cancel).
@@ -58,7 +58,7 @@ On 32-bit limits or allocation failure the point count is reduced by 2 % steps w
 **FR-IMP-007 (output file)** Default output = `<temp>\<source file name>.~NNN` (NNN = import counter),
 deleted when files are closed. Format: **SUN_MULTITIME64** (default; time not stored as a separate
 parameter; each parameter LZH-compressed with float time or TimeTag time stamps) or, with *standard
-format* / `/F`, **SUN_COMMONTIME** (TIME as parameter 0, optional `Index`, optional `GMT`/`TimeTag`
+format* / `/F`, **SUN_COMMONTIME** (TIME as parameter 0, optional `Index`, optional `UTC`/`TimeTag`
 parameter at position 1). Header: reference time from the reference field, cutoff 0, title, comment
 `Imported by ` + product version (e.g. `Imported by Multiplot.NET v1.0.0`). With TimeTags, the comment block gets
 `[events]\nFILE_REF=ddd/msec.usec`. *Keep file* asks for a destination (`*.sun`, initial folder last
@@ -96,7 +96,7 @@ the configured export application). Relative output names go to ExportPath, else
 same plot state. Rules:
 * End-to-end plots prompt `Tabulation of End-to-End plots will include full parameter data sets with
   actual time stamps.\n\nUse standard axis mode for zooming sub-sections of data.` (OK/Cancel).
-* **Columns**: per curve, optionally a GMT/clock column (if INCLUDEGMT or clock time), a relative time
+* **Columns**: per curve, optionally a UTC/clock column (if INCLUDEUTC or clock time), a relative time
   column, for parameter-vs-parameter an X column, then the value column. Time columns are emitted for
   every curve ("multi-time") unless *SharedTabTime* is on and all curves have identical in-range
   point counts and start times (then only the first curve has time columns).
@@ -108,16 +108,16 @@ same plot state. Rules:
   in-range points; a curve without a point in a row writes `" "` placeholders.
 * Time values use the time precision; values use the data precision (tabular plots: each trace's tab
   format; Y nomenclature EFORMAT → exponential). Clock columns use `%03d/%02u:%02u:%02u.%03u.%03u`
-  when a valid GMT array exists, else the plot GMT format computed from reference + relative time
+  when a valid UTC array exists, else the plot UTC format computed from reference + relative time
   (minus applied time shift); unavailable → `n/a`.
 *Acceptance:* TST-XPT-001 — golden CSV/TAB files for a matrix of plot states (normal, zoomed,
-multi-file, parameter-vs-parameter, end-to-end, shared time on/off, GMT on/off, each precision).
+multi-file, parameter-vs-parameter, end-to-end, shared time on/off, UTC on/off, each precision).
 
 **FR-XPT-020 (SUN export, `SAVESUN`/*Save as SUN*)** Writes the active plot as **SUN_MULTITIME**
 (`Plot%04d.sun` default): title = plot title, comment `Plot data from Multiplot display`, reference time
 and cutoff from the first curve's file. Comment block:
 ```
-[events]                      (only when all curves share a GMT reference with TimeTags)
+[events]                      (only when all curves share a UTC reference with TimeTags)
 FILE_REF=ddd/msec.uuu
 [history]
 Data created <plot date>
@@ -125,7 +125,7 @@ Data created <plot date>
 pos(<i>) <name> source=<file> Tref=<clock of curve reference>
 ```
 Each curve → parameter (name without `$`, alternate name `CurveNNN`, units, description, sequence
-number), float data, time stamps as TimeTags (when all curves share the GMT reference) else float
+number), float data, time stamps as TimeTags (when all curves share the UTC reference) else float
 relative times, LZH-compressed, native byte order.
 
 **FR-XPT-021 (parameter/file details)** `SAVEPARMLIST`, `SAVEPARMDETAILS`, `SAVEFILEDETAILS` and the

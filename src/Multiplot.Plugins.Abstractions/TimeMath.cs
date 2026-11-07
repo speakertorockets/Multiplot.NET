@@ -5,7 +5,7 @@ namespace Multiplot.Plugins;
 
 /// <summary>
 /// TimeTag ↔ relative-seconds arithmetic and time-array search
-/// (<c>GMT()</c>, <c>TIME()</c>, <c>TIME_location()</c>).
+/// (<c>UTC()</c>, <c>TIME()</c>, <c>TIME_location()</c>).
 /// </summary>
 public static class TimeMath
 {
@@ -26,7 +26,7 @@ public static class TimeMath
     }
 
     /// <summary>TimeTag at <paramref name="timeOffset"/> seconds from <paramref name="reference"/> (FR-TIM-002).</summary>
-    public static TimeTag Gmt(double timeOffset, TimeTag reference, bool setMicro)
+    public static TimeTag Utc(double timeOffset, TimeTag reference, bool setMicro)
     {
         TimeTag g;
         bool negSign = timeOffset < 0.0;
@@ -157,15 +157,15 @@ public static class TimeMath
         }
     }
 
-    /// <summary>Binary search of a GMT array relative to <paramref name="refGmt"/>.</summary>
-    public static int GmtLocation(double tpoint, TimeTag[] gmt, int offset, int np, TimeTag refGmt, int mode)
+    /// <summary>Binary search of a UTC array relative to <paramref name="refUtc"/>.</summary>
+    public static int UtcLocation(double tpoint, TimeTag[] utc, int offset, int np, TimeTag refUtc, int mode)
     {
         if (np <= 0) return 0;
         uint lbound = 0, ubound = (uint)np - 1;
         uint thePoint = (uint)np / 2;
         while (true)
         {
-            double t = Time(gmt[offset + thePoint], refGmt);
+            double t = Time(utc[offset + thePoint], refUtc);
             if (tpoint > t)
                 lbound = thePoint;
             else if (tpoint < t)
@@ -175,8 +175,8 @@ public static class TimeMath
 
             if ((ubound - lbound) <= 1)
             {
-                double tl = Time(gmt[offset + lbound], refGmt);
-                double tu = Time(gmt[offset + ubound], refGmt);
+                double tl = Time(utc[offset + lbound], refUtc);
+                double tu = Time(utc[offset + ubound], refUtc);
                 switch (mode)
                 {
                     case 0:

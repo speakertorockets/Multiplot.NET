@@ -345,12 +345,12 @@ public sealed class Scale
         if (DecimalPlaces > 7) DecimalPlaces = 7;
     }
 
-    /// <summary>Converts a C GMT format to user tokens.</summary>
+    /// <summary>Converts a C UTC format to user tokens.</summary>
     public static string MakeUserFormat(string fmt) => fmt
         .Replace("%03u/", "DDD/").Replace("%02u:%02u:%02u", "HR:MN:SC").Replace("%02u:%02u", "HR:MN")
         .Replace("%02u", "HR").Replace(".%03u", ".MIL").Replace("%03u", "DDD");
 
-    /// <summary>Converts user tokens to a C GMT format.</summary>
+    /// <summary>Converts user tokens to a C UTC format.</summary>
     public static string MakeCFormat(string fmt) => fmt
         .Replace("DDD/", "%03u/").Replace("HR", "%02u").Replace("MN", "%02u").Replace("SC", "%02u")
         .Replace(".MIL", ".%03u").Replace("DDD", "%03u");

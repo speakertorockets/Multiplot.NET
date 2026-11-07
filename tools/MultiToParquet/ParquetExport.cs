@@ -159,10 +159,10 @@ public static class ParquetExport
         var events = a.File.Events.Select(e => new Dictionary<string, object?>
         {
             ["name"] = e.Name,
-            ["julianDay"] = e.Gmt.JulianDay,
-            ["milliSeconds"] = e.Gmt.MilliSeconds,
-            ["microSeconds"] = e.Gmt.MicroSeconds,
-            ["ticks"] = e.Gmt.JulianDay is >= 1 and <= 366 ? a.TagTicks(e.Gmt) : null,
+            ["julianDay"] = e.Utc.JulianDay,
+            ["milliSeconds"] = e.Utc.MilliSeconds,
+            ["microSeconds"] = e.Utc.MicroSeconds,
+            ["ticks"] = e.Utc.JulianDay is >= 1 and <= 366 ? a.TagTicks(e.Utc) : null,
         }).ToList();
         md[P("events")] = JsonSerializer.Serialize(events);
         if (skipped.Count > 0) md[P("skipped")] = string.Join("\n", skipped);

@@ -22,7 +22,7 @@ multi2parquet synth test.multi [32]                   # writes a synthetic file 
 | `--year N` | header `refTime[0]` | Overrides the year when the header year is missing or wrong |
 
 On the `synth` file, `crosscheck` returns a nonzero exit code and reports a MISMATCH for `D8IDX`.
-That is a bug in the application, not in the converter. `TimeMath.Gmt` wraps Julian day 366 with `% 365`,
+That is a bug in the application, not in the converter. `TimeMath.Utc` wraps Julian day 366 with `% 365`,
 so the application's own reader shifts leap-day `d8`-index time stamps by exactly one day.
 
 The tool reuses `Multiplot.Sun` for the header, map, comment block, events, rates and the LZH decoder.

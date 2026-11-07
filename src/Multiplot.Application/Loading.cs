@@ -568,11 +568,11 @@ public sealed partial class Session
                             if (q2 >= 0) userDescription = userDescription[..q2];
                         }
                         double? refTime = null;
-                        TimeTag? refGmt = null;
+                        TimeTag? refUtc = null;
                         if (!g.TRef.Equals("NONE", StringComparison.OrdinalIgnoreCase))
                         {
-                            refGmt = TimeReference.GetRefGmt(gfiles, j, g.TRef);
-                            if (refGmt == null)
+                            refUtc = TimeReference.GetRefUtc(gfiles, j, g.TRef);
+                            if (refUtc == null)
                             {
                                 refTime = TimeReference.GetRefTime(gfiles, j, g.TRef);
                                 if (refTime == null)
@@ -582,7 +582,7 @@ public sealed partial class Session
                                 }
                             }
                         }
-                        loaded = Read(file, buf, slice[0], slice[1], refTime, refGmt, PlotConfig.Use64BitTime);
+                        loaded = Read(file, buf, slice[0], slice[1], refTime, refUtc, PlotConfig.Use64BitTime);
                         if (loaded == null)
                         {
                             if (LastReadNoData)
@@ -695,12 +695,12 @@ public sealed partial class Session
                     XAxis = buf;
                 }
                 double? refTime = null;
-                TimeTag? refGmt = null;
+                TimeTag? refUtc = null;
                 xpid = null;
                 if (!g.TRef.Equals("NONE", StringComparison.OrdinalIgnoreCase))
                 {
-                    refGmt = TimeReference.GetRefGmt(gfiles, j, g.TRef);
-                    if (refGmt == null)
+                    refUtc = TimeReference.GetRefUtc(gfiles, j, g.TRef);
+                    if (refUtc == null)
                     {
                         refTime = TimeReference.GetRefTime(gfiles, j, g.TRef);
                         if (refTime == null)
@@ -710,7 +710,7 @@ public sealed partial class Session
                         }
                     }
                 }
-                xpid = Read(gfiles[j], buf, slice[0], slice[1], refTime, refGmt, false);
+                xpid = Read(gfiles[j], buf, slice[0], slice[1], refTime, refUtc, false);
                 if (xpid != null) break;
             }
         }
@@ -763,9 +763,9 @@ public sealed partial class Session
                     var ifiles = GroupFiles(iGroup);
                     if (!ig.TRef.Equals("NONE", StringComparison.OrdinalIgnoreCase))
                     {
-                        var refGmt = TimeReference.GetRefGmt(ifiles, iFile - ig.StartPos, ig.TRef);
-                        double? refTime = refGmt == null ? TimeReference.GetRefTime(ifiles, iFile - ig.StartPos, ig.TRef) : null;
-                        if (refGmt != null || refTime != null) xpid = Read(_files[iFile], parm, xSlice[0], xSlice[1], refTime, refGmt, false);
+                        var refUtc = TimeReference.GetRefUtc(ifiles, iFile - ig.StartPos, ig.TRef);
+                        double? refTime = refUtc == null ? TimeReference.GetRefTime(ifiles, iFile - ig.StartPos, ig.TRef) : null;
+                        if (refUtc != null || refTime != null) xpid = Read(_files[iFile], parm, xSlice[0], xSlice[1], refTime, refUtc, false);
                         else Message(Crt.Sprintf("Reference Event, %s, not found in parse()", ig.TRef));
                     }
                     else xpid = Read(_files[iFile], parm, xSlice[0], xSlice[1], null, null, false);
@@ -950,7 +950,7 @@ public sealed partial class Session
     {
         var plot = new PlotDocument(this, curves, PlotConfig, markers, xAxisNomen, xUdef, yUdef, xTitle, yTitle, tRef, tSlice);
         beforeInit?.Invoke(plot);
-        plot.Initialize(PlotNo, Settings.MultiGroupBy, Settings.GmtFormat, UserCaption, ScriptRun != 0 ? ScriptFile : null,
+        plot.Initialize(PlotNo, Settings.MultiGroupBy, Settings.UtcFormat, UserCaption, ScriptRun != 0 ? ScriptFile : null,
             Settings.ContinueTitle, Settings.ContinueSubTitle, Settings.IgnoreStatic, Fix, DateTime.Now);
         if (plot.Config.Style == PlotStyle.Tabular && plot.BackgroundFile.Length > 0) LoadBackground(plot, plot.BackgroundFile);
         CancelAlign();

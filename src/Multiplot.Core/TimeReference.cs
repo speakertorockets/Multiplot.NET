@@ -6,13 +6,13 @@ using Multiplot.Plugins;
 namespace Multiplot.Core;
 
 /// <summary>
-/// Time slice / reference resolution: reference GMT and TIME, cutoff and start/stop times
+/// Time slice / reference resolution: reference UTC and TIME, cutoff and start/stop times
 /// (FR-LOAD-020, FR-LOAD-021).
 /// </summary>
 public static class TimeReference
 {
-    /// <summary>GMT for a clock/TimeTag string or event name; null if not a GMT.</summary>
-    public static TimeTag? GetRefGmt(IReadOnlyList<IDataFile> files, int current, string ev, bool strict = false)
+    /// <summary>UTC for a clock/TimeTag string or event name; null if not a UTC.</summary>
+    public static TimeTag? GetRefUtc(IReadOnlyList<IDataFile> files, int current, string ev, bool strict = false)
     {
         var f = files[current];
         if (ev.Contains(':'))
@@ -60,7 +60,7 @@ public static class TimeReference
             return t;
         }
         foreach (var e in f.Events)
-            if (string.Equals(ev, e.Name, StringComparison.OrdinalIgnoreCase)) return e.Gmt;
+            if (string.Equals(ev, e.Name, StringComparison.OrdinalIgnoreCase)) return e.Utc;
         bool hasTimeTags = f.Parameters.Count > 1 && f.Parameters[1].TypeId == "t8";
         if (!(strict && !hasTimeTags))
             return LastMatch(files, current, ev); // only the inner loop breaks: the last matching file wins
@@ -74,7 +74,7 @@ public static class TimeReference
         {
             if (j == current) continue;
             foreach (var e in files[j].Events)
-                if (string.Equals(ev, e.Name, StringComparison.OrdinalIgnoreCase)) { found = e.Gmt; break; }
+                if (string.Equals(ev, e.Name, StringComparison.OrdinalIgnoreCase)) { found = e.Utc; break; }
         }
         return found;
     }
@@ -115,9 +115,9 @@ public static class TimeReference
 
     /// <summary>
     /// The reference that moves data read against <paramref name="refEvent"/> by <paramref name="shift"/> seconds
-    /// (positive = later on the time axis), as a literal GMT <c>ddd/msec.usec</c>. NONE, START, CUTOFF and constants
-    /// are offsets from the file reference GMT; they become a constant offset instead when the files of the group
-    /// have different (or no) reference GMTs. Null when the reference cannot be shifted (EOF or unresolved).
+    /// (positive = later on the time axis), as a literal UTC <c>ddd/msec.usec</c>. NONE, START, CUTOFF and constants
+    /// are offsets from the file reference UTC; they become a constant offset instead when the files of the group
+    /// have different (or no) reference UTCs. Null when the reference cannot be shifted (EOF or unresolved).
     /// </summary>
     public static string? ShiftReference(IReadOnlyList<IDataFile> files, int current, string refEvent, double shift)
     {
@@ -125,17 +125,17 @@ public static class TimeReference
         double offset;
         if (r.Length == 0 || r.Equals("NONE", StringComparison.OrdinalIgnoreCase)) offset = 0.0;
         else if (r.Equals("EOF", StringComparison.OrdinalIgnoreCase)) return null;
-        else if (GetRefGmt(files, current, r) is TimeTag gmt) return EventMarkers.GmtSpec(TimeMath.Gmt(-shift, gmt, true));
+        else if (GetRefUtc(files, current, r) is TimeTag utc) return EventMarkers.UtcSpec(TimeMath.Utc(-shift, utc, true));
         else if (GetRefTime(files, current, r) is double t && Math.Abs(t) < 1e30) offset = t;
         else return null;
-        var fileRef = files[current].Info.RefGmt;
-        bool commonRef = fileRef.JulianDay != 0 && files.All(f => f.Info.RefGmt == fileRef);
-        return commonRef ? EventMarkers.GmtSpec(TimeMath.Gmt(offset - shift, fileRef, true)) : FormatSeconds(offset - shift);
+        var fileRef = files[current].Info.RefUtc;
+        bool commonRef = fileRef.JulianDay != 0 && files.All(f => f.Info.RefUtc == fileRef);
+        return commonRef ? EventMarkers.UtcSpec(TimeMath.Utc(offset - shift, fileRef, true)) : FormatSeconds(offset - shift);
     }
 
     /// <summary>
     /// A start/stop time after the reference moved by <paramref name="shift"/> seconds: a plain number is relative to
-    /// the reference and moves with it; events, GMTs and the ±3.4e38 defaults are unchanged.
+    /// the reference and moves with it; events, UTCs and the ±3.4e38 defaults are unchanged.
     /// </summary>
     public static string ShiftSliceTime(string time, double shift)
     {
@@ -173,18 +173,18 @@ public static class TimeReference
         }
 
         var f = files[current];
-        TimeTag? pg = GetRefGmt(files, current, buf, strict);
+        TimeTag? pg = GetRefUtc(files, current, buf, strict);
         if (pg.HasValue)
         {
-            TimeTag timeGmt = pg.Value;
+            TimeTag timeUtc = pg.Value;
             TimeTag? refG = string.Equals(refEvent, "NONE", StringComparison.OrdinalIgnoreCase)
-                ? f.Info.RefGmt
-                : GetRefGmt(files, current, refEvent, strict);
+                ? f.Info.RefUtc
+                : GetRefUtc(files, current, refEvent, strict);
             if (refG.HasValue)
-                time = TimeMath.Time(timeGmt, refG.Value);
+                time = TimeMath.Time(timeUtc, refG.Value);
             else
             {
-                if (f is ITimeIndexedFile ti && ti.HasCommonTimeIndex && ti.TryIndexTimeAtGmt(timeGmt, out double t))
+                if (f is ITimeIndexedFile ti && ti.HasCommonTimeIndex && ti.TryIndexTimeAtUtc(timeUtc, out double t))
                 {
                     time = t;
                     if (!string.Equals(refEvent, "NONE", StringComparison.OrdinalIgnoreCase))
@@ -206,10 +206,10 @@ public static class TimeReference
                 time = t.Value;
                 if (!string.Equals(refEvent, "NONE", StringComparison.OrdinalIgnoreCase) && time != Crt.Atof(buf))
                 {
-                    TimeTag? rg = GetRefGmt(files, current, refEvent, strict);
+                    TimeTag? rg = GetRefUtc(files, current, refEvent, strict);
                     if (rg.HasValue)
                     {
-                        TimeTag? start = GetRefGmt(files, current, "START", strict);
+                        TimeTag? start = GetRefUtc(files, current, "START", strict);
                         if (start.HasValue) time -= TimeMath.Time(rg.Value, start.Value);
                     }
                     else

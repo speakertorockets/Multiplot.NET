@@ -5,7 +5,7 @@ namespace Multiplot.Plugins;
 
 /// <summary>
 /// Retrieved parameter data: nomenclature, relative time array,
-/// typed data buffer, optional GMT array, reference used, min/max and rate.
+/// typed data buffer, optional UTC array, reference used, min/max and rate.
 /// Arrays may be longer than <see cref="Points"/> (pre-allocated capacity).
 /// </summary>
 public sealed class ParameterData
@@ -28,20 +28,20 @@ public sealed class ParameterData
     /// Typed data: float[], double[], short[], int[], ushort[], uint[], long[], ulong[], byte[] or TimeTag[].
     /// </summary>
     public Array Data { get; set; } = Array.Empty<float>();
-    /// <summary>Optional GMT per point; element <c>i</c> is at <c>Gmt[GmtOffset + i]</c>.</summary>
-    public TimeTag[]? Gmt { get; set; }
-    /// <summary>Offset of point 0 in <see cref="Gmt"/> (common-time file index sharing).</summary>
-    public int GmtOffset { get; set; }
-    /// <summary>Number of valid GMT entries starting at <see cref="GmtOffset"/>.</summary>
-    public int GmtPoints { get; set; }
-    /// <summary>False once a reduction made the GMT array invalid.</summary>
-    public bool GmtOffsetValid { get; set; } = true;
+    /// <summary>Optional UTC per point; element <c>i</c> is at <c>Utc[UtcOffset + i]</c>.</summary>
+    public TimeTag[]? Utc { get; set; }
+    /// <summary>Offset of point 0 in <see cref="Utc"/> (common-time file index sharing).</summary>
+    public int UtcOffset { get; set; }
+    /// <summary>Number of valid UTC entries starting at <see cref="UtcOffset"/>.</summary>
+    public int UtcPoints { get; set; }
+    /// <summary>False once a reduction made the UTC array invalid.</summary>
+    public bool UtcOffsetValid { get; set; } = true;
     /// <summary>Point offset in the file index (common-time formats).</summary>
     public int IndexStart { get; set; }
     /// <summary>Relative reference offset used for the read, if any.</summary>
     public double? RefTime { get; set; }
-    /// <summary>Reference GMT used for the read, if any.</summary>
-    public TimeTag? RefGmt { get; set; }
+    /// <summary>Reference UTC used for the read, if any.</summary>
+    public TimeTag? RefUtc { get; set; }
     /// <summary>Index of the minimum value.</summary>
     public int MinIndex { get; set; }
     /// <summary>Index of the maximum value.</summary>
@@ -74,11 +74,11 @@ public sealed class ParameterData
     /// <summary>Float data (when <see cref="Type"/> is Float).</summary>
     public float[] Values => (float[])Data;
 
-    /// <summary>True when a valid GMT array covers all points.</summary>
-    public bool HasValidGmt => Gmt != null && GmtPoints >= Points && RefGmt.HasValue && GmtOffsetValid;
+    /// <summary>True when a valid UTC array covers all points.</summary>
+    public bool HasValidUtc => Utc != null && UtcPoints >= Points && RefUtc.HasValue && UtcOffsetValid;
 
-    /// <summary>GMT of point <paramref name="i"/> (requires <see cref="Gmt"/>).</summary>
-    public TimeTag GmtAt(int i) => Gmt![GmtOffset + i];
+    /// <summary>UTC of point <paramref name="i"/> (requires <see cref="Utc"/>).</summary>
+    public TimeTag UtcAt(int i) => Utc![UtcOffset + i];
 
     /// <summary>Value of point <paramref name="i"/> converted to double.</summary>
     public double GetDouble(int i) => ValueConvert.ToDouble(Data, Type, i);
@@ -97,7 +97,7 @@ public sealed class ParameterData
         var c = (ParameterData)MemberwiseClone();
         c.Time = (float[])Time.Clone();
         c.Data = (Array)Data.Clone();
-        if (Gmt != null && !CommonTimeIndex) c.Gmt = (TimeTag[])Gmt.Clone();
+        if (Utc != null && !CommonTimeIndex) c.Utc = (TimeTag[])Utc.Clone();
         return c;
     }
 

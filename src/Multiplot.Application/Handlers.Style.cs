@@ -437,23 +437,23 @@ public sealed partial class Session
         Record("SET COLOR PRINTERTABLE");
     }
 
-    /// <summary>GMT format (script: format already converted).</summary>
-    public void SetGmtFormat(string? cFormat)
+    /// <summary>UTC format (script: format already converted).</summary>
+    public void SetUtcFormat(string? cFormat)
     {
         bool all = Settings.ApplyAll;
         if (cFormat == null)
         {
             string[] f = { "HR:MN:SC.MIL", "HR:MN:SC", "HR:MN", "HR", "DDD/HR:MN:SC.MIL", "DDD/HR:MN:SC", "DDD/HR:MN", "DDD/HR", "DDD" };
-            string cur = Core.Plotting.Scale.MakeUserFormat((ActivePlot?.GmtFormat) ?? Settings.GmtFormat);
-            var r = Shell.Dialogs.Input(new InputRequest("GMT/Clock display format:", cur, "Time Display Format", f, true, all));
+            string cur = Core.Plotting.Scale.MakeUserFormat((ActivePlot?.UtcFormat) ?? Settings.UtcFormat);
+            var r = Shell.Dialogs.Input(new InputRequest("UTC/Clock display format:", cur, "Time Display Format", f, true, all));
             if (r == null) return;
             all = r.ApplyAll;
-            Record("GMTFORMAT " + r.Text);
-            Settings.GmtFormat = Core.Plotting.Scale.MakeCFormat(r.Text);
+            Record("UTCFORMAT " + r.Text);
+            Settings.UtcFormat = Core.Plotting.Scale.MakeCFormat(r.Text);
         }
-        else Settings.GmtFormat = cFormat;
+        else Settings.UtcFormat = cFormat;
         foreach (var p in TargetPlots(all))
-            if (p.GmtFormat != Settings.GmtFormat) { p.GmtFormat = Settings.GmtFormat; Invalidate(p); }
+            if (p.UtcFormat != Settings.UtcFormat) { p.UtcFormat = Settings.UtcFormat; Invalidate(p); }
     }
 
     /// <summary>Sets the window caption source.</summary>

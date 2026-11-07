@@ -133,7 +133,7 @@ recording calls (they are valid input to the interpreter). Complete list (format
 `CAPTION USER %s`, `CLEAR FILES`, `CalcEveryTime %s`, `Caption %s|PARMSET|PLOTNO|SCRIPT|SUBTITLE|TITLE|USER`,
 `ClearList`, `ColorPrinter %s`, `DATARATE 3D %d`, `DATARATE REBUILD %s`, `DBpath %s`, `DefTabTime %s`,
 `AUTOSCALE X %s`, `AUTOSCALE Y %s`, `DropoutIgnore %s`, `DropoutMarker %s`, `EMFWIDE %s`, `ExportPath %s`, `FilePath %s`,
-`FirstOccurrence %s`, `GMTFORMAT %s`, `GridOffset %d`, `INCLUDEGMT %s`, `IgnoreStatic %s`,
+`FirstOccurrence %s`, `UTCFORMAT %s`, `GridOffset %d`, `INCLUDEUTC %s`, `IgnoreStatic %s`,
 `LEGEND COLUMNS %d`, `LandScape %s`, `LegendShift %s`, `LoadSettings %s`, `MARKERSET FILEEVENTS %s`, `MARKERSET TOPMOST %s`,
 `redline %s`, `clear redlines all`, `set color MARKER,%d,%d,%d`, `set color REDLINE,%d,%d,%d`,
 `OPEN %s`, `OptimizedDraw %s`, `PAN DOWN`, `PAN LEFT%s`, `PAN RIGHT%s`, `PAN UP`, `PLOT %s`,
@@ -197,9 +197,9 @@ line and report an error; see DEV-SCR-004).
 | `SCRIPT_LINE` | current physical line number | |
 | `CURRENT_FILE` | full path of the first open file | `<CURRENT_FILE>` |
 | `FILE_LIST` | comma-separated full paths of all open files | `<FILE_LIST>` |
-| `FILE_REFERENCE` | per file, reference GMT as `%03u/%02u:%02u:%02u.%03u`, comma-separated | `<FILE_REFERENCE>` |
+| `FILE_REFERENCE` | per file, reference UTC as `%03u/%02u:%02u:%02u.%03u`, comma-separated | `<FILE_REFERENCE>` |
 | `EVENT_REFERENCE` | if > 1 group: each group's reference string, comma-separated; else the global reference | |
-| `GMT_REFERENCE` | per group, resolved reference GMT as `ddd/hh:mm:ss.mmm.uuu` | `<GMT_REFERENCE>` per group; global reference if no files |
+| `UTC_REFERENCE` | per group, resolved reference UTC as `ddd/hh:mm:ss.mmm.uuu` | `<UTC_REFERENCE>` per group; global reference if no files |
 | `SCALE_XMIN`, `SCALE_XMAX` | active plot X scale min/max (`%g`) | `<SCALE_XMIN>` … |
 | `SCALE_YMIN`, `SCALE_YMAX` | active plot Y scale(s) (`%g`); all scales comma-separated if multi-Y | `<SCALE_YMIN>` … |
 | `PLOT_X_EXTENTS` | `xmin,xmax` | `<PLOT_X_EXTENTS>` |
@@ -210,10 +210,10 @@ line and report an error; see DEV-SCR-004).
 | `USERNAME` | Windows user name | `<USERNAME>` |
 | `USERFOLDER` | user folder (09-settings) | `<USERFOLDER>` |
 | `COMPUTER` | computer name | `<COMPUTER>` |
-| `LAST_FILE_TIME` | GMT of last TIME point of first file, `%03u/%02u:%02u:%02u.%03u` | `<LAST_FILE_TIME>` |
+| `LAST_FILE_TIME` | UTC of last TIME point of first file, `%03u/%02u:%02u:%02u.%03u` | `<LAST_FILE_TIME>` |
 
 `USER_INPUT` and `MCI_RETURN` are ordinary user symbols written by `INPUT` and `MCI`.
-Quirk: `GMT_REFERENCE` consumes **16** characters (`$` + 15) although the name is 13
+Quirk: `UTC_REFERENCE` consumes **16** characters (`$` + 15) although the name is 13
 characters long, eating the two characters that follow it — see DEV-SCR-005 (preserve).
 
 **FR-SCR-053** `CLEAR $name` removes one user symbol (all `$` removed from the argument, compared
@@ -283,7 +283,7 @@ and status bar; no error), **D** = deprecated (error message shown).
 | FR-SCR-137 | `EXTRAPOLATE` | ON/OFF | MULTITIME lead-in/trailing values (FR-SUN-071); plugins notified | S |
 | FR-SCR-138 | `USEPLACEHOLDER` | ON/OFF | create placeholder plots when no data (FR-LOAD) | S |
 | FR-SCR-139 | `64BITTIME` | ON/OFF | use double-precision time axis (FR-PLT) | S |
-| FR-SCR-140 | `RETAINMTGMT` | any | error `Command is deprecated\n\nUse 64BITTIME [ON | OFF] instead`, then **also** executes as `64BITTIME` (fall-through) | D |
+| FR-SCR-140 | `RETAINMTUTC` | any | error `Command is deprecated\n\nUse 64BITTIME [ON | OFF] instead`, then **also** executes as `64BITTIME` (fall-through) | D |
 
 **FR-SCR-130 (parameter list cleaning)** For `PLOT`, `YAXIS`, `XAXIS`: trim; then repeatedly
 replace `" ,"`→`","`, `", "`→`","`, `"[ "`→`"["`, `" ]"`→`"]"`.
@@ -329,9 +329,9 @@ preserve; users write times as `ddd/msec` or with a group prefix).
 | FR-SCR-178 | `ENDTOEND` | ON/OFF | end-to-end display of multiple files (FR-PLT) | S |
 | FR-SCR-179 | `SCALEGROUP` | ON/OFF | use `\GROUP` scale ids from descriptions | S |
 | FR-SCR-180 | `SCALEREDLINES` | — | **removed** (redline markers, FR-MRK-010, are not part of autoscaling); unknown command | — |
-| FR-SCR-181 | `CLOCKTIME` | ON/OFF | X axis in clock (GMT) format | S |
-| FR-SCR-182 | `GMTFORMAT` | `[fmt]` | clock format; user tokens `DDD/`, `HR`, `MN`, `SC`, `.MIL`, `DDD` converted to C format (`MAKE_C_FMT`); empty → `%03u/%02u:%02u:%02u.%03u` | S |
-| FR-SCR-183 | `INCLUDEGMT` | ON/OFF | include GMT column in tabular/export | S |
+| FR-SCR-181 | `CLOCKTIME` | ON/OFF | X axis in clock (UTC) format | S |
+| FR-SCR-182 | `UTCFORMAT` | `[fmt]` | clock format; user tokens `DDD/`, `HR`, `MN`, `SC`, `.MIL`, `DDD` converted to C format (`MAKE_C_FMT`); empty → `%03u/%02u:%02u:%02u.%03u` | S |
+| FR-SCR-183 | `INCLUDEUTC` | ON/OFF | include UTC column in tabular/export | S |
 | FR-SCR-184 | `TIMESLIDE` | — | **removed**: with `AUTOSCALE X OFF` the time window slides with new data (FR-PLT-017); unknown command | — |
 | FR-SCR-185 | `FREEZE` | ON/OFF | freeze active real-time plot; not real-time → `current data not realtime` | S |
 

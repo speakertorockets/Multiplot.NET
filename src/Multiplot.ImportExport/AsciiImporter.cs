@@ -55,9 +55,9 @@ public sealed class AsciiImporter
     /// <summary>Clock (tests).</summary>
     public DateTime? Now;
 
-    private bool _gmtIsSet;
+    private bool _utcIsSet;
     private int _addIndex;
-    private TimeTag _refGmt;
+    private TimeTag _refUtc;
     private TimeTag _dataStart;
     private int _nParms;
     private int _nPoints;
@@ -148,20 +148,20 @@ public sealed class AsciiImporter
 
         Rewind();
         DateTime now = Now ?? DateTime.Now;
-        _refGmt.JulianDay = (short)now.DayOfYear;
+        _refUtc.JulianDay = (short)now.DayOfYear;
         CountHeaderLines();
-        if (_gmtIsSet)
+        if (_utcIsSet)
         {
             GenTimeTag = true;
-            DefRef = Crt.Sprintf("%04u %03u %02u:%02u:%02u.%03u.%03u", now.Year, (int)_refGmt.JulianDay,
-                (_refGmt.MilliSeconds / 3600000U) % 24, (_refGmt.MilliSeconds % 3600000U) / 60000U, (_refGmt.MilliSeconds % 60000U) / 1000U,
-                _refGmt.MilliSeconds % 1000U, (uint)_refGmt.MicroSeconds);
+            DefRef = Crt.Sprintf("%04u %03u %02u:%02u:%02u.%03u.%03u", now.Year, (int)_refUtc.JulianDay,
+                (_refUtc.MilliSeconds / 3600000U) % 24, (_refUtc.MilliSeconds % 3600000U) / 60000U, (_refUtc.MilliSeconds % 60000U) / 1000U,
+                _refUtc.MilliSeconds % 1000U, (uint)_refUtc.MicroSeconds);
         }
         else
         {
             DefRef = Crt.Sprintf("%04u %03u %02u:%02u:%02u.%03u.000", now.Year, now.DayOfYear, now.Hour, now.Minute, now.Second, now.Millisecond);
-            _refGmt.MilliSeconds = (uint)(now.Hour * 3600000 + now.Minute * 60000 + now.Second * 1000 + now.Millisecond);
-            _refGmt.MicroSeconds = 0;
+            _refUtc.MilliSeconds = (uint)(now.Hour * 3600000 + now.Minute * 60000 + now.Second * 1000 + now.Millisecond);
+            _refUtc.MicroSeconds = 0;
         }
         RefTime = DefRef;
         return true;
@@ -232,7 +232,7 @@ public sealed class AsciiImporter
                 else
                 {
                     dataRec = true;
-                    if (!_gmtIsSet && FileIndex < count)
+                    if (!_utcIsSet && FileIndex < count)
                         DetectReference(f[FileIndex - 1]);
                 }
             }
@@ -283,22 +283,22 @@ public sealed class AsciiImporter
                     }
                 }
                 else mil = mic = 0;
-                if (ptr >= 2) _refGmt.JulianDay = (short)((ushort)Crt.Atol(field) % 367);
-                _refGmt.MilliSeconds = unchecked(hr * 3600000 + mn * 60000 + sc * 1000 + mil);
-                _refGmt.MicroSeconds = (ushort)mic;
+                if (ptr >= 2) _refUtc.JulianDay = (short)((ushort)Crt.Atol(field) % 367);
+                _refUtc.MilliSeconds = unchecked(hr * 3600000 + mn * 60000 + sc * 1000 + mil);
+                _refUtc.MicroSeconds = (ushort)mic;
             }
             else
-                TimeTagFromText(field, ref _refGmt);
-            _gmtIsSet = true;
+                TimeTagFromText(field, ref _refUtc);
+            _utcIsSet = true;
         }
         else
         {
             double v = Crt.Atof(field);
             if (v > 485438400.0)
             {
-                _refGmt = Epoch2TimeTag(v);
+                _refUtc = Epoch2TimeTag(v);
                 UnixTime = true;
-                _gmtIsSet = true;
+                _utcIsSet = true;
             }
         }
     }
@@ -477,24 +477,24 @@ public sealed class AsciiImporter
         }
         using (w)
         {
-            if (!ClockToTimeTag(RefTime, out _refGmt, true))
+            if (!ClockToTimeTag(RefTime, out _refUtc, true))
             {
                 RefTime = DefRef;
-                ClockToTimeTag(RefTime, out _refGmt, true);
+                ClockToTimeTag(RefTime, out _refUtc, true);
             }
             uint[] reference =
             {
-                (uint)Crt.Atoi(RefTime), (uint)(ushort)_refGmt.JulianDay, (_refGmt.MilliSeconds / 3600000U) % 24,
-                (_refGmt.MilliSeconds % 3600000U) / 60000U, (_refGmt.MilliSeconds % 60000U) / 1000U, _refGmt.MilliSeconds % 1000U,
+                (uint)Crt.Atoi(RefTime), (uint)(ushort)_refUtc.JulianDay, (_refUtc.MilliSeconds / 3600000U) % 24,
+                (_refUtc.MilliSeconds % 3600000U) / 60000U, (_refUtc.MilliSeconds % 60000U) / 1000U, _refUtc.MilliSeconds % 1000U,
             };
             w.SetRefTime(reference[0], reference[1], reference[2], reference[3], reference[4], reference[5]);
-            _dataStart = _refGmt;
+            _dataStart = _refUtc;
             w.SetCutoff(0f);
             w.SetTitle(_title);
             w.SetComment("Imported by " + AppVersion);
             ParseFileData(w);
             if (GenTimeTag)
-                w.SetCommentText(Crt.Sprintf("[events]\nFILE_REF=%03u/%u.%03u", (uint)(ushort)_refGmt.JulianDay, _refGmt.MilliSeconds, (uint)_refGmt.MicroSeconds));
+                w.SetCommentText(Crt.Sprintf("[events]\nFILE_REF=%03u/%u.%03u", (uint)(ushort)_refUtc.JulianDay, _refUtc.MilliSeconds, (uint)_refUtc.MicroSeconds));
             w.Close();
         }
         if (!Abort) FileReady = true;
@@ -553,7 +553,7 @@ public sealed class AsciiImporter
                         var tt = Epoch2TimeTag(relTime);
                         if (tags != null) { tags[point] = tt; timetagIsSet = true; }
                         else timetagIsSet = false;
-                        relTime = TimeMath.Time(tt, _refGmt);
+                        relTime = TimeMath.Time(tt, _refUtc);
                         dbuf[point + (long)parmNo * np] = (float)relTime;
                     }
                     else if (field.Contains('/'))
@@ -565,14 +565,14 @@ public sealed class AsciiImporter
                             ClockToTimeTag(field, out var tt, false);
                             if (tags != null) { tags[point] = tt; timetagIsSet = true; }
                             else timetagIsSet = false;
-                            relTime = TimeMath.Time(tt, _refGmt);
+                            relTime = TimeMath.Time(tt, _refUtc);
                         }
                         else
                         {
                             var tt = new TimeTag();
                             bool valid = TimeTagFromText(field, ref tt);
                             if (tags != null) { tags[point] = tt; timetagIsSet = valid; }
-                            relTime = TimeMath.Time(tt, _refGmt);
+                            relTime = TimeMath.Time(tt, _refUtc);
                         }
                         dbuf[point + (long)parmNo * np] = (float)relTime;
                     }
@@ -604,7 +604,7 @@ public sealed class AsciiImporter
                     if (!timetagIsSet)
                     {
                         relTime -= baseTime;
-                        tags[point] = TimeMath.Gmt(relTime, _refGmt, true);
+                        tags[point] = TimeMath.Utc(relTime, _refUtc, true);
                     }
                     if (point == 0) _dataStart = tags[0];
                 }
@@ -657,7 +657,7 @@ public sealed class AsciiImporter
             {
                 w.AddParm(name, aname, units, descr, parmNo, "f4", Column(parmNo), null, null, 0, 0, null);
                 if (parmNo == 0 && tags != null)
-                    w.AddParm("GMT", "TimeTag", "Seconds", "Time in Seconds", 0, "t8", tags, null, null, 0, 0, null);
+                    w.AddParm("UTC", "TimeTag", "Seconds", "Time in Seconds", 0, "t8", tags, null, null, 0, 0, null);
             }
             else if (tags != null)
                 w.AddParm(name, aname, units, descr, parmNo, "f4", Column(parmNo), "t8", tags, (uint)np, SunWriteOptions.LzhCompress, null);
@@ -737,11 +737,11 @@ public sealed class AsciiImporter
     private void ResetClockToSeconds() { _lastDay = 0; _addDays = 0; }
 
     /// <summary>Clock text to seconds with day roll-over state.</summary>
-    public double ClockToSeconds(string gmtStr)
+    public double ClockToSeconds(string utcStr)
     {
         int g = 0;
-        while (g < gmtStr.Length && gmtStr[g] == ' ') g++;
-        string s = gmtStr[g..];
+        while (g < utcStr.Length && utcStr[g] == ' ') g++;
+        string s = utcStr[g..];
         int pf = s.IndexOf(':');
         if (pf < 0) return 0.0;
         int iOff = pf >= 2 ? 2 : 1;

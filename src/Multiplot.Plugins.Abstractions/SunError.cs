@@ -44,9 +44,9 @@ public enum SunError
     ParmFind,
     MemAlloc13,
     ParmFilt,
-    GmtMemAlloc,
+    UtcMemAlloc,
     FmtNotSupp,
-    GmtNotAvail,
+    UtcNotAvail,
     WrtStrAlloc,
     WrtFileExists,
     WrtOpenErr,
@@ -100,13 +100,13 @@ public static class SunErrorText
         "couldn't allocate memory for pid struct",
         "couldn't allocate memory for data buffer",
         "null sun file structure used",
-        "parameter retrieval by GMT when GMT not available",
-        "couldn't allocate memory for access reference GMT",
-        "attempt to access time using GMT reference, use TIME",
+        "parameter retrieval by UTC when UTC not available",
+        "couldn't allocate memory for access reference UTC",
+        "attempt to access time using UTC reference, use TIME",
         "failed to open Sun file to retrieve comment block",
         "couldn't allocate memory to retrieve comment block",
         "fread failed reading comment block data",
-        "couldn't allocate memory for time stamps GMT->TIME",
+        "couldn't allocate memory for time stamps UTC->TIME",
         "data not available for selected time slice",
         "time load/re-load attempt during file update",
         "alloc failed for Nomen pointer structure",
@@ -117,9 +117,9 @@ public static class SunErrorText
         "failed to find parm in stream",
         "memory allocation failed",
         "failed to find parm in file map (filter)",
-        "failed to allocate memory for GMT array",
+        "failed to allocate memory for UTC array",
         "SUN_MULTITIME64 not supported on this platform",
-        "GMT array requested but not available",
+        "UTC array requested but not available",
         "structure allocation failed",
         "output file exists",
         "failed to open output file",
@@ -161,7 +161,7 @@ public static class SunErrorText
 
     /// <summary>Non-fatal codes reported as warnings on a successful read.</summary>
     public static bool IsNonFatal(SunError code) =>
-        code is SunError.MemAlloc10 or SunError.MemAlloc12 or SunError.GmtNotAvail or SunError.GmtMemAlloc;
+        code is SunError.MemAlloc10 or SunError.MemAlloc12 or SunError.UtcNotAvail or SunError.UtcMemAlloc;
 }
 
 /// <summary>Error thrown by data access providers; carries a SUN (or plugin) status code.</summary>

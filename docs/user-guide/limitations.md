@@ -24,10 +24,10 @@
 * Packed time stamps (`p4`) that were written across a year end decode to days after 366. The SUN
   reader decodes them the same way. `multi2parquet` exports them as decoded and prints a warning.
 * Compared with the same data read from the `.multi` file, a Parquet read differs in four ways:
-  * GMT is correct on day 366 of a leap year.
+  * UTC is correct on day 366 of a leap year.
   * The EOF hold point is also added to `f4`-indexed parameters.
   * Min/max are computed from the points returned.
-  * GMT of a window end point can differ by 1 µs.
+  * UTC of a window end point can differ by 1 µs.
 
 ## Behaviour notes
 
@@ -70,5 +70,5 @@
   Scaling*): the point sizes chosen in the font dialogs set the text size, which still follows the
   window size. `FONTSIZE` is accepted and ignored, and *Save Settings* no longer writes `FontSize`.
   There is no script command to choose a font.
-* SUN files: GMT time tags of `d8`-indexed MULTITIME data on day 366 of a leap year are shown one day
-  late. `TimeMath.Gmt` wraps day 366 to day 1; see OQ-017.
+* SUN files: UTC time tags of `d8`-indexed MULTITIME data on day 366 of a leap year are shown one day
+  late. `TimeMath.Utc` wraps day 366 to day 1; see OQ-017.

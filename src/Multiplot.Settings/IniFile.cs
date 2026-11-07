@@ -121,7 +121,7 @@ public static class IniFile
             else if (K("scalegroup")) p.GroupId = B();
             else if (K("stairstep")) p.StairStep = B();
             else if (K("clocktime")) p.ClockTime = B();
-            else if (K("gmtformat")) s.GmtFormat = setting ?? "%03u/%02u:%02u:%02u.%03u";
+            else if (K("utcformat")) s.UtcFormat = setting ?? "%03u/%02u:%02u:%02u.%03u";
             else if (K("ignorestatic")) s.IgnoreStatic = B();
             else if (K("dropoutmarker")) p.DropoutMarker = B();
             else if (K("dropoutignore")) p.DropoutIgnore = B();
@@ -166,7 +166,7 @@ public static class IniFile
             else if (K("decimalplaces")) { if (setting != null) s.DataPrecision = ClampPrecision(Crt.Atoi(setting)); }
             else if (K("timeprecision")) { if (setting != null) s.TimePrecision = ClampPrecision(Crt.Atoi(setting)); }
             else if (K("sharedtabtime")) { if (setting != null) s.SharedTabTime = B(); }
-            else if (K("includegmts")) { if (setting != null) s.ShowGmt = B(); }
+            else if (K("includeutcs")) { if (setting != null) s.ShowUtc = B(); }
             else if (K("monitors")) { if (setting != null) s.Monitors = Math.Abs(Crt.Atoi(setting)) <= 10 ? Math.Abs(Crt.Atoi(setting)) : s.Monitors; }
             else if (K("optimizeddraw")) { if (setting != null) s.OptimizedDraw = Math.Abs(Crt.Atoi(setting)); }
             else if (K("offscreendraw")) { if (setting != null) s.OffscreenDraw = Math.Abs(Crt.Atoi(setting)); }
@@ -429,7 +429,7 @@ public static class IniFile
         W("DecimalPlaces = %d\n", s.DataPrecision);
         W("TimePrecision = %d\n", s.TimePrecision);
         W("SharedTabTime = %d\n", s.SharedTabTime ? 1 : 0);
-        W("IncludeGMTs = %d\n", s.ShowGmt ? 1 : 0);
+        W("IncludeUTCs = %d\n", s.ShowUtc ? 1 : 0);
         W("\n");
 
         W("[scripting]\n");
@@ -483,7 +483,7 @@ public static class IniFile
         W("ScaleGroup = %d\n", p.GroupId ? 1 : 0);
         W("StairStep = %d\n", p.StairStep ? 1 : 0);
         W("ClockTime = %d\n", p.ClockTime ? 1 : 0);
-        W("GMTformat = %s\n", s.GmtFormat);
+        W("UTCformat = %s\n", s.UtcFormat);
         W("GridLines = %d\n", p.GridLines ? 1 : 0);
         W("TestInfo = %d\n", p.TestInfo ? 1 : 0);
         W("LegendShift = %d\n", p.LegendShift ? 1 : 0);

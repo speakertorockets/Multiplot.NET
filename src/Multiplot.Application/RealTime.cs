@@ -92,7 +92,7 @@ public sealed partial class Session
             string ev = comma >= 0 ? entry[..comma] : entry;
             for (int j = 0; j < _files.Count; j++)
             {
-                if (!_files[j].Info.IsDynamic || TimeReference.GetRefGmt(_files, j, ev, true) == null) continue;
+                if (!_files[j].Info.IsDynamic || TimeReference.GetRefUtc(_files, j, ev, true) == null) continue;
                 if (ScriptRun == RunState.Running)
                 {
                     if (++_arDeferred * AutoRefresh > 6000)
@@ -125,7 +125,7 @@ public sealed partial class Session
     /// <summary>Real-time refresh (FR-RT-020).</summary>
     private void RtRefresh()
     {
-        bool fileRefresh = false, gmtChanged = false, eventAdded = false;
+        bool fileRefresh = false, utcChanged = false, eventAdded = false;
         var updated = new bool[_files.Count];
         int whyRefreshed = 0;
         for (int iFile = 0; iFile < _files.Count; iFile++)
@@ -141,9 +141,9 @@ public sealed partial class Session
             {
                 updated[iFile] = true;
                 fileRefresh = true;
-                if ((whyRefreshed & 2) != 0) gmtChanged = true;
+                if ((whyRefreshed & 2) != 0) utcChanged = true;
                 if ((whyRefreshed & 4) != 0) eventAdded = true;
-                if ((whyRefreshed & 8) != 0 && _groups.Any(g => g.TRef.Equals("TIMEREF", StringComparison.OrdinalIgnoreCase))) gmtChanged = true;
+                if ((whyRefreshed & 8) != 0 && _groups.Any(g => g.TRef.Equals("TIMEREF", StringComparison.OrdinalIgnoreCase))) utcChanged = true;
             }
         }
         if (!(fileRefresh || TimeChange)) return;
@@ -173,7 +173,7 @@ public sealed partial class Session
                         slice[0] = curve.Time[curve.Points - 1];
                         noAppend = true;
                     }
-                    else if (!plot.Config.PidVsPid && !plot.ForceReload && !g.TRef.Equals("EOF", StringComparison.OrdinalIgnoreCase) && !gmtChanged)
+                    else if (!plot.Config.PidVsPid && !plot.ForceReload && !g.TRef.Equals("EOF", StringComparison.OrdinalIgnoreCase) && !utcChanged)
                     {
                         slice[0] = curve.Time[curve.Points - 1];
                         noAppend = false;
@@ -204,14 +204,14 @@ public sealed partial class Session
                         else if (ExprSyntax.IsExpression(parmName)) refreshed = engine.Parse(gfiles, cur, grp, parmName, slice, g.TRef, ref err);
                         else
                         {
-                            TimeTag? refGmt = null;
+                            TimeTag? refUtc = null;
                             double? refTime = null;
                             if (!g.TRef.Equals("NONE", StringComparison.Ordinal))
                             {
-                                refGmt = TimeReference.GetRefGmt(gfiles, cur, g.TRef);
-                                if (refGmt == null) refTime = TimeReference.GetRefTime(gfiles, cur, g.TRef);
+                                refUtc = TimeReference.GetRefUtc(gfiles, cur, g.TRef);
+                                if (refUtc == null) refTime = TimeReference.GetRefTime(gfiles, cur, g.TRef);
                             }
-                            refreshed = Read(_files[iFile], parmName, slice[0], slice[1], refTime, refGmt, plot.Config.Use64BitTime);
+                            refreshed = Read(_files[iFile], parmName, slice[0], slice[1], refTime, refUtc, plot.Config.Use64BitTime);
                         }
                         if (plot.Config.PidVsPid && refreshed != null)
                         {
@@ -221,14 +221,14 @@ public sealed partial class Session
                             else if (ExprSyntax.IsExpression(xi)) xp = engine.Parse(gfiles, cur, grp, xi, slice, g.TRef, ref err);
                             else
                             {
-                                TimeTag? refGmt = null;
+                                TimeTag? refUtc = null;
                                 double? refTime = null;
                                 if (!g.TRef.Equals("NONE", StringComparison.Ordinal))
                                 {
-                                    refGmt = TimeReference.GetRefGmt(gfiles, cur, g.TRef);
-                                    if (refGmt == null) refTime = TimeReference.GetRefTime(gfiles, cur, g.TRef);
+                                    refUtc = TimeReference.GetRefUtc(gfiles, cur, g.TRef);
+                                    if (refUtc == null) refTime = TimeReference.GetRefTime(gfiles, cur, g.TRef);
                                 }
-                                xp = Read(_files[iFile], xi, slice[0], slice[1], refTime, refGmt, false);
+                                xp = Read(_files[iFile], xi, slice[0], slice[1], refTime, refUtc, false);
                             }
                             if (xp != null)
                             {
@@ -308,12 +308,12 @@ public sealed partial class Session
         Array.Copy(p.Data, start, p.Data, 0, n);
         if (p.CommonTimeIndex)
         {
-            if (p.GmtOffsetValid) p.GmtOffset += start;
+            if (p.UtcOffsetValid) p.UtcOffset += start;
         }
-        else if (p.Gmt != null && p.GmtPoints >= p.Points)
+        else if (p.Utc != null && p.UtcPoints >= p.Points)
         {
-            Array.Copy(p.Gmt, p.GmtOffset + start, p.Gmt, p.GmtOffset, n);
-            p.GmtPoints = n;
+            Array.Copy(p.Utc, p.UtcOffset + start, p.Utc, p.UtcOffset, n);
+            p.UtcPoints = n;
         }
         p.Points = n;
         p.MinIndex = ParameterOps.DataMin(p, Data.Sun.Options.FilterInvalid);
@@ -333,9 +333,9 @@ public sealed partial class Session
         {
             var f = _files[i];
             if (!f.Info.IsDynamic) continue;
-            current = TimeReference.GetRefGmt(_files, i, "EOF", true);
+            current = TimeReference.GetRefUtc(_files, i, "EOF", true);
             if (current == null && f is ITimeIndexedFile ti && ti.IndexEndTime() is double end)
-                current = TimeMath.Gmt(end, f.Info.RefGmt, true);
+                current = TimeMath.Utc(end, f.Info.RefUtc, true);
         }
         if (current != null) Shell.SetClock(ValueFormat.ClockString(current.Value));
     }

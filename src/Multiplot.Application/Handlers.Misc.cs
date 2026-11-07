@@ -298,7 +298,7 @@ public sealed partial class Session
 
     private ExportOptions ExportOpts() => new()
     {
-        ShowGmt = Settings.ShowGmt,
+        ShowUtc = Settings.ShowUtc,
         SharedTabTime = Settings.SharedTabTime,
         TimePrecision = Settings.TimePrecision,
         DataPrecision = Settings.DataPrecision,

@@ -76,7 +76,7 @@ static int Info(string path, int? year)
     Console.WriteLine($"title       '{fi.Title}'  comment '{fi.Comment}'");
     Console.WriteLine($"serial/stand/pos/type/num  '{fi.SerialNum}' '{fi.TestStand}' '{fi.TestPosition}' '{fi.TestType}' '{fi.TestNumber}'  cutoff {fi.Cutoff}");
     Console.WriteLine($"comment     {a.File.CommentBlock?.Length ?? 0} chars (block {a.File.CommentSize:N0} bytes at 0x{a.File.CommentOffset:X})");
-    foreach (var e in a.File.Events) Console.WriteLine($"  event     {e.Name} = {e.Gmt}");
+    foreach (var e in a.File.Events) Console.WriteLine($"  event     {e.Name} = {e.Utc}");
     Console.WriteLine($"parameters  {fi.Items}");
     long total = 0;
     var all = ReadAll(a);
@@ -198,14 +198,14 @@ static int CrossCheck(string input, int? year)
         {
             double x = vals[i], y = s.Values[i];
             if (!(double.IsNaN(y) ? Multiplot.Plugins.DataTypes.IsDropOut(x) || double.IsNaN(x) : x == y)) vBad++;
-            long appTicks = p.HasValidGmt ? a.TagTicks(p.GmtAt(i)) : a.RefTicks + (long)Math.Round(p.Time[i] * 1e7);
+            long appTicks = p.HasValidUtc ? a.TagTicks(p.UtcAt(i)) : a.RefTicks + (long)Math.Round(p.Time[i] * 1e7);
             long dt = Math.Abs(appTicks - s.Ticks[i]);
             maxDt = Math.Max(maxDt, dt);
-            if (p.HasValidGmt && dt > 10) tBad++;
+            if (p.HasValidUtc && dt > 10) tBad++;
         }
         bool ok = vBad == 0 && tBad == 0 && (p.Points == s.Ticks.Length || p.Points == s.Ticks.Length + 1);
         if (!ok) errors++;
-        Console.WriteLine($"  {s.Info.Name}: app {p.Points:N0} pts{(p.HasValidGmt ? " (GMT)" : " (float time)")}, converter {s.Ticks.Length:N0}; value diffs {vBad}, time diffs {tBad}, max |dt| {maxDt / 10.0:F1} us {(ok ? "OK" : "MISMATCH")}");
+        Console.WriteLine($"  {s.Info.Name}: app {p.Points:N0} pts{(p.HasValidUtc ? " (UTC)" : " (float time)")}, converter {s.Ticks.Length:N0}; value diffs {vBad}, time diffs {tBad}, max |dt| {maxDt / 10.0:F1} us {(ok ? "OK" : "MISMATCH")}");
     }
     return errors == 0 ? 0 : 1;
 }

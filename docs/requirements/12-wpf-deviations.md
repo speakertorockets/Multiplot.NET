@@ -16,7 +16,7 @@ as stated (users are told in the release notes); **Owner?** = recommendation awa
 | DEV-UI-004 | Rubber-band interactions are mouse-capture based; instead of confining the cursor, coordinates are clamped to the plot area. | Platform. |
 | DEV-ACC-001 | No explicit memory management in the API; garbage collection and `IDisposable` instead. | .NET idiom. |
 | DEV-PLG-001 | Native plugin DLLs are not loaded; extensions are .NET plugins (chapter 04). | Owner decision. |
-| DEV-PLG-002 | The Parquet plugin (FR-PLG-033) follows MULTITIME read rules with four differences. (1) GMT tags are built from absolute time, so day 366 is correct; SUN `d8`-index reads are affected by OQ-017. (2) The EOF hold point is added for every parameter, including `f4`-indexed ones. (3) Min/max are scanned over the returned points, after clamping. (4) Option 1001/1002 (rate rebuild) is not applied. | Parquet time is always absolute; owner decision to leave the SUN leap-year defect for now. |
+| DEV-PLG-002 | The Parquet plugin (FR-PLG-033) follows MULTITIME read rules with four differences. (1) UTC tags are built from absolute time, so day 366 is correct; SUN `d8`-index reads are affected by OQ-017. (2) The EOF hold point is added for every parameter, including `f4`-indexed ones. (3) Min/max are scanned over the returned points, after clamping. (4) Option 1001/1002 (rate rebuild) is not applied. | Parquet time is always absolute; owner decision to leave the SUN leap-year defect for now. |
 | DEV-XPT-001 | No EMF output. `SAVEPIC EMF …` and `COPYMETA file` save a **PNG** instead and log a warning; `COPYMETA CLIPBOARD` copies a bitmap. | EMF out of scope; keeps existing scripts producing an image. Owner? (OQ-003) |
 | DEV-SCR-001 | Out-of-scope script commands (`PRINT`, `PRINTERNAME`, `PRINTERMARGIN`, `COLORPRINTER`, `LANDSCAPE`, `EMFWIDE`, `COPYMETA` (file), `MCI`, `PLAYSOUND`, `EXTCMDPOLLING`, `DBPATH`) are parsed, their values stored/persisted where they are settings, otherwise ignored with an entry in the script log and diagnostic log — never an error dialog. `MCI` sets `MCI_RETURN` to an empty string. | Existing scripts must keep running. |
 | DEV-SCR-002 | No mailslot command channel; `/comm/<name>` accepted and ignored; `$MAILSLOT_NAME` returns `Auto`. | Owner scope decision. |
@@ -30,11 +30,11 @@ as stated (users are told in the release notes); **Owner?** = recommendation awa
 |---|---|---|
 | DEV-SUN-001 | MULTITIME data byte-swap test uses `typeIDS[1] != 'v'` (always true), so it relies on `DataTypeSize > 1` to skip `v1`. | Preserve observable result (no swap for `v1` objects, swap otherwise). |
 | DEV-SCR-004 | Symbol substitution restarts from the first `$` after each replacement; a value containing its own `$NAME` loops forever. | Fix: stop after 1000 substitutions in one line, report `Symbol substitution limit exceeded` and continue with the partially substituted text. |
-| DEV-SCR-005 | `$GMT_REFERENCE` consumes 16 characters (2 more than its length). | Preserve (scripts may compensate). Owner? (OQ-008) |
+| DEV-SCR-005 | `$UTC_REFERENCE` consumes 16 characters (2 more than its length). | Preserve (scripts may compensate). Owner? (OQ-008) |
 | DEV-SCR-006 | `FIXX/FIXY lo,hi, p` (space before `p`) produces a fixed increment of 0. | Preserve parsing; the scaler treats increment 0 as best-fit (avoids divide-by-zero). |
 | DEV-SCR-007 | `TIME hh:mm:ss,…` treats the text before the first `:` as a group name and stops. | Preserve. |
 | DEV-SCR-008 | `SET NAME=value` truncates the value at the first `;` even when written as `\;`. | Preserve. |
-| DEV-SCR-009 | `RETAINMTGMT` shows the deprecation error and then also executes as `64BITTIME`. | Preserve. |
+| DEV-SCR-009 | `RETAINMTUTC` shows the deprecation error and then also executes as `64BITTIME`. | Preserve. |
 | DEV-SCR-010 | `REFRESH OFF` when auto refresh is not running performs a one-time refresh. | Preserve. |
 | DEV-SCR-011 | `SET TRACE` logic index range is 0–3 in positional form but 1–4 in `KEY=` form. | Preserve. |
 | DEV-EXP-001 | Unusual operator precedence (`%` below `*`/`/`, `<` above `>`, `~` below `&`/`|`, ties left-to-right for `^`). | Preserve; document for users. |

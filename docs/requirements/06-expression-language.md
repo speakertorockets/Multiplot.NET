@@ -138,7 +138,7 @@ unless another parameter's **file** data rate (> 0) is lower than the base file'
 case the lowest-rate one becomes the base. The result has the base's time stamps.
 If `CALCEVERYTIME` is ON and there are ≥ 2 parameters: the timeline is the sorted union of all
 parameters' time stamps with duplicates closer than 1 µs removed (float32 arithmetic, or double
-GMT-derived when 64-bit time is on).
+UTC-derived when 64-bit time is on).
 For constant-only expressions (no brackets), the timeline is the file's TIME parameter (position 0)
 and the expression is evaluated only for the first file of the group.
 
@@ -146,7 +146,7 @@ and the expression is evaluated only for the first file of the group.
 count, same file, the file is a common-time format (COMPRESSED, COMMONTIME, UNCOMPRESSED,
 CIRCULAR), it is not a function result, and 64-bit time is off. Otherwise its value at each base
 time `t` is found by time search: `ALIGNCLOSEST ON` → closest point; OFF → last point at or before `t`
-(sample-and-hold / "stale" value). With 64-bit time, the search is done on GMTs.
+(sample-and-hold / "stale" value). With 64-bit time, the search is done on UTCs.
 
 **FR-EXP-032 (result nomenclature)** Result name = expression text (if > 256 chars, truncated to
 252 + `...`); for constant-only expressions with a `file:` prefix, the text after the last `:`.
@@ -181,7 +181,7 @@ Every function returns a curve named by the function text; if a function produce
 | FR-FN-003 | `atan2(y x)` | | `atan2(y, x(t))` with x aligned by last-point-at-or-before; x dropout → dropout |
 | FR-FN-004 | `rand(p)` | | replaces each non-dropout value with C `rand()` (0..32767) |
 | FR-FN-005 | `spline(p [n])` | n = factor (|n|, default 2, min 2) | natural cubic spline (Burden & Faires Alg. 3.4) resampled to `points × n` equally spaced points over [t0, tN); confirm prompt if points < 2 or > 50,000 (`Perform SPLINE() with %d points?\n*Long process`) |
-| FR-FN-006 | `deltat(p)` | | value = t[i] − t[i−1] (GMT-based when available); first point dropout |
+| FR-FN-006 | `deltat(p)` | | value = t[i] − t[i−1] (UTC-based when available); first point dropout |
 | FR-FN-007 | `delta(p)` | | value = v[i] − previous valid v; first point dropout; dropouts stay dropouts and do not reset the previous value |
 | FR-FN-008 | `fit(p)` | | linear least squares y = a + b·t; description becomes `Slope=%g Intercept=%g` (+ user description) |
 | FR-FN-009 | `polyfit(p [n])` | n = degree (default 2) | polynomial least-squares fit, description from the fitter — see OQ-006 |

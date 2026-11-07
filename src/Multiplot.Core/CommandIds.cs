@@ -158,7 +158,7 @@ public static class CommandIds
     public const int ID_SYM_LARGE = 57879;
     public const int ID_BREAKOUT = 57882;
     public const int ID_SAVEMETA = 57883;
-    public const int ID_SHOWGMT = 57887;
+    public const int ID_SHOWUTC = 57887;
     public const int ID_CLEARREMEMBERED = 57888;
     public const int ID_NEXT_WINDOW = 57889;
     public const int ID_PREV_WINDOW = 57890;
@@ -239,11 +239,11 @@ public static class CommandIds
     public const int ID_AUTOCOMPACT = 58025;
     public const int ID_HITPARM = 58026;
     public const int ID_ADDPARAMETER = 58027;
-    public const int ID_RETURNGMT = 58028;
+    public const int ID_RETURNUTC = 58028;
     public const int ID_WINDOWLIST = 58029;
     public const int ID_HIGHFREQ_OPT = 58031;
     public const int ID_OPTIMIZED_DRAW = 58032;
-    public const int ID_GMTFORMAT = 58034;
+    public const int ID_UTCFORMAT = 58034;
     public const int ID_COPYJPEG = 58035;
     public const int ID_SAVEJPEG = 58036;
     public const int ID_GROUPBY_INDEPENDENT = 58037;
@@ -516,7 +516,7 @@ public static class CommandIds
         ["ID_SYM_LARGE"] = 57879,
         ["ID_BREAKOUT"] = 57882,
         ["ID_SAVEMETA"] = 57883,
-        ["ID_SHOWGMT"] = 57887,
+        ["ID_SHOWUTC"] = 57887,
         ["ID_CLEARREMEMBERED"] = 57888,
         ["ID_NEXT_WINDOW"] = 57889,
         ["ID_PREV_WINDOW"] = 57890,
@@ -597,11 +597,11 @@ public static class CommandIds
         ["ID_AUTOCOMPACT"] = 58025,
         ["ID_HITPARM"] = 58026,
         ["ID_ADDPARAMETER"] = 58027,
-        ["ID_RETURNGMT"] = 58028,
+        ["ID_RETURNUTC"] = 58028,
         ["ID_WINDOWLIST"] = 58029,
         ["ID_HIGHFREQ_OPT"] = 58031,
         ["ID_OPTIMIZED_DRAW"] = 58032,
-        ["ID_GMTFORMAT"] = 58034,
+        ["ID_UTCFORMAT"] = 58034,
         ["ID_COPYJPEG"] = 58035,
         ["ID_SAVEJPEG"] = 58036,
         ["ID_GROUPBY_INDEPENDENT"] = 58037,

@@ -40,7 +40,7 @@ public enum DataType : ushort
 public static class DataTypes
 {
     /// <summary>Flag OR-ed into a requested type to also return a TimeTag array (MULTITIME only).</summary>
-    public const ushort ReturnGmtFlag = 0x0100;
+    public const ushort ReturnUtcFlag = 0x0100;
 
     /// <summary>Dropout bit pattern (4 byte types).</summary>
     public const uint DropOutBits = 0x80000001;

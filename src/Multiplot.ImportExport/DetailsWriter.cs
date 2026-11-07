@@ -65,11 +65,11 @@ public static class DetailsWriter
             int iScale = descr.IndexOf('\\');
             sb.Append(Crt.Sprintf("Parameter description: %s\n", iScale != -1 ? descr[..iScale] : descr));
             sb.Append(Crt.Sprintf("User defined scale ID: %s\n", iScale != -1 ? descr[(iScale + 1)..] : "(undefined)"));
-            if (d.RefGmt.HasValue)
-                sb.Append(Crt.Sprintf("Reference GMT: %03d/%u.%d\n", (int)d.RefGmt.Value.JulianDay, d.RefGmt.Value.MilliSeconds, (int)d.RefGmt.Value.MicroSeconds));
+            if (d.RefUtc.HasValue)
+                sb.Append(Crt.Sprintf("Reference UTC: %03d/%u.%d\n", (int)d.RefUtc.Value.JulianDay, d.RefUtc.Value.MilliSeconds, (int)d.RefUtc.Value.MicroSeconds));
             if (d.RefTime.HasValue)
                 sb.Append(Crt.Sprintf("Reference TIME: %f (relative offset)\n", d.RefTime.Value));
-            if (!d.RefGmt.HasValue && !d.RefTime.HasValue && src != null)
+            if (!d.RefUtc.HasValue && !d.RefTime.HasValue && src != null)
             {
                 var r = src.Info.RefTime;
                 sb.Append(Crt.Sprintf("Reference time: File reference (%02ld %03ld %02ld:%02ld:%02ld.%03d)\n", r[0], r[1], r[2], r[3], r[4], r[5]));
@@ -150,7 +150,7 @@ public static class DetailsWriter
             {
                 sb.Append("[data stream events]\n");
                 foreach (var e in f.Events)
-                    sb.Append(Crt.Sprintf("%s=%d/%d.%d\n", e.Name, (int)e.Gmt.JulianDay, (int)e.Gmt.MilliSeconds, (int)e.Gmt.MicroSeconds));
+                    sb.Append(Crt.Sprintf("%s=%d/%d.%d\n", e.Name, (int)e.Utc.JulianDay, (int)e.Utc.MilliSeconds, (int)e.Utc.MicroSeconds));
             }
         }
         else return null;

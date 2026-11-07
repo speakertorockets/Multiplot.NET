@@ -77,26 +77,26 @@ reference. The global defaults are set by the Time Slice dialog or `TIME` (FR-SC
 
 | `ref` | Meaning | Resolution |
 |---|---|---|
-| `NONE` | file time base | TIME as stored in the file (file reference GMT; for streams `STREAMnnREF`) |
+| `NONE` | file time base | TIME as stored in the file (file reference UTC; for streams `STREAMnnREF`) |
 | `START` | t = 0 | relative offset 0 |
 | `SHUTDOWN`, `C`, `CUTOFF` | engine cutoff | relative offset = cutoff of current file, else first non-zero cutoff in the group; a 0 cutoff on a dynamic file is "not found" |
-| `EOF` | end of file | relative offset = max TIME of the file for COMPRESSED/UNCOMPRESSED/CIRCULAR/COMMONTIME, else +3e38; for streams the stream's current GMT |
+| `EOF` | end of file | relative offset = max TIME of the file for COMPRESSED/UNCOMPRESSED/CIRCULAR/COMMONTIME, else +3e38; for streams the stream's current UTC |
 | number | constant offset | relative offset = value (must be a valid constant) |
-| `ddd/msec[.usec]` | explicit GMT | TimeTag |
-| `[ddd/]hh[:mm[:ss[.mmm[.uuu]]]]` | explicit GMT (contains `:`) | TimeTag; day defaults to the file header day |
-| event name | file event | case-insensitive match in the current file's `[events]`, else in other files of the group (unless *strict* mode and the current file has no `t8` GMT index) |
-GMT-type references access data by GMT (FR-SUN-050); offset-type references access by relative TIME.
+| `ddd/msec[.usec]` | explicit UTC | TimeTag |
+| `[ddd/]hh[:mm[:ss[.mmm[.uuu]]]]` | explicit UTC (contains `:`) | TimeTag; day defaults to the file header day |
+| event name | file event | case-insensitive match in the current file's `[events]`, else in other files of the group (unless *strict* mode and the current file has no `t8` UTC index) |
+UTC-type references access data by UTC (FR-SUN-050); offset-type references access by relative TIME.
 If neither resolves: `Reference Event, <ref>, not found\nfile: <file>\ngroup: <group>` and the file
 is skipped. Option `FIRSTOCCURRENCE` affects stream parameters (FR-LOAD-032).
 
 **FR-LOAD-021 (start/stop values)** A start or stop string is `base[(+|-)offset]` (spaces removed;
 an offset is recognised only after the first character). `base` may be anything accepted for `ref`
-(GMT, event, START, CUTOFF, EOF, number). Conversion to seconds relative to `ref`:
-* base resolves to a GMT: time = GMT(base) − GMT(ref) (ref `NONE` → file reference GMT). If ref is not a
-  GMT, the GMT is located in the file's GMT index and converted to the TIME value at that point,
+(UTC, event, START, CUTOFF, EOF, number). Conversion to seconds relative to `ref`:
+* base resolves to a UTC: time = UTC(base) − UTC(ref) (ref `NONE` → file reference UTC). If ref is not a
+  UTC, the UTC is located in the file's UTC index and converted to the TIME value at that point,
   then the relative `ref` offset is subtracted (errors −2 / −4 when impossible).
 * base is relative: time = value; if ref ≠ `NONE` and base is not a plain number, subtract the ref
-  (for a GMT ref: subtract GMT(ref) − GMT(`START` event)…).
+  (for a UTC ref: subtract UTC(ref) − UTC(`START` event)…).
 * finally add the offset.
 Invalid combinations report `Invalid Start/Reference time combination\nfor <group>` or `…Stop…`
 (OK/Cancel; Cancel aborts the load) and the group is skipped.
@@ -119,7 +119,7 @@ then load and display. Auto refresh is paused during the load and restored after
 **FR-LOAD-031 (load algorithm)** For each group in order: compute the slice (FR-LOAD-021); if X is
 not `(default)` resolve the X item (FR-EXP-040); then for each Y list item (FR-EXP-001) and each file of
 the group, produce at most one curve (FR-EXP-003); stop at 1000 curves. Loading requests float data
-(and GMT arrays when 64-bit time is on). Curves get default attributes: line size = current, solid,
+(and UTC arrays when 64-bit time is on). Curves get default attributes: line size = current, solid,
 symbols = current, no scatter, symbol id = colour index = curve number mod 100, tab format = current
 data precision, tab legend on, logic labels = current default.
 

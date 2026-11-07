@@ -36,7 +36,7 @@ public sealed class PlotDocument
     public string[] XAxisNomen = { "TIME", "Seconds", "Relative Time in Seconds" };
     public string XUdef = "", YUdef = "", XTitleFormat = "", YTitleFormat = "", XTitle = "", YTitle = "";
     public string TReference = "NONE", TSlice = "";
-    public string PlotDate = "", ScriptFile = "(Interactive)", GmtFormat = "%03u/%02u:%02u:%02u.%03u", UserCaption = "";
+    public string PlotDate = "", ScriptFile = "(Interactive)", UtcFormat = "%03u/%02u:%02u:%02u.%03u", UserCaption = "";
     public string BackgroundFile = "";
     public object? BackgroundImage;
     public Scale XScale = new();
@@ -87,12 +87,12 @@ public sealed class PlotDocument
     }
 
     /// <summary>Plot window initialisation (captions, titles, initial scaling).</summary>
-    public void Initialize(int plotNo, int multiGroupBy, string gmtFormat, string userCaption, string? scriptFile,
+    public void Initialize(int plotNo, int multiGroupBy, string utcFormat, string userCaption, string? scriptFile,
         bool continueTitle, bool continueSubTitle, bool ignoreStatic, FixedScaleDefaults fix, DateTime now)
     {
         PlotNo = plotNo;
         MultiGroupBy = multiGroupBy;
-        GmtFormat = gmtFormat;
+        UtcFormat = utcFormat;
         PlotDate = ValueFormat.FormatTimeStamp(now);
         UseTitle = continueTitle;
         UseSubTitle = continueSubTitle;
@@ -533,10 +533,10 @@ public sealed class PlotDocument
         return high;
     }
 
-    /// <summary>Header reference GMT of a curve's file.</summary>
-    public static TimeTag HeaderGmt(ParameterData p)
+    /// <summary>Header reference UTC of a curve's file.</summary>
+    public static TimeTag HeaderUtc(ParameterData p)
     {
-        if (p.RefGmt.HasValue) return p.RefGmt.Value;
+        if (p.RefUtc.HasValue) return p.RefUtc.Value;
         var rt = p.Source?.Info.RefTime ?? new uint[6];
         short day = (short)rt[1];
         if (day == 0) day++;
@@ -548,9 +548,9 @@ public sealed class PlotDocument
     {
         if (Config.ClockTime)
         {
-            var g = HeaderGmt(p);
+            var g = HeaderUtc(p);
             double dTime = p.Time[tPoint] + (p.RefTime ?? 0.0);
-            return ValueFormat.ClockString(TimeMath.Gmt(dTime, g, true));
+            return ValueFormat.ClockString(TimeMath.Utc(dTime, g, true));
         }
         return Crt.Sprintf("%.*f", Host.TimePrecision == -1 ? 3 : Host.TimePrecision, p.Time[tPoint]);
     }
@@ -660,7 +660,7 @@ public sealed class PlotDocument
     /// <summary>Formats the REFT item.</summary>
     public static string RefTString(ParameterData t)
     {
-        if (t.RefGmt.HasValue) return ValueFormat.ClockString(t.RefGmt.Value, "(T-Ref: %03u/%02u:%02u:%02u.%03u)");
+        if (t.RefUtc.HasValue) return ValueFormat.ClockString(t.RefUtc.Value, "(T-Ref: %03u/%02u:%02u:%02u.%03u)");
         if (t.RefTime.HasValue) return Crt.Sprintf("(T-Ref: %.3f)", t.RefTime.Value);
         var rt = t.Source?.Info.RefTime ?? new uint[6];
         return Crt.Sprintf("(T-Ref: %02ld %03ld %02ld:%02ld:%02ld.%03ld)", (int)rt[0], (int)rt[1], (int)rt[2], (int)rt[3], (int)rt[4], (int)rt[5]);
@@ -804,7 +804,7 @@ public sealed class PlotDocument
         string x;
         if (Config.ClockTime && !Config.PidVsPid)
             x = (Config.XNomen & Nomen.UDEF) == Nomen.UDEF ? ParseStringKeywords(XUdef, 0) : "Time";
-        else if (NCurves > 0 && (Curves[0].Data.RefTime.HasValue || Curves[0].Data.RefGmt.HasValue))
+        else if (NCurves > 0 && (Curves[0].Data.RefTime.HasValue || Curves[0].Data.RefUtc.HasValue))
         {
             x = SetNomenString(Config.XNomen & ~Nomen.REFT, null, XUdef, Config.XNomOrder, Config.XNomLen);
             if ((Config.XNomen & Nomen.REFT) != 0) x += " Seconds from " + TReference;
@@ -863,9 +863,9 @@ public sealed class PlotDocument
         var sb = new System.Text.StringBuilder();
         if (Config.ClockTime && NCurves > 0)
         {
-            var g = HeaderGmt(Curves[0].Data);
-            var s = TimeMath.Gmt(XScale.RMin, g, true);
-            var e = TimeMath.Gmt(XScale.RMax, g, true);
+            var g = HeaderUtc(Curves[0].Data);
+            var s = TimeMath.Utc(XScale.RMin, g, true);
+            var e = TimeMath.Utc(XScale.RMax, g, true);
             sb.Append(Crt.Sprintf("Time range:  %03d/%02u:%02u:%02u.%03u   to   %03d/%02u:%02u:%02u.%03u\n\n",
                 (int)s.JulianDay, (s.MilliSeconds / 3600000U) % 24, (s.MilliSeconds % 3600000U) / 60000U, (s.MilliSeconds % 60000U) / 1000U, s.MilliSeconds % 1000U,
                 (int)e.JulianDay, (e.MilliSeconds / 3600000U) % 24, (e.MilliSeconds % 3600000U) / 60000U, (e.MilliSeconds % 60000U) / 1000U, e.MilliSeconds % 1000U));

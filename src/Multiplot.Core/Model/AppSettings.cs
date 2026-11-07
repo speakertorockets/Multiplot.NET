@@ -52,7 +52,7 @@ public sealed class AppSettings
 
     // titles / nomenclature
     public string XTitle = "Multiplot", YTitle = "Parameter", XUdef = "", YUdef = "";
-    public string GmtFormat = "%03u/%02u:%02u:%02u.%03u";
+    public string UtcFormat = "%03u/%02u:%02u:%02u.%03u";
 
     // [printer] (stored only)
     public string UserPrinter = "", TextPrinter = "notepad /p";
@@ -85,7 +85,7 @@ public sealed class AppSettings
     // [external applications]
     public string EditApp = "", ExportApp = "";
     public int DataPrecision = -1, TimePrecision = -1;
-    public bool SharedTabTime, ShowGmt;
+    public bool SharedTabTime, ShowUtc;
 
     // [scripting]
     public bool ScriptPrompt = true, EmbeddedScript;
@@ -103,5 +103,5 @@ public sealed class AppSettings
     public readonly List<string> UserVars = new();
 
     // session flags that are not stored in the INI
-    public bool StreamCert = true, PcgHistory = true, ShowGmtDefault;
+    public bool StreamCert = true, PcgHistory = true, ShowUtcDefault;
 }

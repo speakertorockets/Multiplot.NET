@@ -72,14 +72,14 @@ INI name and do nothing if empty) writes exactly this layout (CRLF as text mode 
 [access time] DefaultStartTime, DefaultStopTime, DefaultReference
 [functions] AverageRate (%.3f), TimeStampMode
 [mouse]     RBfunction, PopupsGlobal
-[external applications] ExportApp, EditApp, DecimalPlaces, TimePrecision, SharedTabTime, IncludeGMTs
+[external applications] ExportApp, EditApp, DecimalPlaces, TimePrecision, SharedTabTime, IncludeUTCs
 [scripting] ScriptPrompt, PauseMode, EmbeddedScript
 [fonts]     TitleFont, LabelFont
 [plot style] GroupBy, ExtNomen, AltNames, SymbolFreq, SampleFreq, AverageFreq, ZaxisFreq, TabStepRate,
             Xtitle, Ytitle, Xnomen, Ynomen, Xudef, Yudef, Xautolabel, UseTitle, UseSubTitle, UseMarkers,
             MarkersTopmost, LegendColumns, ReservedLegend, GridOffset, ShowLegend, LegendColor,
             ShowSymbols, SymbolSize, 3DZangle, PlotMax, ApplyAll, LineSize, 3DLineSize,
-            MinorTics, BoldFrame, ScaleGroup, StairStep, ClockTime, GMTformat, GridLines, TestInfo,
+            MinorTics, BoldFrame, ScaleGroup, StairStep, ClockTime, UTCformat, GridLines, TestInfo,
             LegendShift, CaptionSource,
             EMFwideAspect, NoCaptionBar, LogicTxtIndex,
             LogicTxtLabel = i,true,false (×4), XNomenLen, YNomenLen, XNomenOrder, YNomenOrder,
@@ -109,7 +109,7 @@ is written as the current value only when it is `start` (case-insensitive), othe
 | `titlefont`, `labelfont` | `pointSz height width esc orient weight italic underline strike charset outPrec clipPrec quality pitchFamily face…` (first value > 0 = point size ×10, else height) | fonts (point size ×10 sets the drawn size, FR-UI-029) | title 120/45 "Multiplot"; label 100/30 "Multiplot" |
 | `gridstyle` | contains solid/dotted/dashed | | dotted |
 | `minortics`, `boldframe`, `scalegroup`, `stairstep`, `clocktime` | B | | 0,0,0,0,0 |
-| `gmtformat` | C format (empty → default) | | `%03u/%02u:%02u:%02u.%03u` |
+| `utcformat` | C format (empty → default) | | `%03u/%02u:%02u:%02u.%03u` |
 | `ignorestatic`, `dropoutmarker`, `dropoutignore` | B | | 0,0,1 |
 | `pcgcachesize` | long | stream cache size, also sent as `cachesize n` command to signature 0xFFF0FFFF | 16384 |
 | `rbfunction` | 0 delta, 1 popup, 2 slice, 3 track | right-button default | 0 |
@@ -134,7 +134,7 @@ is written as the current value only when it is `start` (case-insensitive), othe
 | `defaultstarttime`, `defaultstoptime`, `defaultreference` | text | global slice | `-3.4e+038`, `+3.4e+038`, `NONE` |
 | `editapp`, `exportapp` | text | | "" |
 | `decimalplaces`, `timeprecision` | int clamped −1..12 | | −1, −1 |
-| `sharedtabtime`, `includegmts` | B | | 0, 0 |
+| `sharedtabtime`, `includeutcs` | B | | 0, 0 |
 | `monitors` | 0..10 | tiling across monitors | 0 |
 | `optimizeddraw`, `offscreendraw` | |int| | | 1, 1 |
 | `autosave`, `maxpresentation`, `useplaceholder`, `rebuildrate`, `tabhistory`, `defaulttabtime`, `exitsafety`, `statusbar` | B | | 1,1,0,1,1,1,0,1 |

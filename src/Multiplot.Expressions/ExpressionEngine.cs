@@ -50,8 +50,8 @@ public sealed class ExpressionEngine
 
     private static int FindParameter(string name, IDataFile f) => f.FindParameter(name, out _);
 
-    private ParameterData? Read(IDataFile f, string name, double[] slice, double? refTime, TimeTag? refGmt) =>
-        _ctx.Read(f, name, slice[0], slice[1], refTime, refGmt, _ctx.Use64BitTime);
+    private ParameterData? Read(IDataFile f, string name, double[] slice, double? refTime, TimeTag? refUtc) =>
+        _ctx.Read(f, name, slice[0], slice[1], refTime, refUtc, _ctx.Use64BitTime);
 
     private static float FileRate(IDataFile? f) => f is ITimeIndexedFile ti ? ti.FileRate : -1f;
 
@@ -391,7 +391,7 @@ public sealed class ExpressionEngine
                     for (int n = 0; n < pFile.Count; n++)
                     {
                         double? refTime = null;
-                        TimeTag? refGmt = null;
+                        TimeTag? refUtc = null;
                         pid[j] = null;
                         int desiredFile = currentFile;
                         int colon = exprPid[j].LastIndexOf(':');
@@ -425,15 +425,15 @@ public sealed class ExpressionEngine
                         {
                             if (!string.Equals(tref, "NONE", StringComparison.OrdinalIgnoreCase))
                             {
-                                refGmt = TimeReference.GetRefGmt(pFile, n, tref);
-                                if (refGmt == null) refTime = TimeReference.GetRefTime(pFile, n, tref);
-                                if (refTime.HasValue || refGmt.HasValue)
+                                refUtc = TimeReference.GetRefUtc(pFile, n, tref);
+                                if (refUtc == null) refTime = TimeReference.GetRefTime(pFile, n, tref);
+                                if (refTime.HasValue || refUtc.HasValue)
                                 {
-                                    if ((pid[j] = Read(pFile[desiredFile], exprPid[j], slice, refTime, refGmt)) != null)
+                                    if ((pid[j] = Read(pFile[desiredFile], exprPid[j], slice, refTime, refUtc)) != null)
                                     {
                                         if (basePidSource < 0) basePidSource = desiredFile;
                                     }
-                                    else if ((pid[j] = Read(pFile[n], exprPid[j], slice, refTime, refGmt)) != null)
+                                    else if ((pid[j] = Read(pFile[n], exprPid[j], slice, refTime, refUtc)) != null)
                                     {
                                         if (basePidSource < 0) basePidSource = n;
                                     }
@@ -482,7 +482,7 @@ public sealed class ExpressionEngine
                                     var gFiles = GroupFiles(fg);
                                     if (!string.Equals(grp.TRef, "NONE", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        TimeTag? rg = TimeReference.GetRefGmt(gFiles, f - grp.StartPos, grp.TRef);
+                                        TimeTag? rg = TimeReference.GetRefUtc(gFiles, f - grp.StartPos, grp.TRef);
                                         double? rt = rg == null ? TimeReference.GetRefTime(gFiles, f - grp.StartPos, grp.TRef) : null;
                                         if (rt.HasValue || rg.HasValue)
                                             pid[j] = Read(all[f], exprPid[j], slice, rt, rg);
@@ -553,7 +553,7 @@ public sealed class ExpressionEngine
                         string timeName = pFile[0].Parameters.Count > 0 ? pFile[0].Parameters[0].Name : "@0";
                         if (!string.Equals(tref, "NONE", StringComparison.OrdinalIgnoreCase))
                         {
-                            TimeTag? rg = TimeReference.GetRefGmt(pFile, currentFile, tref);
+                            TimeTag? rg = TimeReference.GetRefUtc(pFile, currentFile, tref);
                             double? rt = rg == null ? TimeReference.GetRefTime(pFile, currentFile, tref) : null;
                             if (rt.HasValue || rg.HasValue)
                                 calculated = Read(pFile[basePidSource], timeName, slice, rt, rg);
@@ -630,7 +630,7 @@ public sealed class ExpressionEngine
     private int Evaluate(ParameterData calculated, List<ParameterData> pid, string exp, string expression, int fileGroup, ref string errMsg)
     {
         int status = 0;
-        bool hrTime = _ctx.Use64BitTime && calculated.HasValidGmt;
+        bool hrTime = _ctx.Use64BitTime && calculated.HasValidUtc;
         bool filter = HasAssignmentOp(exp);
         bool hasDelta = exp.Contains('~');
         int n = pid.Count;
@@ -694,8 +694,8 @@ public sealed class ExpressionEngine
         var ct = calculated.Time;
         int filterPnts = 0;
         int points = calculated.Points;
-        var cGmt = calculated.Gmt;
-        int cGo = calculated.GmtOffset;
+        var cUtc = calculated.Utc;
+        int cGo = calculated.UtcOffset;
         for (int pnt = 0; pnt < points; pnt++)
         {
             bool hasDropout = false;
@@ -708,10 +708,10 @@ public sealed class ExpressionEngine
                     continue;
                 }
                 var pp = pid[pPtr];
-                bool gmtValid = pp.HasValidGmt;
-                double baseTime = hrTime ? TimeMath.Time(cGmt![cGo + pnt], calculated.RefGmt!.Value) - (calculated.RefTime ?? 0.0) : ct[pnt];
-                double parmStart = gmtValid ? TimeMath.Time(pp.GmtAt(0), pp.RefGmt!.Value) - (pp.RefTime ?? 0.0) : pp.Time[0];
-                double parmEnd = gmtValid ? TimeMath.Time(pp.GmtAt(pp.Points - 1), pp.RefGmt!.Value) - (pp.RefTime ?? 0.0) : pp.Time[pp.Points - 1];
+                bool utcValid = pp.HasValidUtc;
+                double baseTime = hrTime ? TimeMath.Time(cUtc![cGo + pnt], calculated.RefUtc!.Value) - (calculated.RefTime ?? 0.0) : ct[pnt];
+                double parmStart = utcValid ? TimeMath.Time(pp.UtcAt(0), pp.RefUtc!.Value) - (pp.RefTime ?? 0.0) : pp.Time[0];
+                double parmEnd = utcValid ? TimeMath.Time(pp.UtcAt(pp.Points - 1), pp.RefUtc!.Value) - (pp.RefTime ?? 0.0) : pp.Time[pp.Points - 1];
                 int pLoc;
                 if (baseTime < parmStart || baseTime > parmEnd)
                 {
@@ -721,10 +721,10 @@ public sealed class ExpressionEngine
                 }
                 if (syncTime[pPtr])
                 {
-                    if (hrTime && gmtValid)
+                    if (hrTime && utcValid)
                     {
-                        double d = TimeMath.Time(cGmt![cGo + pnt], calculated.RefGmt!.Value);
-                        pLoc = TimeMath.GmtLocation(d, pp.Gmt!, pp.GmtOffset, pp.Points, pp.RefGmt!.Value, _ctx.AlignClosest ? 0 : 1);
+                        double d = TimeMath.Time(cUtc![cGo + pnt], calculated.RefUtc!.Value);
+                        pLoc = TimeMath.UtcLocation(d, pp.Utc!, pp.UtcOffset, pp.Points, pp.RefUtc!.Value, _ctx.AlignClosest ? 0 : 1);
                     }
                     else
                         pLoc = TimeMath.Location(ct[pnt], pp.Time, pp.Points, _ctx.AlignClosest ? 0 : 1);
@@ -844,7 +844,7 @@ public sealed class ExpressionEngine
             if (filterPnts != 0)
             {
                 calculated.Points = filterPnts;
-                calculated.GmtOffsetValid = false;
+                calculated.UtcOffsetValid = false;
             }
             else
             {
@@ -878,9 +878,9 @@ public sealed class ExpressionEngine
             int k = 0;
             foreach (var p in pParm)
             {
-                bool hr = p.HasValidGmt;
+                bool hr = p.HasValidUtc;
                 for (int i = 0; i < p.Points; i++)
-                    arr[k++] = hr ? TimeMath.Time(p.GmtAt(i), p.RefGmt!.Value) : p.Time[i];
+                    arr[k++] = hr ? TimeMath.Time(p.UtcAt(i), p.RefUtc!.Value) : p.Time[i];
             }
             Array.Sort(arr);
             var sorted = new double[tPoints];
@@ -891,16 +891,16 @@ public sealed class ExpressionEngine
             bottom++;
             timeParm.Time = new float[bottom];
             timeParm.Data = new float[bottom];
-            bool gmt = timeParm.RefGmt.HasValue;
-            timeParm.Gmt = gmt ? new TimeTag[bottom] : null;
-            timeParm.GmtOffset = 0;
-            timeParm.GmtPoints = gmt ? bottom : 0;
+            bool utc = timeParm.RefUtc.HasValue;
+            timeParm.Utc = utc ? new TimeTag[bottom] : null;
+            timeParm.UtcOffset = 0;
+            timeParm.UtcPoints = utc ? bottom : 0;
             timeParm.CommonTimeIndex = false;
-            timeParm.GmtOffsetValid = gmt;
+            timeParm.UtcOffsetValid = utc;
             for (int i = 0; i < bottom; i++)
             {
                 timeParm.Time[i] = (float)sorted[i];
-                if (gmt) timeParm.Gmt![i] = TimeMath.Gmt(sorted[i], timeParm.RefGmt!.Value, true);
+                if (utc) timeParm.Utc![i] = TimeMath.Utc(sorted[i], timeParm.RefUtc!.Value, true);
             }
         }
         else
@@ -919,7 +919,7 @@ public sealed class ExpressionEngine
             timeParm.Time = new float[bottom];
             Array.Copy(sorted, timeParm.Time, bottom);
             timeParm.Data = new float[bottom];
-            timeParm.GmtOffsetValid = false;
+            timeParm.UtcOffsetValid = false;
         }
         timeParm.Points = bottom;
         return timeParm;
@@ -1127,12 +1127,12 @@ public sealed class ExpressionEngine
         }
 
         double? refTime = null;
-        TimeTag? refGmt = null;
+        TimeTag? refUtc = null;
         if (!string.Equals(tref, "NONE", StringComparison.OrdinalIgnoreCase))
         {
-            refGmt = TimeReference.GetRefGmt(pFile, currentFile, tref);
-            if (refGmt == null) refTime = TimeReference.GetRefTime(pFile, currentFile, tref);
-            if (!(refTime.HasValue || refGmt.HasValue))
+            refUtc = TimeReference.GetRefUtc(pFile, currentFile, tref);
+            if (refUtc == null) refTime = TimeReference.GetRefTime(pFile, currentFile, tref);
+            if (!(refTime.HasValue || refUtc.HasValue))
             {
                 if (ErrPrompt && FindParameter(p0, pFile[currentFile]) >= 0)
                 {
@@ -1145,7 +1145,7 @@ public sealed class ExpressionEngine
         var pParm = new ParameterData?[8];
         if (IsFunction(p0) != Fn.None) pParm[0] = DoFunction(pFile, currentFile, fileGroup, p0, slice, tref, ref errMsg);
         else if (IsExpression(p0)) pParm[0] = Parse(pFile, currentFile, fileGroup, p0, slice, tref, ref errMsg);
-        else pParm[0] = Read(pFile[currentFile], p0, slice, refTime, refGmt);
+        else pParm[0] = Read(pFile[currentFile], p0, slice, refTime, refUtc);
 
         if (pParm[0] != null)
         {
@@ -1157,13 +1157,13 @@ public sealed class ExpressionEngine
                 else if (IsExpression(nm)) pParm[k] = Parse(pFile, currentFile, fileGroup, nm, slice, tref, ref errMsg);
                 else
                 {
-                    pParm[k] = Read(pFile[currentFile], nm, slice, refTime, refGmt);
+                    pParm[k] = Read(pFile[currentFile], nm, slice, refTime, refUtc);
                     if (pParm[k] == null)
                     {
                         for (int i = 0; i < pFile.Count; i++)
                         {
                             if (i == currentFile) continue;
-                            if ((pParm[k] = Read(pFile[i], nm, slice, refTime, refGmt)) != null) break;
+                            if ((pParm[k] = Read(pFile[i], nm, slice, refTime, refUtc)) != null) break;
                         }
                     }
                 }
@@ -1341,7 +1341,7 @@ public sealed class ExpressionEngine
             else if (funcNum == Fn.DeltaT)
             {
                 if (i == 0) s[0] = DropOut;
-                else if (p.HasValidGmt) s[i] = (float)TimeMath.Time(p.GmtAt(i), p.GmtAt(i - 1));
+                else if (p.HasValidUtc) s[i] = (float)TimeMath.Time(p.UtcAt(i), p.UtcAt(i - 1));
                 else s[i] = p.Time[i] - p.Time[i - 1];
             }
             else if (!IsDrop(s[i]))
@@ -1407,7 +1407,7 @@ public sealed class ExpressionEngine
         double b = (pid.Points * sumXy - sumX * sumY) / delta;
         for (int i = 0; i < pid.Points; ++i) y[i] = (float)(a + b * x[i]);
         ResetNomen(pid, null, null, Crt.Sprintf("Slope=%g Intercept=%g", b, a));
-        pid.GmtOffsetValid = false;
+        pid.UtcOffsetValid = false;
         pid.MinIndex = ParameterOps.DataMin(pid, _ctx.FilterInvalid);
         pid.MinValue = y[pid.MinIndex];
         pid.MaxIndex = ParameterOps.DataMax(pid, _ctx.FilterInvalid);
@@ -1493,7 +1493,7 @@ public sealed class ExpressionEngine
         pid.Data = data;
         pid.Time = time;
         pid.Points = newSize;
-        pid.GmtOffsetValid = false;
+        pid.UtcOffsetValid = false;
         return true;
     }
 
@@ -1521,7 +1521,7 @@ public sealed class ExpressionEngine
         primary.Data = data;
         primary.Time = time;
         primary.Points = n * 2;
-        primary.GmtOffsetValid = false;
+        primary.UtcOffsetValid = false;
         primary.MinIndex = ParameterOps.DataMin(primary, _ctx.FilterInvalid);
         primary.MinValue = data[primary.MinIndex];
         primary.MaxIndex = ParameterOps.DataMax(primary, _ctx.FilterInvalid);
@@ -1536,12 +1536,12 @@ public sealed class ExpressionEngine
         float shiftValue = 0;
         if (Math.Abs(tStart - tStop) < .001)
         {
-            shift = _ctx.Read(pid.Source, pid.Name, tStart - 10.0, tStart + 10.0, pid.RefTime, pid.RefGmt, false);
+            shift = _ctx.Read(pid.Source, pid.Name, tStart - 10.0, tStart + 10.0, pid.RefTime, pid.RefUtc, false);
             if (shift != null) shiftValue = shift.Values[TimeMath.Location(tStart, shift.Time, shift.Points, 0)];
         }
         else if (tStart < tStop)
         {
-            shift = _ctx.Read(pid.Source, pid.Name, tStart, tStop, pid.RefTime, pid.RefGmt, false);
+            shift = _ctx.Read(pid.Source, pid.Name, tStart, tStop, pid.RefTime, pid.RefUtc, false);
             if (shift != null)
             {
                 shiftValue = 0;

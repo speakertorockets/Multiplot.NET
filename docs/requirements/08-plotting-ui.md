@@ -40,12 +40,12 @@ are omitted (DEV-UI-002). Structure (`IDR_MAINFRAME`):
   Symbols ▸ (Show, Density, Size ▸ Small/Normal/Large), Legend ▸ (Show, Set Columns, Fixed Parameter
   Space, Minimum Grid Offset, Multi-Y Shift Left, Text in Curve Color).
 * **Nomenclature**: Fonts ▸ (Labels..., Titles...), X Axis/Legend Labeling, Y
-  Axis/Legend Labeling, Set Title, Set Sub-Title, Show Time as GMT/Clock, Set GMT Format, Scale Group
+  Axis/Legend Labeling, Set Title, Set Sub-Title, Show Time as UTC/Clock, Set UTC Format, Scale Group
   ID, Test Info (Test Title), Set Plot Window Title... (Version, Script Name, User Name, Page Number,
   Time Stamp and Set Group Name were removed).
 * **Markers**: Add Event Marker... (Ctrl+D), Edit..., Add Redline Marker..., Edit Redlines..., Show File
   Events, Topmost, Marker Color..., Redline Color..., Clear All, Save, Load (FR-MRK).
-* **Options**: File Paths, External Applications ▸ (Assign, Include GMTs), Tabular Output/Exports ▸
+* **Options**: File Paths, External Applications ▸ (Assign, Include UTCs), Tabular Output/Exports ▸
   (Data Format, Time Format, Shared Time), Expressions/Calculations ▸ (Align to Closest Point, Perform
   Every Unique Time), Draw Mode ▸ (Optimized, Offscreen), Average Function ▸ (Default Rate, Time Stamp
   Mode), Right Button Click, Show System Load, Show Coordinates, Show Status Bar, Maximized Plots, Load Symbolic Names, Number of Monitors, Save Window Position, Exit Safety
@@ -85,7 +85,7 @@ Selection dialog opens (FR-LOAD-030). Not while a script runs, in hidden mode or
 the command line.
 
 **FR-UI-005 (status bar)** Panes: message text (help/coordinates/progress), CPU load %, memory load %
-(updated by a timer when *Show System Load*), current real-time GMT. Messages used by operations
+(updated by a timer when *Show System Load*), current real-time UTC. Messages used by operations
 (e.g. `Initializing <file>`, `Retrieving…`, `Calculating expression …`, `calculating spline (%n)`,
 `Paused n...`) shall be shown.
 
@@ -171,7 +171,7 @@ graduation and of min) (fixed) or exponential digits.
 **FR-PLT-013 (clock scale)** With clock time and auto X: shift min to a "neat" boundary based on the
 range table {0.01,0.1,1,10,60,300,1800,3600,18000,86400,345600,∞ s} with intervals
 {1,50,500,1000,5000,60000,300000,600000,900000,3600000,43200000,86400000 ms} and minimum precision of
-the GMT format (MIL/SC/MN/HR/DDD); then snap the graduation up to the table {3,5,10,15,30,60,120,300,
+the UTC format (MIL/SC/MN/HR/DDD); then snap the graduation up to the table {3,5,10,15,30,60,120,300,
 600,900,1800,3600,7200,21600,43200,86400,432000,864000,2592000,15552000 s}.
 **FR-PLT-014 (zoom stack)** Each axis keeps a 20-level zoom stack (oldest dropped); *Revert*
 pops one level; auto-range clears it.
@@ -254,7 +254,7 @@ sum, over preceding groups, of their longest curve duration plus one sample inte
 becomes `Accumulated Time Seconds (<start> to <stop>)` when auto-label is on. Not combinable with
 parameter-vs-parameter or clock time.
 
-**FR-PLT-026 (64-bit time)** With *Use 64 Bit Timing* and GMT arrays available, X positions and
+**FR-PLT-026 (64-bit time)** With *Use 64 Bit Timing* and UTC arrays available, X positions and
 expression alignment use double-precision times derived from TimeTags instead of float32 relative times.
 
 ---
@@ -286,7 +286,7 @@ all Y axes in multi-Y), using sampled 1000-point drawing while panning.
 **FR-PLT-034 (wheel = zoom)** Zoom about the cursor by one graduation (X and Y; multi-Y: selected axis,
 Shift = all); disabled for tabular and log plots.
 **FR-PLT-035 (coordinates)** With *Show Coordinates*, mouse move shows ` X=%.3f Y=%g` (clock:
-`GMT=hh:mm:ss.mmm`; multi-Y: ` name=value` per curve, `CURVEn=` for names > 20 chars) in the status
+`UTC=hh:mm:ss.mmm`; multi-Y: ` name=value` per curve, `CURVEn=` for names > 20 chars) in the status
 bar; tabular plots show layout coordinates ` X=n Y=n`.
 
 ## 8.6 Context menus (plot regions)
@@ -295,7 +295,7 @@ bar; tabular plots show layout coordinates ` X=n Y=n`.
 Labeling, Font ▸, Colors ▸, Legend ▸, Presentation Mode, Window ▸,
 Properties); **Y scale area** (Set Sub-Title, Font ▸, Multi-Y, Multi-Y Shift Left, Colors ▸, Minimum
 Grid Offset, Presentation Mode, Window ▸, Properties); **footer/X area** (X Axis Labeling, Font ▸, Show
-Time as GMT, GMT/Clock Format, Test Info (Test Title), Colors ▸, Presentation Mode,
+Time as UTC, UTC/Clock Format, Test Info (Test Title), Colors ▸, Presentation Mode,
 Window ▸, Properties); **plot area 2D** and **3D** (Symbols ▸, Markers ▸, Colors ▸,
 End to End, Scales ▸ (Auto X/Y, Auto X, Auto Y, Fix X, Fix Y, Revert), Font ▸, Add Parameter, View
 Tabulation, Presentation Mode, Window ▸, plus 3D line widths for 3D); **tabular** (layout, add
@@ -310,7 +310,7 @@ Window ▸ submenu: Maximize, Minimize, Move, Tile, Set Plot Window Title..., Cl
 **FR-PLT-040** The legend entry for a curve (and the X axis label) is built from the selected items in
 the configured order (FR-SCR-230): DBNAME (group of the curve's file), FILENAME (file name, import
 suffix removed), NAME (`$` removed), ALTNAME, EXTNAME, UNITS, DESC (scale-group suffix removed), REFT
-(`(T-Ref: ddd/hh:mm:ss.mmm)` for GMT references, `(T-Ref: %.3f)` for offsets, else `(T-Ref: yy ddd
+(`(T-Ref: ddd/hh:mm:ss.mmm)` for UTC references, `(T-Ref: %.3f)` for offsets, else `(T-Ref: yy ddd
 hh:mm:ss.mmm)` from the header), UDEF (user text with keywords), SEQNUM, CURRENTVALUE (last value, tab
 format), CURRENTTIME. Items are separated by two spaces and padded to their fixed widths (character
 cells) when lengths are set; fixed-width current values are right-justified in tabular style. The X
@@ -328,18 +328,18 @@ plots copy when *Continue Markers* is on. An identical marker (same timestamp, t
 not added twice. Text, line, box, circle and image markers and the coordinate-based redline markers no
 longer exist; value-axis redline markers are FR-MRK-010.
 
-**FR-MRK-002 (timestamps and resolution)** A timestamp is a GMT (`ddd/hh:mm:ss[.mmm]`, `hh:mm:ss[.mmm]`
+**FR-MRK-002 (timestamps and resolution)** A timestamp is a UTC (`ddd/hh:mm:ss[.mmm]`, `hh:mm:ss[.mmm]`
 on the file reference day, `ddd/msec[.usec]`), a number of seconds on the plot's time axis, an
 `[events]` name, or `START`/`EOF`/`CUTOFF`, each with an optional `±seconds` offset (FR-LOAD-021). It is
 resolved against the plot's time reference on every draw, first in the groups shown by the plot,
 then in the other groups (`EventMarkers.Resolve`). Unresolved markers are not drawn and reappear
-when they resolve (real-time data reaching a GMT); no message is shown while drawing.
+when they resolve (real-time data reaching a UTC); no message is shown while drawing.
 
 **FR-MRK-003 (file events)** With *Show File Events* (`MARKERSET FILEEVENTS`, INI `ShowFileEvents`,
 default on), the `[events]` entries of the files of the plot's groups are drawn as markers with the
 event name as text, at the top: SUN files from the comment block `[events]` section, Parquet files
 from the `multiplot.events` metadata (both exposed as `IDataFile.Events`). `FILE_REF`, `EOF` and
-entries flagged `(invalid)` are not drawn; the same name and GMT is drawn once. Events added by a
+entries flagged `(invalid)` are not drawn; the same name and UTC is drawn once. Events added by a
 refresh of a dynamic file appear at the next draw.
 
 **FR-MRK-004 (drawing)** Each resolved marker inside the visible X range (`GraphLeft..GraphRight`) is
@@ -421,20 +421,20 @@ Attributes allows X/Y position, legend and format edits; *Copy to File → as WP
 | FR-UI-021 | **Favorites** | FR-LOAD-050 |
 | FR-UI-022 | **Filter Helper** | Build filter expressions `[p1] op [p2] = [Y]` from combos of available parameters; list of sub-filters (add/remove; `Missing parameter or operator.`); X axis choice; produces the Y list using `=` filtering (FR-EXP-023). |
 | FR-UI-023 | **Time Slice** | Start, Stop, Reference combos (NONE, START, EOF, events of open files); expandable section (state persisted); OK applies to all groups (FR-SCR-131). **Per Database** dialog edits each group's triplet. |
-| FR-UI-024 | **Time Alignment Tool** | For the active plot: list curves (`*` prefix = live non-UNCOMPRESSED, cannot shift), spin to shift the selected curve's time by an increment (shift shown `%.3f`, stored in `vTshift`); changing selection asks `Discard shift to current parameter?`; Cancel restores all shifts; OK optionally (`Replace current reference?`) sets the group reference to the shifted GMT (`ddd/msec.usec`) or time. Shifted plots show the footer note. 64-bit time is temporarily disabled. |
-| FR-UI-024a | **Align Static to Live** | *TimeSlice → Align Static to Live*, plot popup, Ctrl+L (toggle). For a time plot (not tabular, End-to-End, parameter vs. parameter, log X or 64-bit time) that holds both static and live curves. Every static curve moves together on the time axis while the live curves stay put; refresh is held while the mode is on. Left drag moves the curves (preview, X scale kept). ←/→ moves by one pixel, Shift+←/→ by one X graduation, Ctrl+←/→ by a tenth of a pixel. Snap: a click marks a feature on a static curve (dashed line), a second click marks the same feature on a live curve and the shift moves the first onto the second; right click or Esc cancels a pending snap. Status bar: `Align Static: shift %+.3f s …`. Enter (or the toggle) accepts, Esc cancels and restores the curves. Accept moves the time reference of each static group shown in the plot: a GMT reference (event or GMT) becomes the literal GMT `ddd/msec.usec` moved by −shift; NONE, START, CUTOFF or a constant (offsets from the file reference GMT) becomes the literal GMT of that offset minus the shift, or the constant offset minus the shift when the group's files have different or no reference GMTs; EOF can't be shifted (message, mode stays on). File events are placed against their own group's reference, so the static file's events move with its curves. Numeric start/stop times move by the shift. The change is recorded as `TIME group:start,stop,ref`, and the plots that show those groups reload. Equal shifts left by the Alignment Tool are taken over; different ones are dropped. |
+| FR-UI-024 | **Time Alignment Tool** | For the active plot: list curves (`*` prefix = live non-UNCOMPRESSED, cannot shift), spin to shift the selected curve's time by an increment (shift shown `%.3f`, stored in `vTshift`); changing selection asks `Discard shift to current parameter?`; Cancel restores all shifts; OK optionally (`Replace current reference?`) sets the group reference to the shifted UTC (`ddd/msec.usec`) or time. Shifted plots show the footer note. 64-bit time is temporarily disabled. |
+| FR-UI-024a | **Align Static to Live** | *TimeSlice → Align Static to Live*, plot popup, Ctrl+L (toggle). For a time plot (not tabular, End-to-End, parameter vs. parameter, log X or 64-bit time) that holds both static and live curves. Every static curve moves together on the time axis while the live curves stay put; refresh is held while the mode is on. Left drag moves the curves (preview, X scale kept). ←/→ moves by one pixel, Shift+←/→ by one X graduation, Ctrl+←/→ by a tenth of a pixel. Snap: a click marks a feature on a static curve (dashed line), a second click marks the same feature on a live curve and the shift moves the first onto the second; right click or Esc cancels a pending snap. Status bar: `Align Static: shift %+.3f s …`. Enter (or the toggle) accepts, Esc cancels and restores the curves. Accept moves the time reference of each static group shown in the plot: a UTC reference (event or UTC) becomes the literal UTC `ddd/msec.usec` moved by −shift; NONE, START, CUTOFF or a constant (offsets from the file reference UTC) becomes the literal UTC of that offset minus the shift, or the constant offset minus the shift when the group's files have different or no reference UTCs; EOF can't be shifted (message, mode stays on). File events are placed against their own group's reference, so the static file's events move with its curves. Numeric start/stop times move by the shift. The change is recorded as `TIME group:start,stop,ref`, and the plots that show those groups reload. Equal shifts left by the Alignment Tool are taken over; different ones are dropped. |
 | FR-UI-025 | **Trace Attributes** | Per-trace attributes FR-PLT-022 + tab X/Y position; trace number combo; *Apply all*; controls enabled per style (tabular: position/legend/format; logic: logic label; 3D: no symbols/scatter). Title `Trace Attributes - <name>`. |
 | FR-UI-026 | **Nomenclature** | FR-PLT-040 |
 | FR-UI-027 | **Fix X / Fix Y** | Min, Max, Increment (blank = best fit), persist; multi-Y per axis; apply all. |
 | FR-UI-028 | **Colors** | Line colour table (100), label, title, grid, marker, redline, background, each chosen in the Windows colour dialog (`ColorDialog`, FullOpen, custom colours = curve colours 1–16, COLORREF via `ColorTranslator`); Restore colours; *Load Color Table* (ColorPrinter.wps). Default curve colours: `PlotColors.Palette` (25 colours, no black/white, no duplicates) repeated for 1..100; the shipped `Multiplot.ini` and `ColorPrinter.wps` use the same palette. |
 | FR-UI-029 | **Fonts** | Title and label fonts chosen in the Windows font dialog (`FontDialog`: face, regular/bold/italic, size 4–200 pt; no effects/colour). Applied to the active plot (all plots with apply-global) and the defaults; stored as point size ×10 in `PlotConfig.TitlePointSize` / `LabelPointSize`. The screen scaling items (Screen Scaling 1..4, Scale Up/Down, Font Scaling ▸) are removed; `FONTSIZE` is accepted and ignored. |
 | FR-UI-030 | **File Properties** | List of files `group (group:g file:f) : name`; details: path, signature `%08X`, type, header reference time, items, points/updates, rate, cutoff, title, comment, serial, stand, position, type, number, comment block, stream events; Remove file (`Plot Windows will be closed` OK/Cancel); Copy, Copy all, Save (`File Details.txt`). |
-| FR-UI-031 | **Parameter Properties** | `Plot #n: m parameter(s)`, `Curve i:  <file>name`; details: name, file, units, description, scale ID, reference GMT/TIME/file reference, retrieved points, rate (Unknown/Variable/%g), type id, sequence number (16-bit when rate-packed), min/max value and offset, time shift; remove curve (`Can't remove last parameter`), move up/down, copy, save. |
+| FR-UI-031 | **Parameter Properties** | `Plot #n: m parameter(s)`, `Curve i:  <file>name`; details: name, file, units, description, scale ID, reference UTC/TIME/file reference, retrieved points, rate (Unknown/Variable/%g), type id, sequence number (16-bit when rate-packed), min/max value and offset, time shift; remove curve (`Can't remove last parameter`), move up/down, copy, save. |
 | FR-UI-032 | **Slice Average** | FR-XPT-042 |
 | FR-UI-033 | **Data Pick** | Values of every curve at the picked time (`%g`), sortable list, double-click/plot selected/plot all into a new plot. |
 | FR-UI-034 | **Symbolic Names** | List/add/edit/delete/clear user symbols (`Name already exists` confirm). |
 | FR-UI-035 | **File Paths** | Data file search path, (DB_DIR search path), script search path, WPD search path, export folder. Each has a *Browse...* button with the Windows folder selection dialog (`Microsoft.Win32.OpenFolderDialog`, starting in the first existing folder of the path). Search paths (`;` lists): multi-select, the chosen folders are appended unless already present (case-insensitive, trailing `\` ignored). Export folder: the choice replaces the text. |
-| FR-UI-036 | **External Applications** | Export application, edit/view application, text printer command (stored), Include GMTs. |
+| FR-UI-036 | **External Applications** | Export application, edit/view application, text printer command (stored), Include UTCs. |
 | FR-UI-037 | **Precision** | Data format and time format (GENERAL, 0..7, HEX…, OCT…), shared time. |
 | FR-UI-038 | **Average Function** | default rate, time-stamp mode (first/last/averaged). |
 | FR-UI-039 | **Right Button** | choose Delta / Popup Menus / Slice Average / Data Tracking; Popups Global. |
@@ -442,7 +442,7 @@ Attributes allows X/Y position, legend and format edits; *Copy to File → as WP
 | FR-UI-041 | **Import** | FR-IMP-002. |
 | FR-UI-042 | **Manage Plug-ins** | FR-PLG-012. |
 | FR-UI-043 | **Window list** | select a plot window from a list. |
-| FR-UI-044 | **Input / message dialogs** | generic text input with optional drop-down choices and apply-all checkbox, used for many single-value prompts (legend columns, grid offset, symbol density, GMT format, Z angle, group name, user caption…). |
+| FR-UI-044 | **Input / message dialogs** | generic text input with optional drop-down choices and apply-all checkbox, used for many single-value prompts (legend columns, grid offset, symbol density, UTC format, Z angle, group name, user caption…). |
 | FR-UI-045 | **About** | product name, version, build date, data-access and plugin versions. |
 | FR-UI-046 | **Appearance** | *View → Appearance → Light / Dark* (checked), `APPEARANCE LIGHT\|DARK`, INI `[interface] Appearance`; default Light. Sets `Application.ThemeMode` (Fluent Light / Dark) for menus, dialogs and frames, and `UiTheme` for the MDI area, plot window chrome, zoom/cross-hair overlays and the identification pop-up. Plot colours are mapped at draw time by `PlotColors.Map` (identity in Light; in Dark a background with luminance ≥ 0.18 is scaled by 30/255, other entries are mixed towards white until their relative luminance reaches 0.55 text/mono, 0.25 marker, 0.18 curves/redline, 0.10 grid); the colour tables are unchanged. Saved/copied pictures follow the appearance; curve identification by pixel colour compares mapped colours. |
 | FR-UI-046 | **Help → Window Position** | move the main window back onto the visible desktop. |

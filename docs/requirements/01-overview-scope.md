@@ -47,9 +47,9 @@ and recorded in 12-wpf-deviations; nothing is changed silently.
 | Parameter (PID) | A named measured channel (map entry) in a data file; also "curve" once plotted |
 | SUN file | Binary data file family (chapter 03) |
 | TIME | Relative time in seconds from a reference (stored as float32) |
-| GMT / TimeTag | Absolute time of day: Julian day + ms + µs (no year) |
-| Reference (tRef) | The zero of the plotted time axis: NONE, START, CUTOFF, EOF, event, GMT or constant |
-| Event | Named GMT stored in a file's comment block `[events]` |
+| UTC / TimeTag | Absolute time of day: Julian day + ms + µs (no year) |
+| Reference (tRef) | The zero of the plotted time axis: NONE, START, CUTOFF, EOF, event, UTC or constant |
+| Event | Named UTC stored in a file's comment block `[events]` |
 | Cutoff / Shutdown | Engine cutoff time stored in the file header |
 | Group / database | A set of files loaded together; one curve per file per parameter |
 | Dropout | Missing sample, encoded as bit pattern 0x80000001 |

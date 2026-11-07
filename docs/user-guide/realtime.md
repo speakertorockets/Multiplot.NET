@@ -24,7 +24,7 @@ slides with the data and the value axis keeps its scale.
 
 [Event markers](markers.md) follow their timestamps: as the X window slides, a marker moves with the
 data and disappears when its timestamp leaves the visible range. Events that a growing file adds
-to its `[events]` section appear at the next refresh, and a marker whose GMT has not been reached
+to its `[events]` section appear at the next refresh, and a marker whose UTC has not been reached
 yet appears once the data gets there.
 
 [Redline markers](markers.md#redline-markers) stay at their value on the value axis. While *Auto Scale
@@ -53,8 +53,8 @@ context menu). While the mode is on:
 The status bar shows the current shift. Refreshing is held while the mode is on and catches up
 when you accept or cancel.
 
-Accepting moves the time reference of the static file groups: each group's reference becomes a GMT
-(a seconds offset if its files have no common reference GMT), so the alignment lasts. The static
+Accepting moves the time reference of the static file groups: each group's reference becomes a UTC
+(a seconds offset if its files have no common reference UTC), so the alignment lasts. The static
 file's events move with its curves. It survives refreshes, replots and
 new plots, and it is recorded as a `TIME group:start,stop,reference` command when you record a
 script. To undo it, set the group's reference again (*TimeSlice → Per Database*). A group whose

@@ -175,14 +175,14 @@ public static class ParameterOps
     /// </summary>
     public static int Append(ParameterData baseParm, ParameterData append, bool retainScale)
     {
-        bool gmtPresent = false;
+        bool utcPresent = false;
         if (!IsMultiTime(append))
         {
-            baseParm.Gmt = append.Gmt;
-            baseParm.GmtPoints = append.Gmt != null ? append.GmtPoints + append.GmtOffset - baseParm.GmtOffset : 0;
+            baseParm.Utc = append.Utc;
+            baseParm.UtcPoints = append.Utc != null ? append.UtcPoints + append.UtcOffset - baseParm.UtcOffset : 0;
         }
-        if (IsMultiTime(baseParm) && IsMultiTime(append) && baseParm.Gmt != null && append.Gmt != null && baseParm.GmtPoints > 0 && append.GmtPoints > 0)
-            gmtPresent = true;
+        if (IsMultiTime(baseParm) && IsMultiTime(append) && baseParm.Utc != null && append.Utc != null && baseParm.UtcPoints > 0 && append.UtcPoints > 0)
+            utcPresent = true;
 
         if (baseParm.Type != append.Type) return -2;
         if (baseParm.Points == 0) return 0;
@@ -191,9 +191,9 @@ public static class ParameterOps
         int startPoint = append.Points;
         for (int j = 0; j < startPoint; j++)
         {
-            if (gmtPresent)
+            if (utcPresent)
             {
-                if (TimeMath.Time(append.GmtAt(j), baseParm.GmtAt(baseParm.Points - 1)) > 0.0)
+                if (TimeMath.Time(append.UtcAt(j), baseParm.UtcAt(baseParm.Points - 1)) > 0.0)
                 {
                     startPoint = j;
                     validData = true;
@@ -254,20 +254,20 @@ public static class ParameterOps
             baseParm.MaxValue = ValueConvert.ToDouble(baseParm.Data, baseParm.Type, baseParm.MaxIndex);
         }
 
-        if (IsMultiTime(baseParm) && IsMultiTime(append) && baseParm.Gmt != null && append.Gmt != null && baseParm.GmtPoints > 0 && append.GmtPoints > 0)
+        if (IsMultiTime(baseParm) && IsMultiTime(append) && baseParm.Utc != null && append.Utc != null && baseParm.UtcPoints > 0 && append.UtcPoints > 0)
         {
-            int gNew = append.GmtPoints - startPoint;
+            int gNew = append.UtcPoints - startPoint;
             if (gNew > 0)
             {
-                if (baseCopy || baseParm.Gmt.Length < baseParm.GmtPoints + gNew)
+                if (baseCopy || baseParm.Utc.Length < baseParm.UtcPoints + gNew)
                 {
                     var ng = new TimeTag[combined + Math.Max(addSpace, 0)];
-                    Array.Copy(baseParm.Gmt, baseParm.GmtOffset, ng, 0, baseParm.GmtPoints);
-                    baseParm.Gmt = ng;
-                    baseParm.GmtOffset = 0;
+                    Array.Copy(baseParm.Utc, baseParm.UtcOffset, ng, 0, baseParm.UtcPoints);
+                    baseParm.Utc = ng;
+                    baseParm.UtcOffset = 0;
                 }
-                Array.Copy(append.Gmt, append.GmtOffset + startPoint, baseParm.Gmt, baseParm.GmtOffset + baseParm.GmtPoints, gNew);
-                baseParm.GmtPoints += gNew;
+                Array.Copy(append.Utc, append.UtcOffset + startPoint, baseParm.Utc, baseParm.UtcOffset + baseParm.UtcPoints, gNew);
+                baseParm.UtcPoints += gNew;
             }
         }
 
@@ -566,7 +566,7 @@ public static class ParameterOps
         }
 
         pid.Points = aCnt;
-        pid.GmtOffsetValid = false;
+        pid.UtcOffsetValid = false;
         if (slideMode == 1)
         {
             for (int q = 0; q < aCnt; q++)
@@ -673,7 +673,7 @@ public static class ParameterOps
             p.Time = tBuf;
             p.Data = dBuf;
             p.Points = oPoints;
-            p.GmtOffsetValid = false;
+            p.UtcOffsetValid = false;
             p.MinIndex = DataMin(p, filterInvalid);
             p.MinValue = p.Data is float[] f0 ? f0[p.MinIndex] : ValueAt(p, p.MinIndex);
             p.MaxIndex = DataMax(p, filterInvalid);
@@ -711,22 +711,22 @@ public static class ParameterOps
         var dataBuf = new float[allPoints];
         var src = (float[])p.Data;
         TimeTag[]? tags = null;
-        bool hasTags = p.Gmt != null && p.GmtPoints == p.Points && p.RefGmt.HasValue;
+        bool hasTags = p.Utc != null && p.UtcPoints == p.Points && p.RefUtc.HasValue;
         if (hasTags) tags = new TimeTag[allPoints];
 
         timeStamp = timeBuf[0] = p.Time[0];
         float currValue = dataBuf[0] = src[0];
-        if (tags != null) tags[0] = p.GmtAt(0);
+        if (tags != null) tags[0] = p.UtcAt(0);
         int nPnt;
         for (oPnt = 1, nPnt = 1; (nPnt < allPoints) && (oPnt < p.Points); nPnt++)
         {
             timeStamp += deltaT;
-            if (tags != null) tags[nPnt] = TimeMath.Gmt(timeStamp, p.RefGmt!.Value, true);
+            if (tags != null) tags[nPnt] = TimeMath.Utc(timeStamp, p.RefUtc!.Value, true);
             if ((timeStamp - p.Time[oPnt]) > -deltaT)
             {
                 timeStamp = p.Time[oPnt];
                 currValue = src[oPnt];
-                if (tags != null) tags[nPnt] = p.GmtAt(oPnt);
+                if (tags != null) tags[nPnt] = p.UtcAt(oPnt);
                 oPnt++;
             }
             timeBuf[nPnt] = (float)timeStamp;
@@ -737,9 +737,9 @@ public static class ParameterOps
         p.Data = dataBuf;
         if (tags != null)
         {
-            p.Gmt = tags;
-            p.GmtOffset = 0;
-            p.GmtPoints = nPnt;
+            p.Utc = tags;
+            p.UtcOffset = 0;
+            p.UtcPoints = nPnt;
         }
         p.Points = nPnt;
         p.MinIndex = DataMin(p, filterInvalid);
@@ -799,7 +799,7 @@ public static class ParameterOps
             }
         }
         p.Points = packedPos;
-        p.GmtOffsetValid = false;
+        p.UtcOffsetValid = false;
         p.MinIndex = DataMin(p, filterInvalid);
         p.MinValue = data[p.MinIndex];
         p.MaxIndex = DataMax(p, filterInvalid);

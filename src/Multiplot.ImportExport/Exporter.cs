@@ -12,8 +12,8 @@ namespace Multiplot.ImportExport;
 /// <summary>Application options used by the exporters.</summary>
 public sealed class ExportOptions
 {
-    /// <summary>INCLUDEGMT.</summary>
-    public bool ShowGmt;
+    /// <summary>INCLUDEUTC.</summary>
+    public bool ShowUtc;
     /// <summary>SHAREDTIME.</summary>
     public bool SharedTabTime;
     /// <summary>Time precision (−7..12).</summary>
@@ -60,7 +60,7 @@ public static class Exporter
         var offset = new int[n];
         long maxpnts = 0;
         bool multiTime;
-        bool gmtCol = o.ShowGmt || cfg.ClockTime;
+        bool utcCol = o.ShowUtc || cfg.ClockTime;
 
         if (cfg.PidVsPid || cfg.EndToEnd)
         {
@@ -99,7 +99,7 @@ public static class Exporter
                 W(groups.Count > 0 ? groups[Math.Max(g, 0)].GroupName : "");
                 if (!multiTime) { W("\n"); break; }
                 if (cfg.PidVsPid) W(delimiter.ToString());
-                if (gmtCol) W(delimiter.ToString());
+                if (utcCol) W(delimiter.ToString());
                 W(delimiter.ToString());
                 W((i == n - 1 ? '\n' : delimiter).ToString());
             }
@@ -110,7 +110,7 @@ public static class Exporter
             for (int i = 0; i < n; i++)
             {
                 W(pid[i].Data.Source?.Info.Path ?? "");
-                if (gmtCol && (i == 0 || multiTime)) W(delimiter.ToString());
+                if (utcCol && (i == 0 || multiTime)) W(delimiter.ToString());
                 if (i == 0 || multiTime) W(delimiter.ToString());
                 if (cfg.PidVsPid) W(delimiter.ToString());
                 W((i == n - 1 ? '\n' : delimiter).ToString());
@@ -123,7 +123,7 @@ public static class Exporter
             {
                 if (i == 0 || multiTime)
                 {
-                    if (gmtCol) W(pid[i].Data.TimeName + delimiter);
+                    if (utcCol) W(pid[i].Data.TimeName + delimiter);
                     W(pid[i].Data.TimeName + delimiter);
                 }
                 if (cfg.PidVsPid && (i == 0 || multiTime)) W(plot.XAxisNomen[0] + delimiter);
@@ -140,7 +140,7 @@ public static class Exporter
                 if (i == 0 || multiTime)
                 {
                     string b = pid[i].Data.TimeUnits.TrimStart();
-                    if (gmtCol) W(b + delimiter);
+                    if (utcCol) W(b + delimiter);
                     W(b + delimiter);
                 }
                 if (cfg.PidVsPid && (i == 0 || multiTime)) W(plot.XAxisNomen[1] + delimiter);
@@ -155,7 +155,7 @@ public static class Exporter
             {
                 if (i == 0 || multiTime)
                 {
-                    if (gmtCol) W(pid[i].Data.TimeDescription + delimiter);
+                    if (utcCol) W(pid[i].Data.TimeDescription + delimiter);
                     W(pid[i].Data.TimeDescription + delimiter);
                 }
                 if (cfg.PidVsPid && (i == 0 || multiTime)) W(plot.XAxisNomen[2] + delimiter);
@@ -195,13 +195,13 @@ public static class Exporter
                 if (k >= c.Points)
                 {
                     if (j == 0 || multiTime) W(" " + delimiter);
-                    if (gmtCol) W(" " + delimiter);
+                    if (utcCol) W(" " + delimiter);
                     if (cfg.PidVsPid && (j == 0 || multiTime)) W(" " + delimiter);
                 }
                 else if (!cfg.PidVsPid && !cfg.EndToEnd && c.Time[k] - TimeTolerance > xmax)
                 {
                     if (j == 0 || multiTime) W(" " + delimiter);
-                    if (gmtCol) W(" " + delimiter);
+                    if (utcCol) W(" " + delimiter);
                     if (cfg.PidVsPid && (j == 0 || multiTime)) W(" " + delimiter);
                 }
                 else
@@ -211,18 +211,18 @@ public static class Exporter
                     {
                         if (cfg.PidVsPid)
                         {
-                            int iPos = (int)(d.GmtOffset + k);
-                            if (o.ShowGmt)
+                            int iPos = (int)(d.UtcOffset + k);
+                            if (o.ShowUtc)
                             {
-                                if (d.HasValidGmt) W(ValueFormat.ClockString(d.Gmt![iPos], "%03d/%02u:%02u:%02u.%03u.%03u") + delimiter);
+                                if (d.HasValidUtc) W(ValueFormat.ClockString(d.Utc![iPos], "%03d/%02u:%02u:%02u.%03u.%03u") + delimiter);
                                 else W("n/a" + delimiter);
                             }
-                            if (d.HasValidGmt)
+                            if (d.HasValidUtc)
                             {
-                                double tv = TimeMath.Time(d.Gmt![iPos], d.RefGmt!.Value);
+                                double tv = TimeMath.Time(d.Utc![iPos], d.RefUtc!.Value);
                                 W(ValueFormat.FormatValue(tv - refTime, o.TimePrecision) + delimiter);
                             }
-                            else if (d.GmtOffsetValid && c.OriginalTime != null && IsCommonTime(d))
+                            else if (d.UtcOffsetValid && c.OriginalTime != null && IsCommonTime(d))
                                 W(ValueFormat.FormatValue(c.OriginalTime.Time[k], o.TimePrecision) + delimiter);
                             else
                                 W("n/a" + delimiter);
@@ -231,22 +231,22 @@ public static class Exporter
                         {
                             bool dbl = false;
                             double timeValue = 0;
-                            if (gmtCol)
+                            if (utcCol)
                             {
                                 TimeTag tt;
-                                if (!d.HasValidGmt)
+                                if (!d.HasValidUtc)
                                 {
                                     timeValue = c.Time[k] + refTime;
                                     timeValue -= d.TimeShift;
-                                    if (d.RefGmt.HasValue) tt = TimeMath.Gmt(timeValue, d.RefGmt.Value, false);
-                                    else tt = TimeMath.Gmt(timeValue, PlotDocument.HeaderGmt(d), false);
-                                    W(ValueFormat.ClockString(tt, plot.GmtFormat) + delimiter);
+                                    if (d.RefUtc.HasValue) tt = TimeMath.Utc(timeValue, d.RefUtc.Value, false);
+                                    else tt = TimeMath.Utc(timeValue, PlotDocument.HeaderUtc(d), false);
+                                    W(ValueFormat.ClockString(tt, plot.UtcFormat) + delimiter);
                                 }
                                 else
                                 {
                                     dbl = true;
-                                    var g = d.GmtAt((int)k);
-                                    timeValue = TimeMath.Time(g, d.RefGmt!.Value);
+                                    var g = d.UtcAt((int)k);
+                                    timeValue = TimeMath.Time(g, d.RefUtc!.Value);
                                     W(ValueFormat.ClockString(g, "%03d/%02u:%02u:%02u.%03u.%03u") + delimiter);
                                 }
                             }
@@ -295,25 +295,25 @@ public static class Exporter
         for (int i = 0; i < pid.Count; i++)
         {
             var d = pid[i].Data;
-            TimeTag r = d.RefGmt ?? d.Source?.Info.RefGmt ?? new TimeTag();
+            TimeTag r = d.RefUtc ?? d.Source?.Info.RefUtc ?? new TimeTag();
             cmt.Append(Crt.Sprintf("pos(%d) %s", i, d.Name)).Append(" source=").Append(d.Source?.Info.Path ?? "").Append(" Tref=").Append(ValueFormat.ClockString(r)).Append('\n');
         }
-        bool gmtTags;
-        if (pid.Count == 1) gmtTags = pid[0].Data.HasValidGmt;
-        else if (pid[0].Data.HasValidGmt)
+        bool utcTags;
+        if (pid.Count == 1) utcTags = pid[0].Data.HasValidUtc;
+        else if (pid[0].Data.HasValidUtc)
         {
-            var baseRef = pid[0].Data.RefGmt!.Value;
-            gmtTags = true;
+            var baseRef = pid[0].Data.RefUtc!.Value;
+            utcTags = true;
             foreach (var c in pid)
             {
-                if (!c.Data.RefGmt.HasValue || Math.Abs(TimeMath.Time(c.Data.RefGmt.Value, baseRef)) > TimeTolerance) { gmtTags = false; break; }
+                if (!c.Data.RefUtc.HasValue || Math.Abs(TimeMath.Time(c.Data.RefUtc.Value, baseRef)) > TimeTolerance) { utcTags = false; break; }
             }
         }
-        else gmtTags = false;
+        else utcTags = false;
         string comment = cmt.ToString();
-        if (gmtTags)
+        if (utcTags)
         {
-            var r = pid[0].Data.RefGmt!.Value;
+            var r = pid[0].Data.RefUtc!.Value;
             comment = Crt.Sprintf("[events]\nFILE_REF=%03d/%d.%.03d\n", (int)r.JulianDay, r.MilliSeconds, (int)r.MicroSeconds) + comment;
         }
         using var w = SunWriter.Create(fileName, SunCreateMode.Overwrite, (uint)(AnsiText.Encode(comment).Length + 256), (uint)pid.Count, 0, SunSignatures.MultiTime);
@@ -334,10 +334,10 @@ public static class Exporter
             string name2 = Crt.Sprintf("Curve%03d", i + 1);
             var values = new float[np];
             Array.Copy(d.Values, values, np);
-            if (gmtTags)
+            if (utcTags)
             {
                 var tags = new TimeTag[np];
-                Array.Copy(d.Gmt!, d.GmtOffset, tags, 0, np);
+                Array.Copy(d.Utc!, d.UtcOffset, tags, 0, np);
                 w.AddParm(name1, name2, d.Units, d.Description, unchecked((int)d.SequenceNumber), "f4", values, "t8", tags, (uint)np, SunWriteOptions.LzhCompress | SunWriteOptions.OrientNative, null);
             }
             else

@@ -50,7 +50,7 @@ asks the user for a value. `CLEAR $NAME` removes one symbol and `CLEAR $$` remov
 The program provides these system symbols:
 
 `SCRIPT_NAME`, `SCRIPT_LINE`, `CURRENT_FILE`, `FILE_LIST`, `FILE_REFERENCE`, `EVENT_REFERENCE`,
-`GMT_REFERENCE`, `SCALE_XMIN`, `SCALE_XMAX`, `SCALE_YMIN`, `SCALE_YMAX`, `PLOT_X_EXTENTS`,
+`UTC_REFERENCE`, `SCALE_XMIN`, `SCALE_XMAX`, `SCALE_YMIN`, `SCALE_YMAX`, `PLOT_X_EXTENTS`,
 `PLOT_Y_EXTENTS`, `PLOT_PARMS`, `PLOT_SOURCE`, `SYSTEM_TIME`, `USERNAME`, `USERFOLDER`, `COMPUTER`,
 `LAST_FILE_TIME`, `PRINT_APP`, `VIEW_APP`, `EXPORT_APP`, `MAILSLOT_NAME` (always `Auto`).
 
@@ -94,7 +94,7 @@ The exact syntax and error messages for each command are in `docs/requirements/0
 
 ### Axes and view
 `AUTOSCALE X|Y|XY [ON|OFF]`, `FIXX`, `FIXY`, `RESCALE`, `ZOOM`, `PAN`, `MULTIY`, `LOGX`, `LOGY`, `ENDTOEND`,
-`SCALEGROUP`, `CLOCKTIME`, `GMTFORMAT`, `INCLUDEGMT`, `FREEZE`. `FIXXAUTOY` and `TIMESLIDE` no longer exist (see
+`SCALEGROUP`, `CLOCKTIME`, `UTCFORMAT`, `INCLUDEUTC`, `FREEZE`. `FIXXAUTOY` and `TIMESLIDE` no longer exist (see
 [Scales and autoscaling](plot-windows.md#scales-and-autoscaling)).
 
 ### Style

@@ -151,7 +151,7 @@ internal sealed class ParquetDataFile : IDataFile
         var refTime = Md("header.refTime")?.Split(',').Select(s => uint.TryParse(s, out uint u) ? u : 0u).ToArray();
         Info.RefTime = refTime is { Length: 6 } ? refTime
             : new[] { (uint)refDt.Year, (uint)refDt.DayOfYear, (uint)refDt.Hour, (uint)refDt.Minute, (uint)refDt.Second, (uint)refDt.Millisecond };
-        Info.RefGmt = TagOf(_refTicks);
+        Info.RefUtc = TagOf(_refTicks);
         Info.Items = (uint)_parameters.Count;
         Info.Points = (uint)Math.Min(totalRows, uint.MaxValue);
         Info.IsDynamic = false;
@@ -305,7 +305,7 @@ internal sealed class ParquetDataFile : IDataFile
         return baseTicks + (long)Math.Round(d);
     }
 
-    /// <summary>Year-less time tag of an absolute time (built directly, not through TimeMath.Gmt).</summary>
+    /// <summary>Year-less time tag of an absolute time (built directly, not through TimeMath.Utc).</summary>
     internal static TimeTag TagOf(long ticks)
     {
         var dt = new DateTime(ticks, DateTimeKind.Utc);
@@ -316,7 +316,7 @@ internal sealed class ParquetDataFile : IDataFile
     /// <summary>Absolute time of a year-less tag, placed within ±180 days of the file reference (as TimeMath.Time).</summary>
     internal long TicksOf(TimeTag t)
     {
-        int diff = t.JulianDay - Info.RefGmt.JulianDay;
+        int diff = t.JulianDay - Info.RefUtc.JulianDay;
         int year = _refYear + (diff >= 180 ? -1 : diff <= -180 ? 1 : 0);
         return new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc).Ticks + (t.JulianDay - 1L) * TimeSpan.TicksPerDay
             + t.MilliSeconds * TimeSpan.TicksPerMillisecond + t.MicroSeconds * 10L;
@@ -431,7 +431,7 @@ internal sealed class ParquetDataFile : IDataFile
             var col = _columns[loc];
             if (!col.HasData) throw new NoDataException();
 
-            long refTicks = request.RefGmt.HasValue ? TicksOf(request.RefGmt.Value) : _refTicks;
+            long refTicks = request.RefUtc.HasValue ? TicksOf(request.RefUtc.Value) : _refTicks;
             double off = request.RefTime ?? 0.0;
             long ws = AddSeconds(refTicks, start + off);
             long we = AddSeconds(refTicks, stop + off);
@@ -505,13 +505,13 @@ internal sealed class ParquetDataFile : IDataFile
         int cap = np + 1; // room for the EOF hold point
         bool dbl = request.ReturnType == DataType.Double;
         var time = new float[cap];
-        var gmtTicks = new long[cap];
+        var utcTicks = new long[cap];
         var fv = dbl ? null : new float[cap];
         var dv = dbl ? new double[cap] : null;
         for (int i = 0; i < np; i++)
         {
             long t = tk[si + i];
-            gmtTicks[i] = t;
+            utcTicks[i] = t;
             time[i] = (float)((t - refTicks) / (double)TimeSpan.TicksPerSecond - off);
             double x = vv[si + i];
             if (dbl) dv![i] = double.IsNaN(x) ? DataTypes.DpDropOut : x;
@@ -522,7 +522,7 @@ internal sealed class ParquetDataFile : IDataFile
         if (time[0] < start)
         {
             time[0] = (float)start;
-            gmtTicks[0] = AddSeconds(refTicks, start + off);
+            utcTicks[0] = AddSeconds(refTicks, start + off);
         }
         int last = np - 1;
         if (time[last] > stop)
@@ -530,7 +530,7 @@ internal sealed class ParquetDataFile : IDataFile
             if (np >= 2) { if (dbl) dv![last] = dv[last - 1]; else fv![last] = fv[last - 1]; }
             else { if (dbl) dv![last] = 0; else fv![last] = 0; }
             time[last] = (float)stop;
-            gmtTicks[last] = AddSeconds(refTicks, stop + off);
+            utcTicks[last] = AddSeconds(refTicks, stop + off);
         }
         // hold the last value until the EOF event
         if (time[last] < stop)
@@ -538,13 +538,13 @@ internal sealed class ParquetDataFile : IDataFile
             foreach (var ev in _events)
             {
                 if (ev.Name != "EOF") continue;
-                long evTicks = TicksOf(ev.Gmt);
+                long evTicks = TicksOf(ev.Utc);
                 double d = Math.Min((evTicks - refTicks) / (double)TimeSpan.TicksPerSecond - off, stop);
                 if (d > time[last])
                 {
                     np++;
                     time[np - 1] = (float)d;
-                    gmtTicks[np - 1] = AddSeconds(refTicks, d + off);
+                    utcTicks[np - 1] = AddSeconds(refTicks, d + off);
                     if (dbl) dv![np - 1] = dv[np - 2]; else fv![np - 1] = fv[np - 2];
                 }
                 break;
@@ -563,18 +563,18 @@ internal sealed class ParquetDataFile : IDataFile
             Time = time,
             Data = dbl ? dv! : fv!,
             RefTime = request.RefTime,
-            RefGmt = request.RefGmt ?? Info.RefGmt,
+            RefUtc = request.RefUtc ?? Info.RefUtc,
             SequenceNumber = info.SequenceNumber,
             MapPosition = loc,
             CommonTimeIndex = false,
         };
-        if (request.ReturnGmt)
+        if (request.ReturnUtc)
         {
             var g = new TimeTag[cap];
-            for (int i = 0; i < np; i++) g[i] = TagOf(gmtTicks[i]);
-            p.Gmt = g;
-            p.GmtOffset = 0;
-            p.GmtPoints = np;
+            for (int i = 0; i < np; i++) g[i] = TagOf(utcTicks[i]);
+            p.Utc = g;
+            p.UtcOffset = 0;
+            p.UtcPoints = np;
         }
         var nomen = col.IndexNomen.Split(',', StringSplitOptions.RemoveEmptyEntries);
         if (nomen.Length >= 3) { p.TimeName = nomen[0]; p.TimeUnits = nomen[1]; p.TimeDescription = nomen[2]; }

@@ -149,7 +149,7 @@ public interface IPlotHost
     int ReservedLegend { get; }
     /// <summary>Real-time data loaded.</summary>
     bool RtLoaded { get; }
-    /// <summary>Resolves an event/GMT/time label against the files of group <paramref name="group"/>.</summary>
+    /// <summary>Resolves an event/UTC/time label against the files of group <paramref name="group"/>.</summary>
     bool ResolveTime(int group, string spec, string tRef, out double time);
     /// <summary>Shows a message.</summary>
     void ShowMessage(string text);

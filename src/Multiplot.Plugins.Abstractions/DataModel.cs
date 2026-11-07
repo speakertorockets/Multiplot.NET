@@ -14,8 +14,8 @@ public sealed class DataFileInfo
     public string FormatDescription { get; set; } = "";
     /// <summary>Header reference time: year, Julian day, hour, minute, second, millisecond.</summary>
     public uint[] RefTime { get; set; } = new uint[6];
-    /// <summary>File reference GMT (header reference, or the FILE_REF event).</summary>
-    public TimeTag RefGmt { get; set; }
+    /// <summary>File reference UTC (header reference, or the FILE_REF event).</summary>
+    public TimeTag RefUtc { get; set; }
     /// <summary>Number of parameters.</summary>
     public uint Items { get; set; }
     /// <summary>Points (or update counter for MULTITIME formats).</summary>
@@ -71,8 +71,8 @@ public sealed class ParameterInfo
     public bool RateRebuildable => (SequenceNumber & 0x80000000u) != 0;
 }
 
-/// <summary>Named GMT event from the comment block <c>[events]</c>.</summary>
-public readonly record struct FileEvent(string Name, TimeTag Gmt);
+/// <summary>Named UTC event from the comment block <c>[events]</c>.</summary>
+public readonly record struct FileEvent(string Name, TimeTag Utc);
 
 /// <summary>Bit set returned by a refresh (FR-ACC-005).</summary>
 [Flags]
@@ -105,6 +105,6 @@ public sealed record ParameterRequest(
     double Start,
     double Stop,
     double? RefTime = null,
-    TimeTag? RefGmt = null,
+    TimeTag? RefUtc = null,
     DataType ReturnType = DataType.Float,
-    bool ReturnGmt = false);
+    bool ReturnUtc = false);

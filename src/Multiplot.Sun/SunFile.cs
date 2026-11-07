@@ -38,8 +38,8 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
     // file indexes (common-time formats)
     private float[]? _timeIndex;
     private int _timeIndexPoints;
-    private TimeTag[]? _gmtIndex;
-    private int _gmtIndexPoints;
+    private TimeTag[]? _utcIndex;
+    private int _utcIndexPoints;
     private float _rate;
 
     private MultiTimeLookup[]? _lookups;
@@ -71,7 +71,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         public uint TimeLzhSize, DataLzhSize;
         public byte IndexType, NomenSize, Compressed, BigEndian;
         public double FirstTime, LastTime;
-        public TimeTag BaseGmt;
+        public TimeTag BaseUtc;
     }
 
     private sealed class MultiTimeLookup
@@ -121,7 +121,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
             {
                 if (e.Name == "FILE_REF")
                 {
-                    f.Info.RefGmt = e.Gmt;
+                    f.Info.RefUtc = e.Utc;
                     break;
                 }
             }
@@ -180,7 +180,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         };
         Info.FormatDescription = SunSignatures.Describe(rawSig);
         Array.Copy(_refTime, Info.RefTime, 6);
-        Info.RefGmt = HeaderRefGmt();
+        Info.RefUtc = HeaderRefUtc();
         Info.Items = _items;
         Info.Points = SunSignatures.IsMultiTime(rawSig) ? _blockPoints[1] : _blockPoints[0] + _blockPoints[1];
         Info.Cutoff = _cutoff;
@@ -220,7 +220,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         };
     }
 
-    private TimeTag HeaderRefGmt() => new(
+    private TimeTag HeaderRefUtc() => new(
         unchecked((short)_refTime[1]),
         unchecked((_refTime[2] * 3600000U) + (_refTime[3] * 60000U) + (_refTime[4] * 1000U) + _refTime[5]),
         0);
@@ -497,7 +497,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
     }
 
     /// <inheritdoc />
-    public bool TryIndexTimeAtGmt(TimeTag gmt, out double time)
+    public bool TryIndexTimeAtUtc(TimeTag utc, out double time)
     {
         time = 0;
         if (SunSignatures.IsMultiTime(_sig)) return false;
@@ -508,12 +508,12 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
             try { fs = AcquireStream(out owned); } catch (DataAccessException) { return false; }
             try
             {
-                if (_gmtIndex == null) { try { LoadIndex(fs, true); } catch (DataAccessException) { } }
+                if (_utcIndex == null) { try { LoadIndex(fs, true); } catch (DataAccessException) { } }
                 if (_timeIndex == null) { try { LoadIndex(fs, false); } catch (DataAccessException) { } }
             }
             finally { if (owned) fs.Dispose(); }
-            if (_gmtIndex == null || _timeIndex == null || _gmtIndexPoints != _timeIndexPoints) return false;
-            int u = TimeMath.GmtLocation(0.0, _gmtIndex, 0, _gmtIndexPoints, gmt, -1);
+            if (_utcIndex == null || _timeIndex == null || _utcIndexPoints != _timeIndexPoints) return false;
+            int u = TimeMath.UtcLocation(0.0, _utcIndex, 0, _utcIndexPoints, utc, -1);
             time = _timeIndex[u];
             return true;
         }
@@ -601,19 +601,19 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
     public ParameterData? Read(ParameterRequest request)
     {
         ushort rt = (ushort)request.ReturnType;
-        if (request.ReturnGmt) rt |= DataTypes.ReturnGmtFlag;
-        return ReadSunParm(request.Name, request.Start, request.Stop, request.RefTime, request.RefGmt, rt);
+        if (request.ReturnUtc) rt |= DataTypes.ReturnUtcFlag;
+        return ReadSunParm(request.Name, request.Start, request.Stop, request.RefTime, request.RefUtc, rt);
     }
 
     /// <summary>Throws <see cref="DataAccessException"/> on failure.</summary>
-    public ParameterData ReadSunParm(string parmName, double startTime, double stopTime, double? refTIME, TimeTag? refGMT, ushort returnType)
+    public ParameterData ReadSunParm(string parmName, double startTime, double stopTime, double? refTIME, TimeTag? refUTC, ushort returnType)
     {
         lock (_lock)
         {
             LastError = SunError.Success;
             try
             {
-                var p = ReadSunParmCore(parmName, startTime, stopTime, refTIME, refGMT, returnType);
+                var p = ReadSunParmCore(parmName, startTime, stopTime, refTIME, refUTC, returnType);
                 return p;
             }
             catch (DataAccessException ex)
@@ -624,12 +624,12 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         }
     }
 
-    private ParameterData ReadSunParmCore(string parmName, double startTime, double stopTime, double? refTIME, TimeTag? refGMT, ushort returnType)
+    private ParameterData ReadSunParmCore(string parmName, double startTime, double stopTime, double? refTIME, TimeTag? refUTC, ushort returnType)
     {
         if (!(stopTime - startTime >= 0.0)) throw new DataAccessException(SunError.TimeSlice);
 
         if (SunSignatures.IsMultiTime(_sig))
-            return ReadMultiTimeParm(parmName, startTime, stopTime, refTIME, refGMT, returnType);
+            return ReadMultiTimeParm(parmName, startTime, stopTime, refTIME, refUTC, returnType);
 
         returnType &= 0x00ff;
         if (Info.Points == 0) throw new DataAccessException(SunError.NullFile);
@@ -642,21 +642,21 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
             int loc = FindParameter(parmName, out int altname);
             if (loc < 0) throw new DataAccessException(SunError.PidNotFound);
             ParmEntry parmInfo = _map[loc];
-            if (loc == 0 && refGMT.HasValue && _timeIndex == null)
+            if (loc == 0 && refUTC.HasValue && _timeIndex == null)
             {
                 try { LoadIndex(fs, false); }
                 catch (DataAccessException) { throw new DataAccessException(SunError.BadRef); }
             }
 
             SunError warning = SunError.Success;
-            if (refGMT.HasValue)
+            if (refUTC.HasValue)
             {
-                if (_gmtIndex == null)
+                if (_utcIndex == null)
                 {
                     SunError gerr = SunError.Success;
                     try { LoadIndex(fs, true); }
                     catch (DataAccessException ex) { gerr = ex.SunCode; }
-                    if (_gmtIndex == null)
+                    if (_utcIndex == null)
                     {
                         if (gerr != SunError.RefreshTime)
                         {
@@ -666,8 +666,8 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                             }
                             if (_timeIndex != null)
                             {
-                                refTIME = TimeMath.Time(refGMT.Value, Info.RefGmt);
-                                refGMT = null;
+                                refTIME = TimeMath.Time(refUTC.Value, Info.RefUtc);
+                                refUTC = null;
                             }
                             else
                                 throw new DataAccessException(SunError.TimeError);
@@ -692,13 +692,13 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
 
             // locate slice
             int startPoint, stopPoint;
-            if (refGMT.HasValue)
+            if (refUTC.HasValue)
             {
-                var g = _gmtIndex!;
-                int np = _gmtIndexPoints;
-                var rg = refGMT.Value;
-                startPoint = TimeMath.GmtLocation(startTime, g, 0, np, rg, -1);
-                stopPoint = TimeMath.GmtLocation(stopTime, g, 0, np, rg, 1);
+                var g = _utcIndex!;
+                int np = _utcIndexPoints;
+                var rg = refUTC.Value;
+                startPoint = TimeMath.UtcLocation(startTime, g, 0, np, rg, -1);
+                stopPoint = TimeMath.UtcLocation(stopTime, g, 0, np, rg, 1);
                 if (startPoint == stopPoint)
                 {
                     if (np == 1)
@@ -773,22 +773,22 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
             p.TimeShift = 0f;
 
             var time = new float[tpoints];
-            if (refGMT.HasValue)
+            if (refUTC.HasValue)
             {
                 p.RefTime = null;
-                p.RefGmt = refGMT;
-                p.Gmt = _gmtIndex;
-                p.GmtOffset = startPoint;
-                p.GmtPoints = _gmtIndexPoints - startPoint;
-                var g = _gmtIndex!;
-                var rg = refGMT.Value;
+                p.RefUtc = refUTC;
+                p.Utc = _utcIndex;
+                p.UtcOffset = startPoint;
+                p.UtcPoints = _utcIndexPoints - startPoint;
+                var g = _utcIndex!;
+                var rg = refUTC.Value;
                 for (int i = 0; i < tpoints; i++)
                     time[i] = (float)TimeMath.Time(g[i + startPoint], rg);
                 p.TimeName = "TIME"; p.TimeUnits = "Seconds"; p.TimeDescription = "Relative Time in Seconds";
             }
             else
             {
-                p.RefGmt = null;
+                p.RefUtc = null;
                 p.RefTime = refTIME;
                 float off = refTIME.HasValue ? (float)refTIME.Value : 0f;
                 var ti = _timeIndex!;
@@ -831,7 +831,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         if (s0 != _blockPoints[0] || s1 != _blockPoints[1])
         {
             _timeIndex = null;
-            _gmtIndex = null;
+            _utcIndex = null;
             _blockPoints[0] = s0;
             _blockPoints[1] = s1;
             Info.Points = s0 + s1;
@@ -858,13 +858,13 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         p.Units = pi.Info.Units;
     }
 
-    /// <summary>Loads the TIME (position 0) or GMT (position 1, t8) index — the "@index" read.</summary>
-    private void LoadIndex(Stream fs, bool gmt)
+    /// <summary>Loads the TIME (position 0) or UTC (position 1, t8) index — the "@index" read.</summary>
+    private void LoadIndex(Stream fs, bool utc)
     {
         if (_sig == SunSignatures.Circular && _blockPoints[0] == _blockPoints[1])
             throw new DataAccessException(SunError.RefreshTime);
         int loc;
-        if (!gmt) loc = 0;
+        if (!utc) loc = 0;
         else
         {
             if (_items < 2 || !(_map[1].Extended && _map[1].TypeIds == "t8"))
@@ -879,7 +879,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         int tpoints = (int)(stop + 1);
         int size = pi.Extended ? DataTypes.SizeFromId(pi.TypeIds) : 4;
         byte[] buf = ReadFixedData(fs, pi, loc, 0, (int)stop, size);
-        if (!gmt)
+        if (!utc)
         {
             var t = (float[])DecodeTyped(buf, tpoints, "f4", true);
             if (_sig == SunSignatures.Compressed || _sig == SunSignatures.CommonTime)
@@ -896,8 +896,8 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         }
         else
         {
-            _gmtIndex = (TimeTag[])DecodeTyped(buf, tpoints, "t8", true);
-            _gmtIndexPoints = tpoints;
+            _utcIndex = (TimeTag[])DecodeTyped(buf, tpoints, "t8", true);
+            _utcIndexPoints = tpoints;
         }
     }
 
@@ -1203,9 +1203,9 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                 {
                     var tf = new TimeTag(BinaryPrimitives.ReadInt16BigEndian(first[6..]), BinaryPrimitives.ReadUInt32BigEndian(first), BinaryPrimitives.ReadUInt16BigEndian(first[4..]));
                     var tl = new TimeTag(BinaryPrimitives.ReadInt16BigEndian(last[6..]), BinaryPrimitives.ReadUInt32BigEndian(last), BinaryPrimitives.ReadUInt16BigEndian(last[4..]));
-                    h.BaseGmt = tf;
-                    h.FirstTime = TimeMath.Time(tf, Info.RefGmt);
-                    h.LastTime = TimeMath.Time(tl, Info.RefGmt);
+                    h.BaseUtc = tf;
+                    h.FirstTime = TimeMath.Time(tf, Info.RefUtc);
+                    h.LastTime = TimeMath.Time(tl, Info.RefUtc);
                     break;
                 }
             case DataType.Float:
@@ -1218,7 +1218,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         return true;
     }
 
-    private ParameterData ReadMultiTimeParm(string parmName, double startTime, double stopTime, double? pRefTIME, TimeTag? pRefGMT, ushort returnType)
+    private ParameterData ReadMultiTimeParm(string parmName, double startTime, double stopTime, double? pRefTIME, TimeTag? pRefUTC, ushort returnType)
     {
         Stream fs = AcquireStream(out bool owned);
         try
@@ -1273,9 +1273,9 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
             var heads = lk.Heads;
             int count = heads.Count;
             double rs, re;
-            if (pRefGMT.HasValue)
+            if (pRefUTC.HasValue)
             {
-                double dTmp = TimeMath.Time(pRefGMT.Value, Info.RefGmt);
+                double dTmp = TimeMath.Time(pRefUTC.Value, Info.RefUtc);
                 rs = startTime + dTmp;
                 re = stopTime + dTmp;
             }
@@ -1327,24 +1327,24 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                 {
                     if (i == beginAddr)
                     {
-                        pSunParm = ReadMultiTimeBlock(fs, mapPos, altName, startTime, stopTime, pRefTIME, pRefGMT, heads[i], returnType, (int)Math.Min(nPoints, int.MaxValue));
+                        pSunParm = ReadMultiTimeBlock(fs, mapPos, altName, startTime, stopTime, pRefTIME, pRefUTC, heads[i], returnType, (int)Math.Min(nPoints, int.MaxValue));
                     }
                     else
                     {
                         ParameterData tmp;
-                        try { tmp = ReadMultiTimeBlock(fs, mapPos, altName, startTime, stopTime, pRefTIME, pRefGMT, heads[i], returnType, 0); }
+                        try { tmp = ReadMultiTimeBlock(fs, mapPos, altName, startTime, stopTime, pRefTIME, pRefUTC, heads[i], returnType, 0); }
                         catch (DataAccessException) { break; }
                         ParameterOps.Append(pSunParm!, tmp, false);
                     }
                 }
                 if (pSunParm != null && pSunParm.Points > 0)
                 {
-                    bool retGmt = (returnType & DataTypes.ReturnGmtFlag) != 0;
+                    bool retUtc = (returnType & DataTypes.ReturnUtcFlag) != 0;
                     if (pSunParm.Time[0] < startTime)
                     {
                         pSunParm.Time[0] = (float)startTime;
-                        if (retGmt && pSunParm.Gmt != null && pSunParm.GmtPoints > 0)
-                            pSunParm.Gmt[pSunParm.GmtOffset] = TimeMath.Gmt(startTime, pRefGMT ?? Info.RefGmt, true);
+                        if (retUtc && pSunParm.Utc != null && pSunParm.UtcPoints > 0)
+                            pSunParm.Utc[pSunParm.UtcOffset] = TimeMath.Utc(startTime, pRefUTC ?? Info.RefUtc, true);
                     }
                     int last = pSunParm.Points - 1;
                     if (pSunParm.Time[last] > stopTime)
@@ -1355,8 +1355,8 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                         else
                             ClearElement(pSunParm.Data, last);
                         pSunParm.Time[last] = (float)stopTime;
-                        if (retGmt && pSunParm.Gmt != null && pSunParm.GmtPoints > 0)
-                            pSunParm.Gmt[pSunParm.GmtOffset + last] = TimeMath.Gmt(stopTime, pRefGMT ?? Info.RefGmt, true);
+                        if (retUtc && pSunParm.Utc != null && pSunParm.UtcPoints > 0)
+                            pSunParm.Utc[pSunParm.UtcOffset + last] = TimeMath.Utc(stopTime, pRefUTC ?? Info.RefUtc, true);
                     }
                 }
             }
@@ -1365,7 +1365,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                 int u = count - 1;
                 if (u >= 0 && Info.IsDynamic && rs > heads[u].LastTime)
                 {
-                    pSunParm = ReadMultiTimeBlock(fs, mapPos, altName, heads[u].LastTime, heads[u].LastTime, null, pRefGMT, heads[u], returnType, 32);
+                    pSunParm = ReadMultiTimeBlock(fs, mapPos, altName, heads[u].LastTime, heads[u].LastTime, null, pRefUTC, heads[u], returnType, 32);
                 }
                 else
                     throw new DataAccessException(SunError.TimeSlice);
@@ -1373,12 +1373,12 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
             if (pSunParm == null) throw new DataAccessException(SunError.TimeSlice);
 
             // tag an end point with the stale value at the EOF event time
-            if (!isV && pSunParm.RefGmt.HasValue && pSunParm.Points > 0 && pSunParm.Time[pSunParm.Points - 1] < stopTime)
+            if (!isV && pSunParm.RefUtc.HasValue && pSunParm.Points > 0 && pSunParm.Time[pSunParm.Points - 1] < stopTime)
             {
                 foreach (var ev in _events)
                 {
                     if (ev.Name != "EOF") continue;
-                    double dTmp = TimeMath.Time(ev.Gmt, pSunParm.RefGmt.Value);
+                    double dTmp = TimeMath.Time(ev.Utc, pSunParm.RefUtc.Value);
                     if (pRefTIME.HasValue) dTmp -= pRefTIME.Value;
                     dTmp = dTmp > stopTime ? stopTime : dTmp;
                     int n = pSunParm.Points;
@@ -1387,11 +1387,11 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                         EnsureCapacity(pSunParm, n + 1);
                         pSunParm.Time[n] = (float)dTmp;
                         Array.Copy(pSunParm.Data, n - 1, pSunParm.Data, n, 1);
-                        if (pSunParm.HasValidGmt)
+                        if (pSunParm.HasValidUtc)
                         {
-                            EnsureGmtCapacity(pSunParm, n + 1);
-                            pSunParm.Gmt![pSunParm.GmtOffset + n] = TimeMath.Gmt(dTmp, pSunParm.RefGmt.Value, true);
-                            pSunParm.GmtPoints++;
+                            EnsureUtcCapacity(pSunParm, n + 1);
+                            pSunParm.Utc![pSunParm.UtcOffset + n] = TimeMath.Utc(dTmp, pSunParm.RefUtc.Value, true);
+                            pSunParm.UtcPoints++;
                         }
                         pSunParm.Points++;
                     }
@@ -1490,26 +1490,26 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         }
     }
 
-    private static void EnsureGmtCapacity(ParameterData p, int n)
+    private static void EnsureUtcCapacity(ParameterData p, int n)
     {
-        if (p.Gmt!.Length - p.GmtOffset < n)
+        if (p.Utc!.Length - p.UtcOffset < n)
         {
             var g = new TimeTag[n + 16];
-            Array.Copy(p.Gmt, p.GmtOffset, g, 0, p.GmtPoints);
-            p.Gmt = g;
-            p.GmtOffset = 0;
+            Array.Copy(p.Utc, p.UtcOffset, g, 0, p.UtcPoints);
+            p.Utc = g;
+            p.UtcOffset = 0;
         }
     }
 
     private ParameterData ReadMultiTimeBlock(Stream fs, int mapPos, int altName, double startTime, double stopTime,
-        double? pRefTIME, TimeTag? pRefGMT, BlockHeader h, ushort returnTypeIn, int preAllocSz)
+        double? pRefTIME, TimeTag? pRefUTC, BlockHeader h, ushort returnTypeIn, int preAllocSz)
     {
-        bool retGmtRequested = (returnTypeIn & DataTypes.ReturnGmtFlag) != 0;
-        bool retGmt = retGmtRequested;
+        bool retUtcRequested = (returnTypeIn & DataTypes.ReturnUtcFlag) != 0;
+        bool retUtc = retUtcRequested;
         ushort returnType = (ushort)(returnTypeIn & 0x00ff);
         ParmEntry parmInfo = _map[mapPos];
-        TimeTag baseRef = Info.RefGmt;
-        TimeTag refGMT = pRefGMT ?? baseRef;
+        TimeTag baseRef = Info.RefUtc;
+        TimeTag refUTC = pRefUTC ?? baseRef;
         bool isV = parmInfo.TypeIds.Length > 0 && parmInfo.TypeIds[0] == 'v';
 
         int dataTypeSize;
@@ -1567,10 +1567,10 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                         }
                         else
                             saveDay = day;
-                        tags[i].JulianDay = unchecked((short)(day + h.BaseGmt.JulianDay + wrapDays));
+                        tags[i].JulianDay = unchecked((short)(day + h.BaseUtc.JulianDay + wrapDays));
                         tags[i].MilliSeconds = packedTime & 0x07FFFFFF;
                         tags[i].MicroSeconds = 0;
-                        time[i] = (float)TimeMath.Time(tags[i], refGMT);
+                        time[i] = (float)TimeMath.Time(tags[i], refUTC);
                         if (pRefTIME.HasValue) time[i] -= (float)pRefTIME.Value;
                         if (time[i] > stopTime) { points = i + 1; break; }
                     }
@@ -1593,7 +1593,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                             t.MicroSeconds = unchecked((ushort)(t.MicroSeconds + tags[i - 1].MicroSeconds));
                         }
                         tags[i] = t;
-                        time[i] = (float)TimeMath.Time(t, refGMT);
+                        time[i] = (float)TimeMath.Time(t, refUTC);
                         if (pRefTIME.HasValue) time[i] -= (float)pRefTIME.Value;
                         if (time[i] > stopTime) { points = i + 1; break; }
                     }
@@ -1613,7 +1613,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                             t.MilliSeconds %= 86400000U;
                         }
                         tags[i] = t;
-                        time[i] = (float)TimeMath.Time(t, refGMT);
+                        time[i] = (float)TimeMath.Time(t, refUTC);
                         if (pRefTIME.HasValue) time[i] -= (float)pRefTIME.Value;
                         if (time[i] > stopTime) { points = i + 1; break; }
                     }
@@ -1621,8 +1621,8 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                 }
             case DataType.Float:
                 {
-                    if (retGmt) retGmt = false; // ERR_GMTNOTAVAIL (not reported)
-                    double? refDelta = pRefGMT.HasValue ? TimeMath.Time(pRefGMT.Value, baseRef) : null;
+                    if (retUtc) retUtc = false; // ERR_UTCNOTAVAIL (not reported)
+                    double? refDelta = pRefUTC.HasValue ? TimeMath.Time(pRefUTC.Value, baseRef) : null;
                     double dSum = 0;
                     for (int i = 0; i < hp; i++)
                     {
@@ -1644,13 +1644,13 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                 {
                     hasTimeTags = true;
                     tags = new TimeTag[hp];
-                    double? refDelta = pRefGMT.HasValue ? TimeMath.Time(pRefGMT.Value, baseRef) : null;
+                    double? refDelta = pRefUTC.HasValue ? TimeMath.Time(pRefUTC.Value, baseRef) : null;
                     var dbl = new double[hp];
                     for (int i = 0; i < hp; i++)
                     {
                         dbl[i] = be ? BinaryPrimitives.ReadDoubleBigEndian(tb[(i * 8)..]) : BinaryPrimitives.ReadDoubleLittleEndian(tb[(i * 8)..]);
                         if (h.Compressed != 0 && i != 0) dbl[i] += dbl[i - 1];
-                        tags[i] = TimeMath.Gmt(dbl[i], baseRef, true);
+                        tags[i] = TimeMath.Utc(dbl[i], baseRef, true);
                         time[i] = (float)dbl[i];
                         if (pRefTIME.HasValue) time[i] -= (float)pRefTIME.Value;
                         if (refDelta.HasValue) time[i] -= (float)refDelta.Value;
@@ -1671,13 +1671,13 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         var outTime = new float[bufAlloc];
         Array.Copy(time, startPoint, outTime, 0, np);
         p.Time = outTime;
-        if (retGmt && tags != null)
+        if (retUtc && tags != null)
         {
             var g = new TimeTag[bufAlloc];
             Array.Copy(tags, startPoint, g, 0, np);
-            p.Gmt = g;
-            p.GmtOffset = 0;
-            p.GmtPoints = np;
+            p.Utc = g;
+            p.UtcOffset = 0;
+            p.UtcPoints = np;
         }
 
         // data block
@@ -1741,7 +1741,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         p.Data = data;
         p.TimeShift = 0f;
         if (pRefTIME.HasValue) p.RefTime = pRefTIME;
-        if (pRefGMT.HasValue || hasTimeTags) p.RefGmt = refGMT;
+        if (pRefUTC.HasValue || hasTimeTags) p.RefUtc = refUTC;
 
         p.TimeName = "Time";
         p.TimeUnits = "Seconds";
@@ -1794,7 +1794,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
         try { fs = AcquireStream(out owned); }
         catch (DataAccessException) { return 0; }
         int refreshed = 0;
-        bool needsUpdate = false, gmtChange = false;
+        bool needsUpdate = false, utcChange = false;
         uint[] np = new uint[9];
         try
         {
@@ -1815,9 +1815,9 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                     }
                     if (np[7] != _blockPoints[0] || np[8] != _blockPoints[1]) needsUpdate = true;
                     for (int i = 5; i >= 0; i--)
-                        if (np[i] != _refTime[i]) { gmtChange = true; break; }
-                    if (np[6] != _items) gmtChange = true;
-                    if (gmtChange) needsUpdate = true;
+                        if (np[i] != _refTime[i]) { utcChange = true; break; }
+                    if (np[6] != _items) utcChange = true;
+                    if (utcChange) needsUpdate = true;
                 }
                 else
                     refreshed = -5;
@@ -1825,7 +1825,7 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
             else
                 refreshed = -4;
 
-            if (gmtChange)
+            if (utcChange)
             {
                 _lookups = null;
                 _items = np[6];
@@ -1839,11 +1839,11 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                 _blockPoints[0] = np[7];
                 _blockPoints[1] = np[8];
                 Info.Points = SunSignatures.IsMultiTime(_sig) ? _blockPoints[1] : _blockPoints[0];
-                if (gmtChange)
+                if (utcChange)
                 {
                     for (int i = 0; i < 6; i++) _refTime[i] = np[i];
                     Array.Copy(_refTime, Info.RefTime, 6);
-                    Info.RefGmt = HeaderRefGmt();
+                    Info.RefUtc = HeaderRefUtc();
                     refreshed = 2;
                 }
                 else
@@ -1857,9 +1857,9 @@ public sealed class SunFile : IDataFile, ITimeIndexedFile
                         try { LoadIndex(fs, false); }
                         catch (DataAccessException) { refreshed = -1; }
                     }
-                    if (_gmtIndex != null)
+                    if (_utcIndex != null)
                     {
-                        _gmtIndex = null;
+                        _utcIndex = null;
                         try { LoadIndex(fs, true); }
                         catch (DataAccessException) { refreshed = -1; }
                     }

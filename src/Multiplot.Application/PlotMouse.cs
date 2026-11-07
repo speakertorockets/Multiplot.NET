@@ -56,14 +56,14 @@ public sealed partial class Session
     private static TimeTag ClockBase(PlotDocument p, bool headerDayFix)
     {
         var d = p.Curves[0].Data;
-        if (d.RefGmt.HasValue) return d.RefGmt.Value;
+        if (d.RefUtc.HasValue) return d.RefUtc.Value;
         if (headerDayFix)
         {
-            var g = d.Source?.Info.RefGmt ?? new TimeTag();
+            var g = d.Source?.Info.RefUtc ?? new TimeTag();
             if (g.JulianDay == 0) g.JulianDay++;
             return g;
         }
-        return PlotDocument.HeaderGmt(d);
+        return PlotDocument.HeaderUtc(d);
     }
 
     /// <summary>Mouse-move coordinate text (null = idle message).</summary>
@@ -87,7 +87,7 @@ public sealed partial class Session
         {
             var d = p.Curves[0].Data;
             if (d.RefTime.HasValue) xv += d.RefTime.Value;
-            xBuf = ValueFormat.ClockString(TimeMath.Gmt(xv, ClockBase(p, false), true), "GMT=%02u:%02u:%02u.%03u");
+            xBuf = ValueFormat.ClockString(TimeMath.Utc(xv, ClockBase(p, false), true), "UTC=%02u:%02u:%02u.%03u");
         }
         else
         {
@@ -335,7 +335,7 @@ public sealed partial class Session
         if (!p.Config.ClockTime) return Crt.Sprintf("%g", xv);
         var d = p.Curves[0].Data;
         if (d.RefTime.HasValue) xv += d.RefTime.Value;
-        return ValueFormat.ClockString(TimeMath.Gmt(xv, ClockBase(p, true), true));
+        return ValueFormat.ClockString(TimeMath.Utc(xv, ClockBase(p, true), true));
     }
 
     /// <summary>Track text ("Time: … name=value …").</summary>

@@ -238,7 +238,7 @@ public sealed partial class Session
             case ID_AXIS_XTITLE: ApplyTitle(false, true); break;
             case ID_AXIS_YTITLE: ApplyTitle(true, true); break;
             case ID_CLOCKTIME: SetClockTime(null); break;
-            case ID_GMTFORMAT: SetGmtFormat(null); break;
+            case ID_UTCFORMAT: SetUtcFormat(null); break;
             case ID_STYLE_SCALEGROUP: SetScaleGroup(null); break;
             case ID_STYLE_TESTINFO: SetTestInfo(null); break;
             case ID_SETUSERCAPTION: SetUserCaption(null); break;
@@ -267,7 +267,7 @@ public sealed partial class Session
             // Options
             case ID_SETPATHS: Shell.Dialogs.Show(this, DialogKind.FilePaths); break;
             case ID_EXTAPPS: Shell.Dialogs.Show(this, DialogKind.ExternalApplications); break;
-            case ID_SHOWGMT: Settings.ShowGmt = !Settings.ShowGmt; Record("INCLUDEGMT " + OnOff(Settings.ShowGmt)); break;
+            case ID_SHOWUTC: Settings.ShowUtc = !Settings.ShowUtc; Record("INCLUDEUTC " + OnOff(Settings.ShowUtc)); break;
             case ID_EXTPRECISION:
                 if (PrecisionDialog(Settings.DataPrecision) is int dp) { Settings.DataPrecision = dp; ApplyDataPrecision(true); }
                 break;
@@ -448,7 +448,7 @@ public sealed partial class Session
             ID_STYLE_TESTINFO => c.TestInfo,
             ID_MARKERS_TOPMOST => c.MarkersTopmost,
             ID_SHOW_FILE_EVENTS => c.ShowFileEvents,
-            ID_SHOWGMT => Settings.ShowGmt,
+            ID_SHOWUTC => Settings.ShowUtc,
             ID_TAB_SGL_TIME => Settings.SharedTabTime,
             ID_DATA_ALIGNMENT => Settings.AlignClosest,
             ID_CALC_EVERY_INSTANCE => Settings.CalcEveryInstance,

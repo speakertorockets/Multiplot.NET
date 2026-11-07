@@ -372,12 +372,12 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
     IReadOnlyList<FileGroup> IExpressionContext.Groups => _groups;
 
     /// <summary>Reads a float parameter; null on failure with <see cref="LastStatus"/>.</summary>
-    public ParameterData? Read(IDataFile file, string name, double start, double stop, double? refTime, TimeTag? refGmt, bool returnGmt)
+    public ParameterData? Read(IDataFile file, string name, double start, double stop, double? refTime, TimeTag? refUtc, bool returnUtc)
     {
         _lastReadNoData = false;
         try
         {
-            var p = file.Read(new ParameterRequest(name, start, stop, refTime, refGmt, DataType.Float, returnGmt));
+            var p = file.Read(new ParameterRequest(name, start, stop, refTime, refUtc, DataType.Float, returnUtc));
             _lastReadStatus = p == null ? (int)SunError.PidNotFound : p.Warning;
             return p;
         }
@@ -441,15 +441,15 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
             case "CURRENT_FILE": return _files.Count > 0 ? _files[0].Info.Path : "<CURRENT_FILE>";
             case "FILE_LIST": return _files.Count > 0 ? string.Join(",", _files.Select(f => f.Info.Path)) : "<FILE_LIST>";
             case "FILE_REFERENCE":
-                return _files.Count > 0 ? string.Join(",", _files.Select(f => ValueFormat.ClockString(f.Info.RefGmt, "%03u/%02u:%02u:%02u.%03u"))) : "<FILE_REFERENCE>";
+                return _files.Count > 0 ? string.Join(",", _files.Select(f => ValueFormat.ClockString(f.Info.RefUtc, "%03u/%02u:%02u:%02u.%03u"))) : "<FILE_REFERENCE>";
             case "EVENT_REFERENCE":
                 return _groups.Count > 1 ? string.Join(",", _groups.Select(g => g.TRef)) : Settings.TRef;
-            case "GMT_REFERENCE":
+            case "UTC_REFERENCE":
                 if (_groups.Count == 0) return Settings.TRef;
                 return string.Join(",", Enumerable.Range(0, _groups.Count).Select(g =>
                 {
-                    var t = TimeReference.GetRefGmt(GroupFiles(g), 0, _groups[g].TRef);
-                    return t.HasValue ? ValueFormat.ClockString(t.Value, "%03u/%02u:%02u:%02u.%03u.%03u") : "<GMT_REFERENCE>";
+                    var t = TimeReference.GetRefUtc(GroupFiles(g), 0, _groups[g].TRef);
+                    return t.HasValue ? ValueFormat.ClockString(t.Value, "%03u/%02u:%02u:%02u.%03u.%03u") : "<UTC_REFERENCE>";
                 }));
             case "SCALE_XMIN": return plot != null ? Crt.Sprintf("%g", plot.XScale.RMin) : "<SCALE_XMIN>";
             case "SCALE_XMAX": return plot != null ? Crt.Sprintf("%g", plot.XScale.RMax) : "<SCALE_XMAX>";
@@ -487,8 +487,8 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
                     var rt = f.Info.RefTime;
                     short day = (short)rt[1];
                     if (day == 0) day++;
-                    var gmt = new TimeTag(day, unchecked(rt[2] * 3600000U + rt[3] * 60000U + rt[4] * 1000U + rt[5]), 0);
-                    return ValueFormat.ClockString(TimeMath.Gmt(p.Time[p.Points - 1], gmt, true), "%03u/%02u:%02u:%02u.%03u");
+                    var utc = new TimeTag(day, unchecked(rt[2] * 3600000U + rt[3] * 60000U + rt[4] * 1000U + rt[5]), 0);
+                    return ValueFormat.ClockString(TimeMath.Utc(p.Time[p.Points - 1], utc, true), "%03u/%02u:%02u:%02u.%03u");
                 }
         }
         return "";

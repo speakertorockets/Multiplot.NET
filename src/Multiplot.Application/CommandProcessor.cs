@@ -296,8 +296,8 @@ public sealed partial class Session
             case Cmd.StairStep: if (oo == null) Err(); else SetStairStep(oo); break;
             case Cmd.ClockTime: if (oo == null) Err(); else SetClockTime(oo); break;
 
-            case Cmd.GmtFormat:
-                SetGmtFormat(cmdParm.Length == 0 ? "%03u/%02u:%02u:%02u.%03u" : Core.Plotting.Scale.MakeCFormat(cmdParm));
+            case Cmd.UtcFormat:
+                SetUtcFormat(cmdParm.Length == 0 ? "%03u/%02u:%02u:%02u.%03u" : Core.Plotting.Scale.MakeCFormat(cmdParm));
                 break;
 
             case Cmd.Legend:
@@ -819,14 +819,14 @@ public sealed partial class Session
             case Cmd.ApplyGlobal: if (oo == null) Err(); else SetApplyAll(oo); break;
             case Cmd.OptimizedDraw: if (oo == null) Err(); else { Settings.OptimizedDraw = oo.Value ? 1 : 0; RefreshAllPlots(); } break;
 
-            case Cmd.RetainMtGmt:
+            case Cmd.RetainMtUtc:
             case Cmd.Bit64Time:
-                if (key == Cmd.RetainMtGmt) Err("Command is deprecated\n\nUse 64BITTIME [ON | OFF] instead");
+                if (key == Cmd.RetainMtUtc) Err("Command is deprecated\n\nUse 64BITTIME [ON | OFF] instead");
                 if (oo == null) Err(); else Set64BitTime(oo);
                 break;
 
             case Cmd.UsePlaceholder: if (oo == null) Err(); else Settings.UsePlaceholder = oo.Value; break;
-            case Cmd.IncludeGmt: if (oo == null) Err(); else Settings.ShowGmt = oo.Value; break;
+            case Cmd.IncludeUtc: if (oo == null) Err(); else Settings.ShowUtc = oo.Value; break;
 
             case Cmd.PresentationMode:
                 if (Is(cmdParm, "OFF")) { if (PresentationMode) TogglePresentationMode(); }

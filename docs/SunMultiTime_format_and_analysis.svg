@@ -554,7 +554,7 @@
 <text x="1379.5" y="2292.0" font-family="Consolas, 'Courier New', monospace" font-size="10.5" font-weight="normal" text-anchor="start" fill="#5b6472">36</text>
 <text x="40.0" y="2332.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">bigEndian (byte 23/19) sets the byte order of the time and data ARRAYS only. The writer defaults to host order; the ORIENT_BIG_END / ORIENT_LITTLE_END / ORIENT_NATIVE options override it.</text>
 <text x="40.0" y="2349.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">For 'v1' (variable-size) blocks, TimeLzhSize (and DataLzhSize when uncompressed) holds the blob size in bytes. The single time stamp is never compressed, even when compressed = 1.</text>
-<text x="40.0" y="2366.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">An in-memory field, blkBaseGMT (the TimeTag of firstTime), is NOT stored on disk. The reader rebuilds it, and packed-time decoding uses it as the base day.</text>
+<text x="40.0" y="2366.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1d2430">An in-memory field, blkBaseUTC (the TimeTag of firstTime), is NOT stored on disk. The reader rebuilds it, and packed-time decoding uses it as the base day.</text>
 <text x="40.0" y="2417.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">7. Index (time) encodings and data value types</text>
 <line x1="40.0" y1="2425.0" x2="1560.0" y2="2425.0" stroke="#c9ced6" stroke-width="1"/>
 <rect x="40.0" y="2447.0" width="1179.0" height="23.0" rx="3" fill="#2f3b4d" stroke="#2f3b4d" stroke-width="1.2"/>
@@ -589,7 +589,7 @@
 <text x="250.0" y="2548.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">{u32 ms-of-day, u16 us, i16 JulianDay} each field swapped</text>
 <text x="580.0" y="2548.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">TimeTag (same layout)</text>
 <text x="830.0" y="2548.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">yes, per field</text>
-<text x="1020.0" y="2548.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">absolute GMT</text>
+<text x="1020.0" y="2548.0" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">absolute UTC</text>
 <rect x="40.0" y="2554.0" width="1179.0" height="21.0" rx="0" fill="#f6f7f9" stroke="#f6f7f9" stroke-width="0"/>
 <text x="46.0" y="2569.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">9  DT_PACKEDTIME</text>
 <text x="154.0" y="2569.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">"t8"+PACK</text>
@@ -754,7 +754,7 @@
 <text x="84.0" y="3694.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">Time is returned as float32 relative seconds whatever the stored precision: about 7.8 ms resolution 1 day from the reference and about 2 s after 1 year. Float index deltas are themselves float32, so</text>
 <text x="84.0" y="3710.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">rounding error accumulates over long blocks.</text>
 <text x="40.0" y="3729.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">L3.</text>
-<text x="84.0" y="3729.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">No year arithmetic: TIME() assumes |day difference| &lt; 180 and 365-day years, and GMT() clamps offsets to +/-180 days and wraps day &gt; 365 with % 365, which mishandles leap years. The header year is</text>
+<text x="84.0" y="3729.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">No year arithmetic: TIME() assumes |day difference| &lt; 180 and 365-day years, and UTC() clamps offsets to +/-180 days and wraps day &gt; 365 with % 365, which mishandles leap years. The header year is</text>
 <text x="84.0" y="3745.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">ignored.</text>
 <text x="40.0" y="3764.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="bold" text-anchor="start" fill="#1d2430">L4.</text>
 <text x="84.0" y="3764.0" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="normal" text-anchor="start" fill="#1d2430">DT_ULONGINT index: milliseconds since the file reference, at most 49.7 days, and never delta-coded. DT_PACKEDTIME: a 5-bit relative day where a wrap is detected only when the day decreases, so a gap</text>
@@ -859,7 +859,7 @@ FORMAT LIMITATIONS
   L2. Time is returned as float32 relative seconds whatever the stored precision: about 7.8 ms resolution 1 day from
   the reference and about 2 s after 1 year. Float index deltas are themselves float32, so rounding error accumulates
   over long blocks.
-  L3. No year arithmetic: TIME() assumes |day difference| &lt; 180 and 365-day years, and GMT() clamps offsets to +/-180
+  L3. No year arithmetic: TIME() assumes |day difference| &lt; 180 and 365-day years, and UTC() clamps offsets to +/-180
   days and wraps day &gt; 365 with % 365, which mishandles leap years. The header year is ignored.
   L4. DT_ULONGINT index: milliseconds since the file reference, at most 49.7 days, and never delta-coded.
   DT_PACKEDTIME: a 5-bit relative day where a wrap is detected only when the day decreases, so a gap of 32 days or

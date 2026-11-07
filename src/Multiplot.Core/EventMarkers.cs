@@ -13,7 +13,7 @@ public readonly record struct ResolvedMarker(double Time, string Text, bool Bott
 /// Event marker resolution (FR-MRK-002): the plot's own markers plus, optionally, the <c>[events]</c> of the
 /// data file headers (SUN comment block <c>[events]</c> section, parquet <c>events</c> metadata — both are
 /// exposed as <see cref="IDataFile.Events"/>), resolved against the plot's time reference. Markers whose
-/// timestamp cannot be resolved (for example a GMT not reached yet by a real-time file) are left out; they
+/// timestamp cannot be resolved (for example a UTC not reached yet by a real-time file) are left out; they
 /// appear once the timestamp resolves.
 /// </summary>
 public static class EventMarkers
@@ -28,13 +28,13 @@ public static class EventMarkers
         return list;
     }
 
-    /// <summary>Exact <c>ddd/msec.usec</c> spelling of a GMT (parsed by <see cref="TimeReference.GetRefGmt"/>).</summary>
-    public static string GmtSpec(TimeTag t) => Crt.Sprintf("%d/%u.%u", (int)t.JulianDay, t.MilliSeconds, (uint)t.MicroSeconds);
+    /// <summary>Exact <c>ddd/msec.usec</c> spelling of a UTC (parsed by <see cref="TimeReference.GetRefUtc"/>).</summary>
+    public static string UtcSpec(TimeTag t) => Crt.Sprintf("%d/%u.%u", (int)t.JulianDay, t.MilliSeconds, (uint)t.MicroSeconds);
 
     /// <summary>
     /// Resolves the markers of a plot. <paramref name="plotGroups"/> are the group indexes the plot shows
     /// (tried first for user markers; file events are taken from these groups only). Returns markers in
-    /// draw order: user markers, then file events (identical name and GMT listed once).
+    /// draw order: user markers, then file events (identical name and UTC listed once).
     /// </summary>
     public static List<ResolvedMarker> Resolve(IReadOnlyList<Marker> markers, bool includeFileEvents,
         IReadOnlyList<IDataFile> files, IReadOnlyList<FileGroup> groups, IReadOnlyCollection<int> plotGroups, string tRef)
@@ -71,9 +71,9 @@ public static class EventMarkers
                 foreach (var e in f.Events)
                 {
                     if (Marker.IsReservedEvent(e.Name)) continue;
-                    if (!seen.Add((e.Name.ToUpperInvariant(), e.Gmt.JulianDay, e.Gmt.MilliSeconds, e.Gmt.MicroSeconds))) continue;
+                    if (!seen.Add((e.Name.ToUpperInvariant(), e.Utc.JulianDay, e.Utc.MilliSeconds, e.Utc.MicroSeconds))) continue;
                     // file events follow their own group's reference (Align Static moves it)
-                    if (TimeReference.SetTime(gf, 0, GmtSpec(e.Gmt), groups[g].TRef, out double t) == 0)
+                    if (TimeReference.SetTime(gf, 0, UtcSpec(e.Utc), groups[g].TRef, out double t) == 0)
                         result.Add(new ResolvedMarker(t, e.Name, false));
                 }
             }

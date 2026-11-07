@@ -468,7 +468,7 @@ public sealed class NomenWindow : DialogBase
 /// </summary>
 public sealed class MarkerWindow : DialogBase
 {
-    private const string TimeHelp = "GMT (ddd/hh:mm:ss.mmm or hh:mm:ss), seconds on the time axis, or an [events] name; optional +/-seconds offset.";
+    private const string TimeHelp = "UTC (ddd/hh:mm:ss.mmm or hh:mm:ss), seconds on the time axis, or an [events] name; optional +/-seconds offset.";
 
     /// <summary>Shows the add dialog (<paramref name="addOnly"/>) or the list editor.</summary>
     public static bool Show(Window? owner, Session s, bool addOnly)

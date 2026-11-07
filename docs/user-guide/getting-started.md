@@ -83,7 +83,7 @@ other open files, the dialog says so; type a qualifier yourself (any part of the
 Files.
 
 To limit the time range, use *TimeSlice → Set Time Slice* or `TIME start,stop[,reference]`. Times
-are in seconds relative to the reference. A reference can be a GMT (`ddd/hh:mm:ss.mmm`) or the name
+are in seconds relative to the reference. A reference can be a UTC (`ddd/hh:mm:ss.mmm`) or the name
 of an event in the file's `[events]` section.
 
 ## Next steps

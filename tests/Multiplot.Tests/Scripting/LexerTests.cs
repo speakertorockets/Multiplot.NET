@@ -82,7 +82,7 @@ public class LexerTests
 
     private sealed class Sys : ISystemSymbols
     {
-        public string GetValue(string name) => name == "GMT_REFERENCE" ? "X" : "<" + name + ">";
+        public string GetValue(string name) => name == "UTC_REFERENCE" ? "X" : "<" + name + ">";
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class LexerTests
         Assert.True(t.Substitute(ref s, new Sys(), null));
         Assert.Equal("plot bar baz", s);
 
-        string g = "$GMT_REFERENCE12rest";
+        string g = "$UTC_REFERENCE12rest";
         t.Substitute(ref g, new Sys(), null);
         Assert.Equal("Xrest", g); // consumes 16 characters (DEV-SCR-005)
     }

@@ -10,7 +10,7 @@ as a behaviour change. Fixture availability is tracked in OQ-011.
 |---|---|---|---|
 | FX-SUN-01 | SUN_COMPRESSED, single block, 20 parameters, f4 only, 10 k points | basic read | owner / generated with the SUN writer |
 | FX-SUN-02 | SUN_COMPRESSED, double-blocked around t = 0 (≥ 500 points each side) | FR-SUN-040..043 | same |
-| FX-SUN-03 | SUN_COMPRESSED with extended types i2, i4, u2, u4, b1, d8, t8 GMT index at position 1, 36-char description | types, GMT access | same |
+| FX-SUN-03 | SUN_COMPRESSED with extended types i2, i4, u2, u4, b1, d8, t8 UTC index at position 1, 36-char description | types, UTC access | same |
 | FX-SUN-04 | SUN_COMMONTIME (variable map, long names, rates in seq numbers) | map decoding | same |
 | FX-SUN-05 | SUN_UNCOMPRESSED (live recorder layout) | raw blocks | same |
 | FX-SUN-06 | SUN_CIRCULAR, wrapped and unwrapped | FR-SUN-046 | same |
@@ -49,21 +49,21 @@ For each scenario a script produces outputs that become golden files once review
 | TST-LZH-001 | Decode every LZH block of the fixtures; compare to golden decoded bytes | golden |
 | TST-LZH-002 | Round-trip 10,000 random buffers through encoder/decoder | property |
 | TST-LZH-003 | Fuzz the decoder (truncation, bit flips) — only defined error codes, no exceptions/hangs | fuzz |
-| TST-TIM-001 | `GMT()`/`TIME()`/`TIME_location`/`GMT_location` edge-case tables | unit |
+| TST-TIM-001 | `UTC()`/`TIME()`/`TIME_location`/`UTC_location` edge-case tables | unit |
 | TST-SCR-001 | Table-driven parser tests for every command form in §5.6, including error texts | unit |
 | TST-SCR-002 | Lexer tests: continuation, comment stripping, `\;`, 16 K lines, CRLF/LF | unit |
 | TST-SCR-010 | Record a UI session covering every recordable action; replay; compare plots & settings | UI automation |
 | TST-SCR-020 | `/hide` batch run producing PNG + CSV, no window, exit code 0 | integration |
 | TST-EXP-001 | ≥ 200 constant expressions and ≥ 100 parameter expressions vs. golden exports | golden |
 | TST-FN-001 | Each function on fixture data vs. golden exports | golden |
-| TST-LOAD-001 | Time slice/reference matrix (NONE/START/CUTOFF/EOF/events/GMT/constants with offsets) | golden |
+| TST-LOAD-001 | Time slice/reference matrix (NONE/START/CUTOFF/EOF/events/UTC/constants with offsets) | golden |
 | TST-PLT-001 | Axis scaling vs. golden reference values (10 k random ranges, log, clock) | unit |
 | TST-CFG-001 | INI load→save round-trip vs. golden saved INI | golden |
 | TST-CFG-002 | Command-id map covers all menu command ids | unit |
 | TST-IMP-001 | Import fixtures vs. golden imported SUN (via export) | golden |
-| TST-XPT-001 | Export matrix (zoom, multi-file, PvP, end-to-end, shared time, GMT, precisions) | golden |
+| TST-XPT-001 | Export matrix (zoom, multi-file, PvP, end-to-end, shared time, UTC, precisions) | golden |
 | TST-RT-001 | Live-file refresh scenario (FX-RT-01) equals static reload; UI responsive | integration |
 | TST-PLG-001 | Sample plugin loads, is listed, can be blocked/unblocked via registry and script | integration |
-| TST-PLG-002 | The Parquet plugin loads from `plugins\Multiplot.Parquet\`. Reads of FX-PQ-01 equal SUN reads of the source file (values bit for bit, times within 1e-5 relative, GMT within 1 µs, same error codes) for full and windowed ranges. FX-PQ-02 times, nulls, dropouts and windowed reads are correct. A `/hide` script opens, plots and exports a `.parquet` file | integration |
+| TST-PLG-002 | The Parquet plugin loads from `plugins\Multiplot.Parquet\`. Reads of FX-PQ-01 equal SUN reads of the source file (values bit for bit, times within 1e-5 relative, UTC within 1 µs, same error codes) for full and windowed ranges. FX-PQ-02 times, nulls, dropouts and windowed reads are correct. A `/hide` script opens, plots and exports a `.parquet` file | integration |
 | TST-XPT-050 | `multi2parquet verify` on converted sample and synthetic files (every index type, LZH, big-endian, appended blocks, 32- and 64-bit) reports a bit-for-bit match. `crosscheck` matches the SUN reader except for the OQ-017 leap-day case | integration (manual / tool) |
 | TST-UI-001 | Smoke UI automation (FlaUI/WinAppDriver): menus, dialogs open/close, accelerators | UI automation |

@@ -35,16 +35,16 @@ offset, for example `IGNITION+2.5`.
 
 | Form | Example | Meaning |
 |---|---|---|
-| `ddd/hh:mm:ss[.mmm]` | `100/12:00:05.250` | GMT: day of year and time of day |
-| `hh:mm:ss[.mmm]` | `12:00:05` | GMT on the reference day of the file |
-| `ddd/msec[.usec]` | `100/43205250.0` | GMT as day / milliseconds of day (the `[events]` notation) |
+| `ddd/hh:mm:ss[.mmm]` | `100/12:00:05.250` | UTC: day of year and time of day |
+| `hh:mm:ss[.mmm]` | `12:00:05` | UTC on the reference day of the file |
+| `ddd/msec[.usec]` | `100/43205250.0` | UTC as day / milliseconds of day (the `[events]` notation) |
 | number | `12.5` | Seconds on the plot's time axis (relative to the plot's time reference) |
 | event name | `IGNITION` | An entry of the file's `[events]` section |
 | `START`, `EOF`, `CUTOFF` | `EOF-10` | The start of the data, the end of the file, the cutoff time |
 
-The timestamp is resolved against the plot's time reference every time the plot is drawn. A GMT or
+The timestamp is resolved against the plot's time reference every time the plot is drawn. A UTC or
 event marker therefore stays on the right instant when you change the time reference, and a marker
-whose GMT has not been reached yet in a real-time file appears as soon as the data gets there.
+whose UTC has not been reached yet in a real-time file appears as soon as the data gets there.
 
 ## Markers from the data file
 
@@ -102,7 +102,7 @@ also go into the master marker set, which new plots copy when *Options → Conti
 open test.multi
 plot PC1,TEMP
 
-marker 100/12:00:05,Ignition                ; GMT, text at the top
+marker 100/12:00:05,Ignition                ; UTC, text at the top
 marker IGNITION+2.5,Valve open,BOTTOM       ; 2.5 s after the IGNITION event, text at the bottom
 marker 30,Operator: throttle up             ; 30 s on the time axis
 marker EOF-10,Shutdown sequence, stage 1    ; the text may contain commas

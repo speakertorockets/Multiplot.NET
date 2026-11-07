@@ -16,12 +16,12 @@ plugin DLLs are **not** loaded. The sample plugin is `samples/MinimalPlugin`.
 | `DataFileInfo` | path, signature (`uint`, numeric value as in the "uint32 LE" column of §3.1, or plugin signature), format description, `refTime[6]`, reference `TimeTag`, item count, point count, `IsDynamic`, cutoff, title, comment, serial number, test stand, test position, test type, test number, optional certification status text (streams) |
 | `ParameterInfo` | map position, names[3] (primary, alternate, extended), units, descriptions[2], type id, rate (−1 unknown, 0 variable, > 0 Hz), sequence number, rate-rebuildable flag |
 | `FileEvent` | name, `TimeTag` |
-| `ParameterData` | source file, name/units/description (mutable copy), data type, `float[] Time` (relative seconds), typed data buffer (at least `float[]`; `double[]`/raw for other types), optional `TimeTag[]` GMT array, reference used (`RefTime` double? / `RefGmt` TimeTag?), min/max index & value, sequence number, rate, time shift applied (`vTshift`), and application-owned attribute slots (redline flag, pack position, tab position, display attributes) |
+| `ParameterData` | source file, name/units/description (mutable copy), data type, `float[] Time` (relative seconds), typed data buffer (at least `float[]`; `double[]`/raw for other types), optional `TimeTag[]` UTC array, reference used (`RefTime` double? / `RefUtc` TimeTag?), min/max index & value, sequence number, rate, time shift applied (`vTshift`), and application-owned attribute slots (redline flag, pack position, tab position, display attributes) |
 
 **FR-ACC-002** `ParameterData` shall support the operations the application needs from the data
 library: duplicate, append (another block, no time overlap/reversal, optional "retain scale"),
 reset nomenclature, find min/max (dropout-aware), find time offset (FR-SUN-051 semantics),
-find GMT offset, GMT↔relative conversions (FR-TIM), average, quantize, compact. Memory is managed by
+find UTC offset, UTC↔relative conversions (FR-TIM), average, quantize, compact. Memory is managed by
 the GC; there is no `FreeParameter`/`CreateStorage` in the API (DEV-ACC-001).
 
 **FR-ACC-003 (data-access façade)** A single `DataAccessService` shall: hold the provider list
@@ -32,9 +32,9 @@ files; read parameters; return the comment block; report the last status per pro
 description/version strings (`DataAcc` version + SUN library version + each plugin's version,
 newline-separated, shown in Help→About and Manage Plugins).
 
-**FR-ACC-004 (read request)** `Read(file, name, start, stop, refTime?, refGmt?, returnType,
-returnGmt)` returns `ParameterData` or a typed error (`SunError` or plugin status code). The
-application always requests `float` data (plus GMT arrays when 64-bit time is enabled).
+**FR-ACC-004 (read request)** `Read(file, name, start, stop, refTime?, refUtc?, returnType,
+returnUtc)` returns `ParameterData` or a typed error (`SunError` or plugin status code). The
+application always requests `float` data (plus UTC arrays when 64-bit time is enabled).
 
 **FR-ACC-005 (refresh result)** `Refresh(file, clearEventFlag)` returns a bit set: 1 = new data,
 2 = reference changed, 4 = events added, 8 = dynamic event (stream); negative = error
@@ -149,7 +149,7 @@ followed by a separator; command ids are allocated in blocks of 20 per plugin in
 delivered with the SDK as documentation and as an integration test of the API.
 **FR-PLG-031** A **live-stream plugin** for PC GOAL streams (signature
 `PCGOAL_REALTIME = 0xFFF0FFFF`, handling `.flt` filter files, certification status, stream events
-`STREAMnnREF`, stream "EOF" GMT) is required for the in-scope real-time stream feature; its protocol
+`STREAMnnREF`, stream "EOF" UTC) is required for the in-scope real-time stream feature; its protocol
 specification is **not available** — see OQ-001.
 **FR-PLG-032** An ElvAcc live plugin (signatures `0x4C41424C` / `0x4C42414C`, the ASCII tags "LBAL"/"LABL") is optional — see OQ-001.
 **FR-PLG-033** An **Apache Parquet plugin** (`src/Multiplot.Parquet`, signature `0x31524150`, the magic
@@ -158,7 +158,7 @@ the `multiplot.timeseries.wide/1` convention written by `tools/MultiToParquet`
 (see `docs/parquet-archive-format.md`), and generic Parquet files whose time column is INT64 `time_ticks`, a
 TIMESTAMP, or relative seconds. Every other numeric top-level column is a parameter. A null cell is "no sample"
 and NaN is a dropout. Reads follow the MULTITIME rules: lead-in and trailing points with extrapolation, clamping
-to the window, and the EOF hold point. GMT tags are built directly from the absolute times.
+to the window, and the EOF hold point. UTC tags are built directly from the absolute times.
 
 **FR-PLG-040** Expression functions `fn(...)` and `refprop(...)` (and its deprecated aliases) are
 served by `IExpressionFunctionProvider` plugins; if no provider implements the requested name the

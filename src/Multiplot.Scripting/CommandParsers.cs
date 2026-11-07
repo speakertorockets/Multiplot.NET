@@ -417,6 +417,6 @@ public static class CommandParsers
         return name;
     }
 
-    /// <summary>User GMT format tokens to a C format.</summary>
+    /// <summary>User UTC format tokens to a C format.</summary>
     public static string MakeCFormat(string user) => Core.Plotting.Scale.MakeCFormat(user);
 }

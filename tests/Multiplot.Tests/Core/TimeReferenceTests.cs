@@ -9,10 +9,10 @@ namespace Multiplot.Tests.Core;
 /// <summary>Reference shifting used by Align Static (FR-UI-024a).</summary>
 public class TimeReferenceTests
 {
-    private sealed class FakeFile(TimeTag refGmt, params FileEvent[] events) : IDataFile
+    private sealed class FakeFile(TimeTag refUtc, params FileEvent[] events) : IDataFile
     {
         public FakeFile(params FileEvent[] events) : this(new TimeTag(100, 0), events) { }
-        public DataFileInfo Info { get; } = new() { RefGmt = refGmt };
+        public DataFileInfo Info { get; } = new() { RefUtc = refUtc };
         public IReadOnlyList<ParameterInfo> Parameters { get; } = Array.Empty<ParameterInfo>();
         public IReadOnlyList<FileEvent> Events { get; } = events;
         public string? CommentBlock => null;
@@ -31,19 +31,19 @@ public class TimeReferenceTests
     [InlineData("START", -3, 3)]
     [InlineData("10", 2.25, 7.75)]
     [InlineData("-4", 0.000001, -4.000001)]
-    public void ConstantReferencesBecomeGmtFromTheFileReference(string tref, double shift, double expectedOffset)
+    public void ConstantReferencesBecomeUtcFromTheFileReference(string tref, double shift, double expectedOffset)
     {
         string? r = TimeReference.ShiftReference(Files, 0, tref, shift);
-        var moved = TimeReference.GetRefGmt(Files, 0, r!);
+        var moved = TimeReference.GetRefUtc(Files, 0, r!);
         Assert.NotNull(moved);
-        Assert.Equal(expectedOffset, TimeMath.Time(moved!.Value, Files[0].Info.RefGmt), 6);
+        Assert.Equal(expectedOffset, TimeMath.Time(moved!.Value, Files[0].Info.RefUtc), 6);
     }
 
     [Theory]
     [InlineData("NONE", 12.5, "-12.5")]
     [InlineData("10", 2.25, "7.75")]
     [InlineData("-4", 0.000001, "-4.000001")]
-    public void ConstantReferencesStayConstantWithoutACommonFileGmt(string tref, double shift, string expected)
+    public void ConstantReferencesStayConstantWithoutACommonFileUtc(string tref, double shift, string expected)
     {
         IReadOnlyList<IDataFile>[] cases =
         [
@@ -54,7 +54,7 @@ public class TimeReferenceTests
         {
             string? r = TimeReference.ShiftReference(files, 0, tref, shift);
             Assert.Equal(expected, r);
-            Assert.Null(TimeReference.GetRefGmt(files, 0, r!));
+            Assert.Null(TimeReference.GetRefUtc(files, 0, r!));
             Assert.Equal(double.Parse(expected, System.Globalization.CultureInfo.InvariantCulture), TimeReference.GetRefTime(files, 0, r!)!.Value, 9);
         }
     }
@@ -64,22 +64,22 @@ public class TimeReferenceTests
     [InlineData("IGNITION", -7200.000123)]
     [InlineData("100/3600000.250", 0.0005)]
     [InlineData("100/01:00:00.000", 42)]
-    public void GmtReferencesBecomeLiteralGmt(string tref, double shift)
+    public void UtcReferencesBecomeLiteralUtc(string tref, double shift)
     {
-        var old = TimeReference.GetRefGmt(Files, 0, tref)!.Value;
+        var old = TimeReference.GetRefUtc(Files, 0, tref)!.Value;
         string? r = TimeReference.ShiftReference(Files, 0, tref, shift);
         Assert.NotNull(r);
         Assert.Contains('/', r);
-        var moved = TimeReference.GetRefGmt(Files, 0, r)!.Value;
-        // data time = gmt − reference, so the new reference is `shift` seconds earlier
+        var moved = TimeReference.GetRefUtc(Files, 0, r)!.Value;
+        // data time = utc − reference, so the new reference is `shift` seconds earlier
         Assert.Equal(shift, TimeMath.Time(old, moved), 6);
     }
 
     [Fact]
-    public void GmtShiftCrossesMidnight()
+    public void UtcShiftCrossesMidnight()
     {
         var files = new[] { new FakeFile(new FileEvent("T0", new TimeTag(100, 100))) };
-        var moved = TimeReference.GetRefGmt(files, 0, TimeReference.ShiftReference(files, 0, "T0", 1.0)!)!.Value;
+        var moved = TimeReference.GetRefUtc(files, 0, TimeReference.ShiftReference(files, 0, "T0", 1.0)!)!.Value;
         Assert.Equal(99, moved.JulianDay);
         Assert.Equal(86_399_100u, moved.MilliSeconds);
     }

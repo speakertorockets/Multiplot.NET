@@ -112,7 +112,7 @@ public class ParquetPluginTests
             Assert.False(pq.Info.IsDynamic);
             Assert.Equal(sun.Info.Title, pq.Info.Title);
             Assert.Equal(sun.Info.TestStand, pq.Info.TestStand);
-            Assert.Equal(sun.Info.RefGmt, pq.Info.RefGmt);
+            Assert.Equal(sun.Info.RefUtc, pq.Info.RefUtc);
             Assert.Equal(sun.Info.RefTime, pq.Info.RefTime);
             Assert.Equal(sun.Events, pq.Events);
             Assert.Contains("[coef]", pq.CommentBlock);
@@ -136,7 +136,7 @@ public class ParquetPluginTests
                         continue;
                     }
                     var b = pq.Read(req)!;
-                    // The SUN reader skips the EOF hold point for f4-indexed parameters (no GMT);
+                    // The SUN reader skips the EOF hold point for f4-indexed parameters (no UTC);
                     // Parquet time is always absolute, so the plugin applies it to every parameter.
                     bool eofExtra = name == "COUNT" && stop > 100;
                     Assert.True(a.Points + (eofExtra ? 1 : 0) == b.Points, $"{ctx}: points {a.Points} vs {b.Points}");
@@ -145,8 +145,8 @@ public class ParquetPluginTests
                     {
                         Assert.True(BitConverter.SingleToUInt32Bits(a.Values[i]) == BitConverter.SingleToUInt32Bits(b.Values[i]), $"{ctx}: value {i}");
                         Assert.True(Math.Abs(a.Time[i] - b.Time[i]) <= 1e-5 * Math.Max(1, Math.Abs(a.Time[i])), $"{ctx}: time {i} {a.Time[i]} vs {b.Time[i]}");
-                        // samples match exactly; a window end point clamped by the SUN reader can differ by 1 us (TimeMath.Gmt rounding)
-                        if (a.HasValidGmt) Assert.True(Math.Abs(TimeMath.Time(a.GmtAt(i), b.GmtAt(i))) <= 1.5e-6, $"{ctx}: gmt {i} {a.GmtAt(i)}.{a.GmtAt(i).MicroSeconds} vs {b.GmtAt(i)}.{b.GmtAt(i).MicroSeconds}");
+                        // samples match exactly; a window end point clamped by the SUN reader can differ by 1 us (TimeMath.Utc rounding)
+                        if (a.HasValidUtc) Assert.True(Math.Abs(TimeMath.Time(a.UtcAt(i), b.UtcAt(i))) <= 1.5e-6, $"{ctx}: utc {i} {a.UtcAt(i)}.{a.UtcAt(i).MicroSeconds} vs {b.UtcAt(i)}.{b.UtcAt(i).MicroSeconds}");
                     }
                     // the SUN reader scans min/max before replacing the clamped trailing value; the plugin scans the
                     // returned points, so they agree when nothing is clamped
@@ -164,7 +164,7 @@ public class ParquetPluginTests
             var ts = Assert.Throws<DataAccessException>(() => pq.Read(new ParameterRequest("PRESS", 5000, 6000)));
             Assert.Equal(SunError.TimeSlice, ts.SunCode);
 
-            // reading relative to another reference (GMT and relative offset)
+            // reading relative to another reference (UTC and relative offset)
             var shifted = pq.Read(new ParameterRequest("PRESS", -1e6, 1e6, 2.5, new TimeTag(100, 12 * 3600000 + 1000, 0)))!;
             var plain = sun.Read(new ParameterRequest("PRESS", -1e6, 1e6, 2.5, new TimeTag(100, 12 * 3600000 + 1000, 0)))!;
             Assert.Equal(plain.Time[3], shifted.Time[3], 4);
@@ -178,7 +178,7 @@ public class ParquetPluginTests
 
     /// <summary>
     /// Event markers resolve identically from the SUN [events] comment section and the parquet "events"
-    /// metadata: file events are drawn (except FILE_REF / EOF), user markers resolve GMT, seconds and
+    /// metadata: file events are drawn (except FILE_REF / EOF), user markers resolve UTC, seconds and
     /// event-name timestamps against the plot reference.
     /// </summary>
     [Fact]
@@ -269,14 +269,14 @@ public class ParquetPluginTests
             using var f = svc.Open(path)!;
             Assert.NotNull(f);
             Assert.Equal(new[] { "temp", "count" }, f.Parameters.Select(p => p.Name)); // strings are not parameters
-            Assert.Equal(new TimeTag((short)t0.DayOfYear, 8 * 3600000 + 30 * 60000, 0), f.Info.RefGmt);
+            Assert.Equal(new TimeTag((short)t0.DayOfYear, 8 * 3600000 + 30 * 60000, 0), f.Info.RefUtc);
             Assert.Equal(2025u, f.Info.RefTime[0]);
             var p = f.Read(new ParameterRequest("temp", -100, 100, null, null, DataType.Float, true))!;
             Assert.Equal(3, p.Points); // null row skipped, NaN kept as a dropout
             Assert.Equal(new[] { 0f, 2.5f, 4f }, p.Time.Take(3));
             Assert.Equal(1.5f, p.Values[0]);
             Assert.True(p.IsDropOut(2));
-            Assert.Equal(new TimeTag((short)t0.DayOfYear, 8 * 3600000 + 30 * 60000 + 2500, 0), p.GmtAt(1));
+            Assert.Equal(new TimeTag((short)t0.DayOfYear, 8 * 3600000 + 30 * 60000 + 2500, 0), p.UtcAt(1));
             var c = f.Read(new ParameterRequest("count", 0.5, 3))!;
             Assert.Equal(new[] { 0.5f, 1f, 2.5f, 3f }, c.Time.Take(c.Points)); // lead-in and trailing points clamped to the window
         }
@@ -315,13 +315,13 @@ public class ParquetPluginTests
         try
         {
             using var f = svc.Open(path)!;
-            Assert.Equal(new TimeTag(152, 0, 0), f.Info.RefGmt); // 1 June 2025 = day 152
+            Assert.Equal(new TimeTag(152, 0, 0), f.Info.RefUtc); // 1 June 2025 = day 152
             var all = f.Read(new ParameterRequest("val", -1e6, 1e6))!;
             Assert.Equal(500, all.Points);
             Assert.Equal(4.99f, all.Time[499], 4);
             var win = f.Read(new ParameterRequest("val", 2.505, 2.535, null, null, DataType.Float, true))!; // middle row group
             Assert.Equal(new[] { 250f, 251f, 252f, 253f, 253f }, win.Values.Take(win.Points));
-            Assert.Equal(new TimeTag(152, 2510, 0), win.GmtAt(1));
+            Assert.Equal(new TimeTag(152, 2510, 0), win.UtcAt(1));
         }
         finally
         {

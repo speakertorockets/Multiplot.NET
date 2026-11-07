@@ -13,7 +13,7 @@ public sealed class Marker
     public const int MaxMarkers = 1000;
 
     /// <summary>
-    /// Timestamp: a GMT (<c>ddd/hh:mm:ss[.mmm]</c>, <c>hh:mm:ss[.mmm]</c>, <c>ddd/msec[.usec]</c>), a time in
+    /// Timestamp: a UTC (<c>ddd/hh:mm:ss[.mmm]</c>, <c>hh:mm:ss[.mmm]</c>, <c>ddd/msec[.usec]</c>), a time in
     /// seconds on the plot's time axis, or the name of a file <c>[events]</c> entry / START, EOF, CUTOFF,
     /// each optionally followed by a <c>+/-seconds</c> offset. Resolved against the plot's time reference.
     /// </summary>

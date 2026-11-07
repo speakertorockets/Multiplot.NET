@@ -74,8 +74,8 @@ public sealed class MultiTimeArchive : IDisposable
         // FILE_REF may move the reference across a year boundary relative to the header day
         HeaderYear = headerYear;
         var headerJd = (short)Math.Max(1u, file.Info.RefTime[1]);
-        RefYear = headerYear + YearWrap(file.Info.RefGmt.JulianDay - headerJd);
-        RefTicks = ToTicks(RefYear, file.Info.RefGmt);
+        RefYear = headerYear + YearWrap(file.Info.RefUtc.JulianDay - headerJd);
+        RefTicks = ToTicks(RefYear, file.Info.RefUtc);
         _blockPtr = ReadMapBlockPointers();
     }
 
@@ -99,7 +99,7 @@ public sealed class MultiTimeArchive : IDisposable
         + t.MicroSeconds * 10L;
 
     /// <summary>Ticks of a TimeTag, resolving its year against the reference.</summary>
-    public long TagTicks(TimeTag t) => ToTicks(RefYear + YearWrap(t.JulianDay - File.Info.RefGmt.JulianDay), t);
+    public long TagTicks(TimeTag t) => ToTicks(RefYear + YearWrap(t.JulianDay - File.Info.RefUtc.JulianDay), t);
 
     private long SecondsToTicks(double seconds) => RefTicks + (long)Math.Round(seconds * TimeSpan.TicksPerSecond);
 
@@ -298,7 +298,7 @@ public sealed class MultiTimeArchive : IDisposable
             case DataType.ULongInt:
                 {
                     // milliseconds since the reference (the SUN reader drops the reference microseconds here)
-                    long baseTicks = RefTicks - File.Info.RefGmt.MicroSeconds * 10L;
+                    long baseTicks = RefTicks - File.Info.RefUtc.MicroSeconds * 10L;
                     for (int i = 0; i < n; i++)
                     {
                         uint v = be ? BinaryPrimitives.ReadUInt32BigEndian(t[(i * 4)..]) : BinaryPrimitives.ReadUInt32LittleEndian(t[(i * 4)..]);

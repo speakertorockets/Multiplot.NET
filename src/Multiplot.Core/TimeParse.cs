@@ -75,7 +75,7 @@ public static class TimeParse
         return new TimeTag(unchecked((short)Crt.Atoi(p)), unchecked((uint)Crt.Atol(m)), unchecked((ushort)Crt.Atoi(u)));
     }
 
-    /// <summary>Formats a GMT as <c>%03u/%02u:%02u:%02u.%03u</c> (the default GMT format).</summary>
-    public static string FormatGmt(TimeTag t) => Crt.Sprintf("%03u/%02u:%02u:%02u.%03u",
+    /// <summary>Formats a UTC as <c>%03u/%02u:%02u:%02u.%03u</c> (the default UTC format).</summary>
+    public static string FormatUtc(TimeTag t) => Crt.Sprintf("%03u/%02u:%02u:%02u.%03u",
         (uint)t.JulianDay, t.MilliSeconds / 3600000, t.MilliSeconds / 60000 % 60, t.MilliSeconds / 1000 % 60, t.MilliSeconds % 1000);
 }

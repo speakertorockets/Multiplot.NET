@@ -65,7 +65,7 @@ answer.
 
 * `Time`: relative seconds as `float[]`;
 * `Data`: a typed array;
-* optional `Gmt` time tags;
+* optional `Utc` time tags;
 * minimum and maximum, with their indexes;
 * `Rate`.
 
