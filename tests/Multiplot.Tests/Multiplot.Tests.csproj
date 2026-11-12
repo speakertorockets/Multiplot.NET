@@ -29,6 +29,7 @@
     <ProjectReference Include="..\..\src\Multiplot.Rendering\Multiplot.Rendering.csproj" />
     <ProjectReference Include="..\..\samples\MinimalPlugin\MinimalPlugin.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\tools\MultiToParquet\MultiToParquet.csproj" />
+    <ProjectReference Include="..\..\tools\HelpBuilder\HelpBuilder.csproj" />
     <ProjectReference Include="..\..\src\Multiplot.App\Multiplot.App.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 

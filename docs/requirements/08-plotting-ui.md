@@ -57,8 +57,9 @@ are omitted (DEV-UI-002). Structure (`IDR_MAINFRAME`):
   Markers), Real-Time ▸ (Refresh, Auto Refresh, Ignore Static Data, First Occurrence,
   Auto Run, Auto Data Compact, Auto Data Discard, Show Stream Certification), Tabular Options ▸
   (Maintain History, Default Time Stamp), plugin commands, Manage Plug-ins.
-* **Window**: as FR-UI-001. **Help**: User Guide (opens `docs\user-guide\README.md`, shipped beside the
-  executable, in the default web browser: the http handler, else Microsoft Edge, else the file
+* **Window**: as FR-UI-001. **Help**: User Guide (opens `docs\user-guide\index.html`, shipped beside the
+  executable, in the default web browser. The HTML pages are generated at build and publish time from the
+  Markdown sources in `docs/user-guide` by `tools/HelpBuilder`; only the HTML is shipped. Browser choice: the http handler, else Microsoft Edge, else the file
   association), Window Position, About Multiplot.
 The Axis menu no longer has *Auto Scale REDLINEs*: redline markers (FR-MRK-010) are not part of
 autoscaling.

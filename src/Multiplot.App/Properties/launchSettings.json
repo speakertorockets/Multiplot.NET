@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Multiplot.App": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "MULTIPLOT_TELEMETRY": "1"
+      }
+    }
+  }
+}

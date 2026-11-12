@@ -370,16 +370,20 @@ public sealed partial class Session
         return true;
     }
 
-    /// <summary>Help → User Guide: opens the user guide shipped next to the executable in the web browser.</summary>
-    public void OpenUserGuide()
+    /// <summary>
+    /// Help → User Guide: opens the HTML user guide shipped next to the executable in the web browser.
+    /// <paramref name="page"/> is a guide page (e.g. "scripts.html") and <paramref name="section"/> an optional
+    /// heading id on it (e.g. "command-reference").
+    /// </summary>
+    public void OpenUserGuide(string page = "index.html", string? section = null)
     {
-        string path = Path.Combine(AppContext.BaseDirectory, "docs", "user-guide", "README.md");
+        string path = Path.Combine(AppContext.BaseDirectory, "docs", "user-guide", page);
         if (!File.Exists(path))
         {
             Message("User guide not found:\n" + path);
             return;
         }
-        if (!Shell.OpenInBrowser(path)) Message("Could not open the web browser for:\n" + path);
+        if (!Shell.OpenInBrowser(path, section)) Message("Could not open the web browser for:\n" + path);
     }
 
     /// <summary>Runs a User's Choice entry.</summary>

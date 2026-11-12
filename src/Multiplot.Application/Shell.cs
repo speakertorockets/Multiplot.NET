@@ -138,8 +138,11 @@ public interface IShell
     bool IsSpacePressed();
     /// <summary>True while Shift is held.</summary>
     bool IsShiftPressed();
-    /// <summary>Opens a local file in the default web browser; false when no browser could be started.</summary>
-    bool OpenInBrowser(string path);
+    /// <summary>
+    /// Opens a local file in the default web browser, scrolled to <paramref name="fragment"/> (an element id)
+    /// when given; false when no browser could be started.
+    /// </summary>
+    bool OpenInBrowser(string path, string? fragment = null);
     /// <summary>Menus must be refreshed (labels, check states).</summary>
     void RefreshCommands();
     /// <summary>Menus must be rebuilt (settings loaded, plugins changed).</summary>

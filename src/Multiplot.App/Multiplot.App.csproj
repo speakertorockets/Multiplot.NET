@@ -49,7 +49,22 @@
     <Resource Include="Resources\Multiplot.ico" />
     <None Update="Multiplot.ini" CopyToOutputDirectory="PreserveNewest" />
     <None Update="ColorPrinter.wps" CopyToOutputDirectory="PreserveNewest" />
-    <!-- user guide, opened in the browser by Help > User Guide -->
-    <None Include="..\..\docs\user-guide\**\*" Link="docs\user-guide\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <!-- user guide: docs\user-guide\*.md converted to HTML (docs\user-guide\index.html), opened in the browser by Help > User Guide -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\tools\HelpBuilder\HelpBuilder.csproj" ReferenceOutputAssembly="false" Private="false" SkipGetTargetFrameworkProperties="true" />
+    <UserGuideSource Include="..\..\docs\user-guide\*.md" />
+  </ItemGroup>
+  <PropertyGroup>
+    <HelpBuilderDll>$(MSBuildThisFileDirectory)..\..\tools\HelpBuilder\bin\$(Configuration)\net10.0\helpbuilder.dll</HelpBuilderDll>
+    <HelpBuilderHost Condition="'$(DOTNET_HOST_PATH)' != ''">$(DOTNET_HOST_PATH)</HelpBuilderHost>
+    <HelpBuilderHost Condition="'$(DOTNET_HOST_PATH)' == ''">dotnet</HelpBuilderHost>
+    <UserGuideSourceDir>$(MSBuildThisFileDirectory)..\..\docs\user-guide</UserGuideSourceDir>
+  </PropertyGroup>
+  <Target Name="BuildUserGuide" AfterTargets="Build" Inputs="@(UserGuideSource);$(HelpBuilderDll)" Outputs="$(OutDir)docs\user-guide\index.html">
+    <Exec Command="&quot;$(HelpBuilderHost)&quot; &quot;$(HelpBuilderDll)&quot; &quot;$(UserGuideSourceDir)&quot; &quot;$(OutDir)docs\user-guide&quot;" />
+  </Target>
+  <Target Name="PublishUserGuide" AfterTargets="Publish">
+    <Exec Command="&quot;$(HelpBuilderHost)&quot; &quot;$(HelpBuilderDll)&quot; &quot;$(UserGuideSourceDir)&quot; &quot;$(PublishDir)docs\user-guide&quot;" />
+  </Target>
 </Project>

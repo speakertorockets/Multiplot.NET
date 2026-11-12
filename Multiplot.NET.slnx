@@ -17,6 +17,7 @@
     <Project Path="samples/MinimalPlugin/MinimalPlugin.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/HelpBuilder/HelpBuilder.csproj" />
     <Project Path="tools/MultiToParquet/MultiToParquet.csproj" />
     <Project Path="tools/SampleMultiGen/SampleMultiGen.csproj" />
   </Folder>

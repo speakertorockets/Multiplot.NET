@@ -206,13 +206,14 @@ public sealed class WpfShell : IShell
 
     /// <inheritdoc/>
     /// <remarks>
-    /// Opens the file URI with the user's default browser (the http protocol handler), so documents such as
-    /// Markdown are shown in the browser rather than in the application associated with their extension.
-    /// Falls back to Microsoft Edge, then to the shell association of the file.
+    /// Opens the file URI with the user's default browser (the http protocol handler), so the fragment is kept
+    /// and the page is shown in the browser rather than in the application associated with its extension.
+    /// Falls back to Microsoft Edge, then to the shell association of the file (without the fragment).
     /// </remarks>
-    public bool OpenInBrowser(string path)
+    public bool OpenInBrowser(string path, string? fragment = null)
     {
         string uri = new Uri(Path.GetFullPath(path)).AbsoluteUri;
+        if (!string.IsNullOrEmpty(fragment)) uri += "#" + Uri.EscapeDataString(fragment);
         string? browser = DefaultBrowser();
         if (browser != null && TryStart(browser, "\"" + uri + "\"")) return true;
         if (TryStart("msedge", "\"" + uri + "\"")) return true;
