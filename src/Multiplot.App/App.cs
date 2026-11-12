@@ -25,10 +25,13 @@ public static class Program
             System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         }
 
-        GlobalExceptionHandler.Install("Multiplot");
-
         string raw = string.Join(" ", args.Select(a => a.Contains(' ') && !a.StartsWith('"') ? "\"" + a + "\"" : a));
-        var app = new App(raw);
+
+        // NFR-TEL-001: off unless MULTIPLOT_TELEMETRY=1 and a local collector is running; disposing flushes.
+        using var telemetry = new TelemetryBootstrap(CommandLine.Parse(raw).Hide);
+        GlobalExceptionHandler.Install("Multiplot", telemetry);
+
+        var app = new App(raw, telemetry);
         try
         {
             return app.Run();
@@ -45,7 +48,7 @@ public static class Program
     internal static class GlobalExceptionHandler
     {
         // called as GlobalExceptionHandler.Install("Multiplot", args);
-        public static void Install(string appName)
+        public static void Install(string appName, TelemetryBootstrap telemetry)
         {
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
@@ -53,6 +56,8 @@ public static class Program
                 {
                     var ex = e.ExceptionObject as Exception;
                     Console.Error.WriteLine($"{appName} Unhandled exception: {ex}");
+                    Multiplot.Core.Diagnostics.MultiplotTelemetry.Log($"{appName} Unhandled exception: {ex}");
+                    telemetry.Flush(); // the process may be about to terminate: push what is buffered
                 }
                 catch { /* swallow to avoid secondary failures */ }
             };
@@ -67,9 +72,12 @@ public sealed class App : System.Windows.Application
     private Session? _session;
     private MainWindow? _main;
     private WpfShell? _shell;
+    private readonly TelemetryBootstrap? _telemetry;
 
     /// <summary>Creates the application with the raw command line.</summary>
     public App(string rawCommandLine) => _rawCommandLine = rawCommandLine;
+
+    internal App(string rawCommandLine, TelemetryBootstrap telemetry) : this(rawCommandLine) => _telemetry = telemetry;
 
     /// <inheritdoc/>
     protected override void OnStartup(StartupEventArgs e)
@@ -81,6 +89,7 @@ public sealed class App : System.Windows.Application
         _main = new MainWindow();
         _shell = new WpfShell(_main, cl.Hide, ExitApplication);
         _session = AppStartup.CreateSession(_shell, cl);
+        if (_telemetry?.Describe() is { Length: > 0 } tel) _session.DiagLog(tel);
         _main.Attach(_session, _shell);
         if (!cl.Hide)
         {
@@ -178,6 +187,7 @@ public sealed class App : System.Windows.Application
         if (_shell != null && !_shell.Hidden)
             MessageBox.Show("The display system failed (" + ex.Message + ").\n\nMultiplot must close. Details were written to the Multiplot log.",
             "Multiplot", MessageBoxButton.OK, MessageBoxImage.Error);
+        _telemetry?.Dispose(); // Environment.Exit skips the using in Main
         Environment.Exit(1);
     }
 

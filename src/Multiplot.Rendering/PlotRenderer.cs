@@ -78,6 +78,18 @@ public sealed class PlotRenderer
     /// <summary>Renders the plot into a drawing context of size W×H.</summary>
     public void Draw(DrawingContext dc, int W, int H, bool imageCopy)
     {
+        // NFR-TEL-003: histogram only — a span per repaint would flood the backend
+        long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+        try { DrawCore(dc, W, H, imageCopy); }
+        finally
+        {
+            Multiplot.Core.Diagnostics.MultiplotTelemetry.PlotDrawMs.Record(Multiplot.Core.Diagnostics.MultiplotTelemetry.ElapsedMs(t0),
+                new KeyValuePair<string, object?>("multiplot.image_copy", imageCopy));
+        }
+    }
+
+    private void DrawCore(DrawingContext dc, int W, int H, bool imageCopy)
+    {
         var d = _d;
         _c = d.Config;
         _g = new GdiCanvas(dc);

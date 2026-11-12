@@ -1,0 +1,2 @@
+# OpenTelemetry Collector release archive (105 MB, above the GitHub 100 MB file limit)
+tools/OtelCollector/*.tar.gz filter=lfs diff=lfs merge=lfs -text

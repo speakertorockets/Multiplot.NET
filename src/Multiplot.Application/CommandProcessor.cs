@@ -37,9 +37,34 @@ public sealed partial class Session
     /// <summary>Executes one command line; returns the command key.</summary>
     public async Task<Cmd> ExecuteAsync(string command)
     {
+        // NFR-TEL-002: one span per command (null, and nearly free, when telemetry is off)
+        using var act = MultiplotTelemetry.Source.StartActivity("command");
+        try { return await ExecuteCoreAsync(command, act); }
+        catch (Exception ex)
+        {
+            MultiplotTelemetry.Fail(act, ex);
+            MultiplotTelemetry.ScriptErrors.Add(1);
+            throw;
+        }
+    }
+
+    private async Task<Cmd> ExecuteCoreAsync(string command, Activity? act)
+    {
         string cmdBuf = PreProcess(command);
         Cmd key = ScriptKeywords.GetCmdKey(cmdBuf);
         string cmdParm = ScriptKeywords.GetParm(cmdBuf);
+        if (act != null)
+        {
+            act.DisplayName = "command " + key;
+            act.SetTag("multiplot.command", key.ToString());
+            act.SetTag("multiplot.command.text", cmdBuf.Trim());
+            if (IsScriptActive)
+            {
+                act.SetTag("multiplot.script.path", ScriptFile);
+                act.SetTag("multiplot.script.line", ScriptLineNo);
+            }
+        }
+        if (key != Cmd.Comment) MultiplotTelemetry.Commands.Add(1, new KeyValuePair<string, object?>("multiplot.command", key.ToString()));
         bool hadError = false;
         string errTxt = "invalid syntax";
         void Err(string? t = null) { hadError = true; if (t != null) errTxt = t; }
@@ -896,6 +921,8 @@ public sealed partial class Session
 
         if (hadError)
         {
+            act?.SetStatus(ActivityStatusCode.Error, errTxt.Replace("\n", " "));
+            MultiplotTelemetry.ScriptErrors.Add(1, new KeyValuePair<string, object?>("multiplot.command", key.ToString()));
             ScriptLog(cmdBuf + " -> " + errTxt.Replace("\n", " "));
             Message(cmdBuf + " -> " + errTxt);
         }

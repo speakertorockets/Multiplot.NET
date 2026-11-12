@@ -9,7 +9,7 @@ namespace Multiplot.Tests.EndToEnd;
 /// <summary>Runs the built Multiplot.exe with /hide on a script and checks its outputs.</summary>
 public class HiddenScriptTests
 {
-    private static string? FindExe()
+    internal static string? FindExe()
     {
         string dir = AppContext.BaseDirectory;
         string config = dir.Contains("\\Release\\", StringComparison.OrdinalIgnoreCase) ? "Release" : "Debug";
@@ -18,7 +18,7 @@ public class HiddenScriptTests
         return File.Exists(exe) ? exe : null;
     }
 
-    private static void WriteFixture(string path, string? comment = null)
+    internal static void WriteFixture(string path, string? comment = null)
     {
         const int n = 200;
         var t = new float[n];

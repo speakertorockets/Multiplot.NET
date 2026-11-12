@@ -1,9 +1,11 @@
 // Copyright (c) 2026 speakertorockets
 // SPDX-License-Identifier: MIT
 
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Loader;
 using Multiplot.Core;
+using Multiplot.Core.Diagnostics;
 using Multiplot.Plugins;
 using Multiplot.Sun;
 
@@ -104,12 +106,37 @@ public sealed class DataAccessService : IDisposable
     /// <summary>Returns null on failure with <see cref="LastStatus"/> set.</summary>
     public IDataFile? Open(string fileName)
     {
+        // NFR-TEL-002: span and counter per file open
+        using var act = MultiplotTelemetry.Source.StartActivity("data.open");
+        string provider = "";
+        IDataFile? f = null;
+        try { f = OpenCore(fileName, ref provider); }
+        catch (Exception ex) { MultiplotTelemetry.Fail(act, ex); throw; }
+        finally
+        {
+            string result = f != null ? "ok" : "error";
+            MultiplotTelemetry.FilesOpened.Add(1, new KeyValuePair<string, object?>("multiplot.provider", provider),
+                new KeyValuePair<string, object?>("multiplot.result", result));
+            if (act != null)
+            {
+                act.SetTag("multiplot.file", fileName);
+                act.SetTag("multiplot.provider", provider);
+                act.SetTag("multiplot.status", _status);
+                if (f == null) act.SetStatus(ActivityStatusCode.Error, "status " + _status);
+            }
+        }
+        return f;
+    }
+
+    private IDataFile? OpenCore(string fileName, ref string provider)
+    {
         _status = 0;
         if (string.IsNullOrEmpty(fileName)) { _status = (int)SunError.FileOpen; return null; }
         uint type = IsSupportedType(fileName);
         if (type == 0) return null;
         if (SunSignatures.IsSun(type))
         {
+            provider = "SUN";
             try
             {
                 var f = Sun.Open(fileName);
@@ -126,6 +153,7 @@ public sealed class DataAccessService : IDisposable
         foreach (var p in DataProviders)
         {
             if (p.Signature != type) continue;
+            provider = p.Name;
             try
             {
                 var f = p.Open(fileName);
@@ -286,6 +314,18 @@ public sealed class DataAccessService : IDisposable
     /// <inheritdoc/>
     public void Dispose() => UnloadPlugins();
 
+    /// <summary>
+    /// Assemblies a plugin always gets from the host (default load context) even if it ships its own copy: the
+    /// plugin contracts, and <c>System.Diagnostics.DiagnosticSource</c> / <c>OpenTelemetry.*</c> so that a plugin's
+    /// <c>ActivitySource</c>/<c>Meter</c> is seen by the host's telemetry listener (NFR-TEL-005).
+    /// </summary>
+    public static bool IsSharedWithHost(string? assemblyName) =>
+        assemblyName != null
+        && (assemblyName == typeof(IMultiplotPlugin).Assembly.GetName().Name
+            || assemblyName == "System.Diagnostics.DiagnosticSource"
+            || assemblyName == "OpenTelemetry"
+            || assemblyName.StartsWith("OpenTelemetry.", StringComparison.Ordinal));
+
     private sealed class PluginLoadContext : AssemblyLoadContext
     {
         private readonly AssemblyDependencyResolver _resolver;
@@ -295,8 +335,8 @@ public sealed class DataAccessService : IDisposable
 
         protected override Assembly? Load(AssemblyName name)
         {
-            // share the contracts assembly with the host so the interfaces match
-            if (name.Name == typeof(IMultiplotPlugin).Assembly.GetName().Name) return null;
+            // share the contracts and telemetry assemblies with the host so the interfaces match
+            if (IsSharedWithHost(name.Name)) return null;
             string? p = _resolver.ResolveAssemblyToPath(name);
             return p != null ? LoadFromAssemblyPath(p) : null;
         }

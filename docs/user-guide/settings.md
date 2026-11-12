@@ -102,3 +102,66 @@ window position take effect the next time Multiplot.NET starts.
 *Parameter → Favorites* lists saved parameter sets from the favourites file. Each line looks like
 `name=Label yaxis=list xaxis=parm`. Pick one to plot it; you can use its label as the plot title.
 `FAVORITES file` chooses a different file.
+
+## Operations telemetry
+
+On operations workstations, Multiplot.NET can report what it is doing to operations staff while
+operations are running. It uses [OpenTelemetry](https://opentelemetry.io/): every Multiplot window on
+the workstation sends traces, metrics and log lines to one OpenTelemetry Collector on the same
+machine. The collector stores the data and can forward it to the monitoring system.
+
+Telemetry is **off by default**. Two things must both be true when Multiplot.NET starts:
+
+1. The environment variable `MULTIPLOT_TELEMETRY` is set to `1`.
+2. The OpenTelemetry Collector is installed and running on the workstation.
+
+If either is missing, Multiplot.NET runs exactly as before and makes no network connection. Normal
+desktop workstations used for technical reviews after operations do not need the collector.
+
+### Installing the collector
+
+The production tools install the collector with administrator rights. The collector, its
+configuration and the scripts are in the `tools\OtelCollector` folder of the Multiplot.NET source:
+
+```
+powershell -ExecutionPolicy Bypass -File Install-MultiplotCollector.ps1 -EnableTelemetry
+```
+
+This installs the `MultiplotOtelCollector` Windows service, which listens on `127.0.0.1:4318`. With
+`-EnableTelemetry` it also sets `MULTIPLOT_TELEMETRY=1` for all users. To remove everything, run
+`Uninstall-MultiplotCollector.ps1`. `tools\OtelCollector\README.md` describes the configuration
+(`C:\ProgramData\Multiplot\otel\multiplot-collector.yaml`) and how to forward data to a monitoring
+backend.
+
+Multiplot.NET checks the variable and the collector only when it starts. A Multiplot window that was
+already open when telemetry was enabled must be restarted before it sends anything. If the collector
+stops while Multiplot.NET is running, Multiplot.NET keeps working, but the telemetry from that period
+is lost.
+
+### Environment variables
+
+| Variable | Effect |
+|---|---|
+| `MULTIPLOT_TELEMETRY` | `1` (or `true`, `on`, `yes`) turns telemetry on. Not set means off |
+| `MULTIPLOT_OTLP_ENDPOINT` | Collector address, default `http://127.0.0.1:4318`. Only `http` addresses on the local machine are accepted |
+| `MULTIPLOT_OTEL_METRIC_INTERVAL_MS` | How often metrics are sent, in milliseconds (default 15000, minimum 1000) |
+| `OTEL_SDK_DISABLED` | `true` turns telemetry off even when `MULTIPLOT_TELEMETRY` is set |
+
+At start-up, the diagnostic log (`%LOCALAPPDATA%\Multiplot\logs`) shows whether telemetry is on. If it
+is not on, the log line says why, for example that no collector is listening.
+
+### What is reported
+
+* **Traces**: one entry for each script run and each command. Each command entry has the full command
+  text. There are also entries for opening data files (with the file path), loading parameters (with
+  the parameter list and the number of points), exports, imports and real-time refresh cycles. A
+  command that fails is marked as an error, together with its message.
+* **Metrics**: counts of commands, errors, file opens and loaded points; load, draw and refresh times;
+  .NET runtime figures (memory, garbage collection, threads).
+* **Logs**: every line written to the diagnostic log.
+* **Identity**: each Multiplot process has its own instance id. The process id, computer name, user
+  name, the command line and whether it runs hidden (`/hide`) are also sent, so the reports from
+  different Multiplot windows on one workstation can be told apart.
+
+File names, parameter names, command text and script paths are sent as they are. Telemetry is meant
+for protected operations workstations whose data is watched by privileged production staff.

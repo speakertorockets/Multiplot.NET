@@ -16,6 +16,15 @@
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
   </ItemGroup>
+  <!-- OpenTelemetry SDK + OTLP exporter (NFR-TEL-001, Apache-2.0). Only the executable references the SDK;
+       the libraries use the BCL ActivitySource/Meter in Multiplot.Core.Diagnostics. Keep all core packages on one version. -->
+  <PropertyGroup>
+    <OpenTelemetryVersion>1.21.0</OpenTelemetryVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry" Version="$(OpenTelemetryVersion)" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetryVersion)" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Multiplot.Application\Multiplot.Application.csproj" />
     <!-- bundled plugin: built first, deployed to plugins\Multiplot.Parquet\ (not referenced) -->

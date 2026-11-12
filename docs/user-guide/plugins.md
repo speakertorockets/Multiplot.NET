@@ -71,6 +71,12 @@ answer.
 
 Report errors by throwing `DataAccessException`.
 
+A plugin can also report to [operations telemetry](settings.md#operations-telemetry). Create a
+`System.Diagnostics.ActivitySource` or `System.Diagnostics.Metrics.Meter` named `Multiplot.<PluginName>`,
+for example `Multiplot.Parquet`. Multiplot.NET picks up every source whose name starts with `Multiplot`.
+Do not create your own OpenTelemetry providers or exporters. Dispose the sources when the plugin is
+shut down, otherwise the plugin cannot be unloaded.
+
 ### Sample
 
 `Multiplot.NET\samples\MinimalPlugin` is a minimal data-source template. It accepts any existing `.min` file and creates three 32-point parameters: `UPDATA`,

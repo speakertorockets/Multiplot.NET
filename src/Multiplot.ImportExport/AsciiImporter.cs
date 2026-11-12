@@ -1,8 +1,10 @@
 // Copyright (c) 2026 speakertorockets
 // SPDX-License-Identifier: MIT
 
+using System.Diagnostics;
 using System.Text;
 using Multiplot.Core;
+using Multiplot.Core.Diagnostics;
 using Multiplot.Plugins;
 using Multiplot.Sun;
 
@@ -460,6 +462,24 @@ public sealed class AsciiImporter
     /// reference which is honoured (DEV-IMP-001 fix). Returns 0 on success.
     /// </summary>
     public int GenerateFile(string? overrideRef = null)
+    {
+        // NFR-TEL-002
+        using var act = MultiplotTelemetry.Source.StartActivity("import");
+        int rc;
+        try { rc = GenerateFileCore(overrideRef); }
+        catch (Exception ex) { MultiplotTelemetry.Fail(act, ex); throw; }
+        if (act != null)
+        {
+            act.SetTag("multiplot.import.source", SourceFile);
+            act.SetTag("multiplot.import.dest", DestFile);
+            act.SetTag("multiplot.points", _nPoints);
+            act.SetTag("multiplot.result", rc);
+            if (rc != 0) act.SetStatus(ActivityStatusCode.Error, StatusMsg.Length > 0 ? StatusMsg : "result " + rc);
+        }
+        return rc;
+    }
+
+    private int GenerateFileCore(string? overrideRef)
     {
         if (_data.Length == 0 && !Load()) return 1;
         if (overrideRef != null) RefTime = overrideRef;

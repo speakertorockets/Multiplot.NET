@@ -206,6 +206,7 @@ public sealed partial class Session : IPlotHost, IExpressionContext, IPluginHost
     /// <summary>Diagnostic log (NFR-LOG-001): %LOCALAPPDATA%\Multiplot\logs.</summary>
     public void DiagLog(string text)
     {
+        MultiplotTelemetry.Log(text); // NFR-TEL-004: also an OTel log record when telemetry is active
         try
         {
             string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Multiplot", "logs");

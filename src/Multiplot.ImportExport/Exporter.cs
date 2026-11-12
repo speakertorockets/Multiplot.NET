@@ -1,8 +1,10 @@
 // Copyright (c) 2026 speakertorockets
 // SPDX-License-Identifier: MIT
 
+using System.Diagnostics;
 using System.Text;
 using Multiplot.Core;
+using Multiplot.Core.Diagnostics;
 using Multiplot.Core.Model;
 using Multiplot.Plugins;
 using Multiplot.Sun;
@@ -273,6 +275,21 @@ public static class Exporter
     /// <summary>Writes the ASCII export; returns the file name or null when it cannot be created.</summary>
     public static string? ToAscii(PlotDocument plot, char delimiter, string? fileName, ExportOptions o)
     {
+        // NFR-TEL-002
+        using var act = MultiplotTelemetry.Source.StartActivity("export");
+        string? result = ToAsciiCore(plot, delimiter, fileName, o);
+        if (act != null)
+        {
+            act.SetTag("multiplot.export.format", delimiter == '\t' ? "TAB" : "CSV");
+            act.SetTag("multiplot.export.file", result ?? fileName ?? "");
+            act.SetTag("multiplot.curves", plot.Curves.Count);
+            if (result == null) act.SetStatus(ActivityStatusCode.Error, "cannot create export file");
+        }
+        return result;
+    }
+
+    private static string? ToAsciiCore(PlotDocument plot, char delimiter, string? fileName, ExportOptions o)
+    {
         string outFile = AsciiFileName(plot, delimiter, fileName, o);
         try
         {
@@ -288,6 +305,17 @@ public static class Exporter
 
     /// <summary>Writes the plot curves as SUN_MULTITIME (FR-XPT-020).</summary>
     public static void ToSun(PlotDocument plot, string fileName)
+    {
+        // NFR-TEL-002
+        using var act = MultiplotTelemetry.Source.StartActivity("export");
+        act?.SetTag("multiplot.export.format", "SUN");
+        act?.SetTag("multiplot.export.file", fileName);
+        act?.SetTag("multiplot.curves", plot.Curves.Count);
+        try { ToSunCore(plot, fileName); }
+        catch (Exception ex) { MultiplotTelemetry.Fail(act, ex); throw; }
+    }
+
+    private static void ToSunCore(PlotDocument plot, string fileName)
     {
         var pid = plot.Curves;
         if (pid.Count == 0) return;

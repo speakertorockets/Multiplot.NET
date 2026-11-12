@@ -56,6 +56,20 @@ public sealed class ScriptRunner
     /// <summary>Runs a script file.</summary>
     public async Task RunAsync(string batchName, int startAt = 0, int lineNo = 0)
     {
+        // NFR-TEL-002: one span per script run; the command spans (and nested scripts) become its children
+        using var act = MultiplotTelemetry.Source.StartActivity("script.run");
+        act?.SetTag("multiplot.script.name", batchName);
+        if (startAt > 0) act?.SetTag("multiplot.script.resume_offset", startAt);
+        try { await RunCoreAsync(batchName, startAt, lineNo, act); }
+        catch (Exception ex)
+        {
+            MultiplotTelemetry.Fail(act, ex);
+            throw;
+        }
+    }
+
+    private async Task RunCoreAsync(string batchName, int startAt, int lineNo, Activity? act)
+    {
         if (_s.IsScriptActive)
         {
             _s.Message("Cancel current script first");
@@ -77,6 +91,8 @@ public sealed class ScriptRunner
         if (data == null)
         {
             _s.Message("Failure opening script " + batchName);
+            act?.SetStatus(ActivityStatusCode.Error, "Failure opening script");
+            MultiplotTelemetry.ScriptErrors.Add(1);
             return;
         }
         _s.Data.SetOption(1003);
@@ -84,6 +100,7 @@ public sealed class ScriptRunner
         _s.ScriptLineNo = lineNo;
         _s.ScriptRun = RunState.Running;
         _s.ScriptFile = path!;
+        act?.SetTag("multiplot.script.path", Path.GetFullPath(path!));
         StateChanged?.Invoke();
         await _s.Shell.YieldAsync();
 
@@ -95,6 +112,7 @@ public sealed class ScriptRunner
             catch (Exception ex)
             {
                 _s.DiagLog("Script command failed: " + cmd.Trim() + " " + ex);
+                act?.AddException(ex);
                 _s.Message(ScriptLexer.Clean(cmd) + " -> " + ex.Message);
             }
             await _s.Shell.YieldAsync();
@@ -113,6 +131,12 @@ public sealed class ScriptRunner
         }
 
         int exitState = _s.ScriptRun;
+        act?.SetTag("multiplot.script.lines", _s.ScriptLineNo);
+        act?.SetTag("multiplot.script.end_state", exitState switch
+        {
+            RunState.Running => "completed", RunState.Paused => "paused", RunState.Calling => "calling",
+            RunState.Aborting => "aborted", RunState.ExitRequested => "exit", _ => exitState.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        });
         _s.ScriptRun = RunState.Idle;
         _s.Data.SetOption(1004);
         StateChanged?.Invoke();
@@ -128,6 +152,7 @@ public sealed class ScriptRunner
                 _stack.Clear();
                 break;
             case RunState.ExitRequested:
+                act?.Stop(); // end the span before shutdown flushes the exporters
                 _s.Shell.RequestExit();
                 break;
         }

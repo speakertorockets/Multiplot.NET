@@ -1,0 +1,78 @@
+# OpenTelemetry Collector configuration for Multiplot.NET (NFR-TEL-006).
+# Installed by Install-MultiplotCollector.ps1 to C:\ProgramData\Multiplot\otel\multiplot-collector.yaml.
+#
+# One collector per workstation, listening on loopback only. Every Multiplot instance on the machine
+# pushes OTLP/HTTP to 127.0.0.1:4318; the collector merges the streams and writes them to rotated
+# JSON-lines files. To feed an operations monitoring backend, uncomment "otlp/backend" (or add another
+# exporter) and add it to the pipelines' exporters lists - Multiplot itself never needs to change.
+#
+# Validate after editing (as administrator):
+#   "C:\Program Files\Multiplot\OtelCollector\otelcol-contrib.exe" validate --config C:\ProgramData\Multiplot\otel\multiplot-collector.yaml
+#   Restart-Service MultiplotOtelCollector
+
+extensions:
+  health_check:
+    endpoint: 127.0.0.1:13133          # http://127.0.0.1:13133/ answers when the collector is up
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 127.0.0.1:4318       # THE single port for all Multiplot instances (loopback only)
+
+processors:
+  memory_limiter:                      # first: protects the workstation if instances flood the collector
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  resourcedetection:                   # adds host/os attributes once, centrally
+    detectors: [system]
+    system:
+      hostname_sources: [os]
+  batch:
+    send_batch_size: 1024
+    timeout: 5s
+
+exporters:
+  file/traces:
+    path: C:/ProgramData/Multiplot/otel/data/traces.jsonl
+    rotation:
+      max_megabytes: 50
+      max_backups: 5
+  file/metrics:
+    path: C:/ProgramData/Multiplot/otel/data/metrics.jsonl
+    rotation:
+      max_megabytes: 50
+      max_backups: 5
+  file/logs:
+    path: C:/ProgramData/Multiplot/otel/data/logs.jsonl
+    rotation:
+      max_megabytes: 50
+      max_backups: 5
+  # Forward to the operations monitoring backend (Jaeger, Seq, Grafana/Tempo/Loki, Aspire dashboard,
+  # a central collector, ...):
+  # otlp/backend:
+  #   endpoint: monitoring-host:4317
+  #   tls:
+  #     insecure: true
+
+service:
+  extensions: [health_check]
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      level: none                      # no :8888 self-metrics port
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [file/traces]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [file/metrics]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [file/logs]

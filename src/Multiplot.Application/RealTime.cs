@@ -75,9 +75,27 @@ public sealed partial class Session
         if (!Refreshing)
         {
             Refreshing = true;
-            try { RtRefresh(); }
-            catch (Exception ex) { DiagLog("Refresh failed: " + ex); }
-            finally { Refreshing = false; }
+            // NFR-TEL-002: each refresh is its own root span (timer callbacks have no parent)
+            Activity? parent = Activity.Current;
+            Activity.Current = null;
+            using var act = MultiplotTelemetry.Source.StartActivity("realtime.refresh", ActivityKind.Internal);
+            Activity.Current = act ?? parent;
+            long t0 = Stopwatch.GetTimestamp();
+            try
+            {
+                act?.SetTag("multiplot.files", _files.Count);
+                act?.SetTag("multiplot.plots", Plots.Count);
+                RtRefresh();
+            }
+            catch (Exception ex) { MultiplotTelemetry.Fail(act, ex); DiagLog("Refresh failed: " + ex); }
+            finally
+            {
+                Refreshing = false;
+                MultiplotTelemetry.RealtimeRefreshes.Add(1);
+                MultiplotTelemetry.RealtimeRefreshMs.Record(MultiplotTelemetry.ElapsedMs(t0));
+                act?.Stop();
+                Activity.Current = parent;
+            }
         }
         ProcessAutoRun();
     }

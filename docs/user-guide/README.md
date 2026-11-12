@@ -14,7 +14,7 @@ files.
 | [Scripts](scripts.md) | The `.wps` language, symbols, recording, and a command reference |
 | [Import and export](import-export.md) | ASCII import, CSV/SUN export, converting `.multi` files to Parquet, pictures, statistics, details files |
 | [Real-time operation](realtime.md) | Auto refresh, compaction, discard, AutoRun |
-| [Settings and files](settings.md) | User folder, `Multiplot.ini`, registry, command line |
+| [Settings and files](settings.md) | User folder, `Multiplot.ini`, registry, command line, operations telemetry |
 | [Plugins](plugins.md) | Managing plugins, the bundled Parquet plugin, writing a data-source plugin |
 | [Limitations and notes](limitations.md) | Unsupported features and behaviour notes |
 

@@ -446,6 +446,32 @@ public sealed partial class Session
     /// </summary>
     public int LoadParameters(List<Curve> curves, string[] xAxisNomen, ref string errMsg)
     {
+        // NFR-TEL-002: span, duration and point count per plot load
+        using var act = MultiplotTelemetry.Source.StartActivity("load.parameters");
+        long t0 = Stopwatch.GetTimestamp();
+        int n;
+        try { n = LoadParametersCore(curves, xAxisNomen, ref errMsg); }
+        catch (Exception ex) { MultiplotTelemetry.Fail(act, ex); throw; }
+        long points = 0;
+        foreach (var c in curves) points += c.Data?.Points ?? 0;
+        MultiplotTelemetry.LoadMs.Record(MultiplotTelemetry.ElapsedMs(t0));
+        if (points > 0) MultiplotTelemetry.PointsLoaded.Add(points);
+        if (act != null)
+        {
+            act.SetTag("multiplot.parameters", YAxis);
+            act.SetTag("multiplot.x_axis", XAxis);
+            act.SetTag("multiplot.groups", _groups.Count);
+            act.SetTag("multiplot.curves", curves.Count);
+            act.SetTag("multiplot.points", points);
+            act.SetTag("multiplot.result", n);
+            if (errMsg.Length > 0) act.SetTag("multiplot.message", errMsg);
+            if (n < 0) act.SetStatus(ActivityStatusCode.Error, n == -1 ? "cancelled" : "time slice error");
+        }
+        return n;
+    }
+
+    private int LoadParametersCore(List<Curve> curves, string[] xAxisNomen, ref string errMsg)
+    {
         curves.Clear();
         string xAxis = XAxis;
         SymbolSubstitute(ref xAxis);
