@@ -49,8 +49,22 @@ exporters:
     rotation:
       max_megabytes: 50
       max_backups: 5
-  # Forward to the operations monitoring backend (Jaeger, Seq, Grafana/Tempo/Loki, Aspire dashboard,
-  # a central collector, ...):
+  # Local .NET Aspire dashboard (web UI http://localhost:18888 for traces, metrics and structured logs).
+  # Start it with Docker, published on loopback only:
+  #   docker run --rm -d --name aspire-dashboard -p 127.0.0.1:18888:18888 -p 127.0.0.1:18889:18889 `
+  #     -e DASHBOARD__FRONTEND__AUTHMODE=Unsecured mcr.microsoft.com/dotnet/aspire-dashboard
+  # 18889 is the dashboard's OTLP/gRPC port. While the dashboard is not running, this exporter retries for
+  # a minute and then drops its copy; the file exporters are not affected.
+  otlp/aspire:
+    endpoint: 127.0.0.1:18889
+    tls:
+      insecure: true
+    retry_on_failure:
+      max_elapsed_time: 60s
+    sending_queue:
+      queue_size: 200
+  # Forward to the operations monitoring backend (Jaeger, Seq, Grafana/Tempo/Loki, a central
+  # collector, ...):
   # otlp/backend:
   #   endpoint: monitoring-host:4317
   #   tls:
@@ -67,12 +81,12 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, batch]
-      exporters: [file/traces]
+      exporters: [file/traces, otlp/aspire]
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, batch]
-      exporters: [file/metrics]
+      exporters: [file/metrics, otlp/aspire]
     logs:
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, batch]
-      exporters: [file/logs]
+      exporters: [file/logs, otlp/aspire]

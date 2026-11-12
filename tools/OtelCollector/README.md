@@ -37,6 +37,20 @@ powershell -ExecutionPolicy Bypass -File tools\OtelCollector\Uninstall-Multiplot
 Multiplot instances read `MULTIPLOT_TELEMETRY` at start-up, so instances that were already running when the
 variable or the service was added keep running without telemetry until they are restarted.
 
+## Viewing the data in the Aspire dashboard
+
+The config also sends every signal to a local .NET Aspire dashboard on `127.0.0.1:18889` (OTLP/gRPC).
+Start the dashboard with Docker, published on loopback only, then open http://localhost:18888:
+
+```powershell
+docker run --rm -d --name aspire-dashboard -p 127.0.0.1:18888:18888 -p 127.0.0.1:18889:18889 `
+  -e DASHBOARD__FRONTEND__AUTHMODE=Unsecured mcr.microsoft.com/dotnet/aspire-dashboard
+```
+
+The dashboard keeps data in memory only and shows what arrives after it starts. While it is not running,
+the collector retries for a minute per batch, logs a warning and drops that copy; the JSON-lines files
+are still written. To stop forwarding, remove `otlp/aspire` from the pipelines' `exporters` lists.
+
 ## Forwarding to a monitoring backend
 
 Edit `C:\ProgramData\Multiplot\otel\multiplot-collector.yaml`: uncomment `otlp/backend`, set its endpoint,
