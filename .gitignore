@@ -6,3 +6,4 @@ TestResults/
 # 125 MB sample data file, too large for most git hosts
 test_large.multi
 test3.multi
+artifacts/
