@@ -44,9 +44,36 @@ public static class MultiplotTelemetry
     public static readonly Counter<long> PointsLoaded =
         Meter.CreateCounter<long>("multiplot.load.points", "{point}", "Samples loaded from data files");
 
-    /// <summary>Data files opened (tag <c>multiplot.result</c> = ok / error).</summary>
+    /// <summary>Data files opened (tags <c>multiplot.file</c> = full path, <c>multiplot.provider</c>, <c>multiplot.result</c> = ok / error).</summary>
     public static readonly Counter<long> FilesOpened =
         Meter.CreateCounter<long>("multiplot.data.opens", "{file}", "Data file open attempts");
+
+    /// <summary>
+    /// Parameters added to plots, one per curve (tags <c>multiplot.parameter</c> = parameter name, <c>multiplot.file</c> =
+    /// source file path, <c>multiplot.plot.action</c> = <c>plot</c> for a new plot / <c>add</c> for Add Parameter).
+    /// </summary>
+    public static readonly Counter<long> ParametersPlotted =
+        Meter.CreateCounter<long>("multiplot.plot.parameters", "{parameter}", "Parameters added to plots");
+
+    /// <summary>
+    /// Attribute combinations kept per metric for the per-file and per-parameter counters (the SDK default is 2000;
+    /// combinations beyond the limit are reported under <c>otel.metric.overflow</c>).
+    /// </summary>
+    public const int DetailCardinalityLimit = 10000;
+
+    /// <summary>Records one <see cref="ParametersPlotted"/> measurement per curve. Never throws.</summary>
+    public static void RecordParametersPlotted(IEnumerable<(string Parameter, string File)> curves, string action)
+    {
+        if (!ParametersPlotted.Enabled) return;
+        try
+        {
+            foreach (var (parameter, file) in curves)
+                ParametersPlotted.Add(1, new KeyValuePair<string, object?>("multiplot.parameter", parameter),
+                    new KeyValuePair<string, object?>("multiplot.file", file),
+                    new KeyValuePair<string, object?>("multiplot.plot.action", action));
+        }
+        catch (Exception) { /* telemetry must never affect the application */ }
+    }
 
     /// <summary>Commands executed (tag <c>multiplot.command</c>).</summary>
     public static readonly Counter<long> Commands =

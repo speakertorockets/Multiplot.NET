@@ -167,18 +167,19 @@ public class TelemetryTests
         };
         ActivitySource.AddActivityListener(al);
 
-        var opens = new ConcurrentBag<(long Value, string Provider, string Result)>();
+        var opens = new ConcurrentBag<(long Value, string File, string Provider, string Result)>();
         using var ml = new MeterListener();
         ml.InstrumentPublished = (inst, l) => { if (inst.Meter.Name == MultiplotTelemetry.SourceName && inst.Name == "multiplot.data.opens") l.EnableMeasurementEvents(inst); };
         ml.SetMeasurementEventCallback<long>((inst, v, tags, _) =>
         {
-            string p = "", r = "";
+            string file = "", p = "", r = "";
             foreach (var t in tags)
             {
+                if (t.Key == "multiplot.file") file = t.Value as string ?? "";
                 if (t.Key == "multiplot.provider") p = t.Value as string ?? "";
                 if (t.Key == "multiplot.result") r = t.Value as string ?? "";
             }
-            opens.Add((v, p, r));
+            opens.Add((v, file, p, r));
         });
         ml.Start();
 
@@ -194,8 +195,8 @@ public class TelemetryTests
         Assert.Equal(ActivityStatusCode.Unset, okSpan.Status);
         var badSpan = Assert.Single(spans, a => (string?)a.GetTagItem("multiplot.file") == missing);
         Assert.Equal(ActivityStatusCode.Error, badSpan.Status);
-        Assert.Contains(opens, o => o.Value == 1 && o.Provider == "SUN" && o.Result == "ok");
-        Assert.Contains(opens, o => o.Value == 1 && o.Result == "error");
+        Assert.Contains(opens, o => o.Value == 1 && o.File == ok && o.Provider == "SUN" && o.Result == "ok");
+        Assert.Contains(opens, o => o.Value == 1 && o.File == missing && o.Result == "error");
         try { Directory.Delete(dir, true); } catch (IOException) { }
     }
 

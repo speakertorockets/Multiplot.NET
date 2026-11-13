@@ -470,6 +470,10 @@ public sealed partial class Session
         return n;
     }
 
+    /// <summary>NFR-TEL-003: one <c>multiplot.plot.parameters</c> measurement per curve placed on a plot.</summary>
+    private static void RecordParametersPlotted(List<Curve> curves, string action) =>
+        MultiplotTelemetry.RecordParametersPlotted(curves.Select(c => (c.Name, c.Data.Source?.Info.Path ?? "")), action);
+
     private int LoadParametersCore(List<Curve> curves, string[] xAxisNomen, ref string errMsg)
     {
         curves.Clear();
@@ -883,6 +887,7 @@ public sealed partial class Session
                 PlotNo++;
                 tSlice = _groups[0].TStart + "," + _groups[0].TStop + "," + _groups[0].TRef;
                 var markers = fromWpd ? MasterMarkers : (Settings.UseMarkers ? MasterMarkers : null);
+                RecordParametersPlotted(curves, "plot");
                 var plot = CreatePlot(curves, markers, xAxisNomen, Settings.XUdef, Settings.YUdef, Settings.XTitle, Settings.YTitle, _groups[0].TRef, tSlice, p =>
                 {
                     p.PrevXNomen = saveXNomen;
@@ -1157,6 +1162,7 @@ public sealed partial class Session
                     curves[0].TabPosition = unchecked(((uint)(ushort)y << 16) | (ushort)x);
                     curves[0].TabLegend = false;
                 }
+                RecordParametersPlotted(curves, "add");
                 plot.AddCurves(curves, PlotConfig);
                 plot.ResetMinMax(plot.Config.EndToEnd ? 0x0003 : 0x0202, false);
                 Invalidate(plot);

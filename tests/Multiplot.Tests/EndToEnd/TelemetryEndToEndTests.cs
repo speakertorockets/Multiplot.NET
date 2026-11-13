@@ -151,6 +151,7 @@ public class TelemetryEndToEndTests
         File.WriteAllText(script,
             "open " + sun + "\r\n" +
             "plot SINE,RAMP\r\n" +
+            "addparameter RAMP\r\n" +
             "export " + Path.Combine(dir, "out.csv") + "\r\n" +
             "nosuchcommand 42\r\n" +
             "exit\r\n");
@@ -199,6 +200,14 @@ public class TelemetryEndToEndTests
         Assert.Contains("multiplot.commands", metrics);
         Assert.Contains("multiplot.load.duration", metrics);
         Assert.Contains("multiplot.script.errors", metrics);
+        Assert.Contains("multiplot.data.opens", metrics);
+        Assert.Contains(sun, metrics);                       // multiplot.file on the open counter
+        Assert.Contains("multiplot.plot.parameters", metrics);
+        Assert.Contains("multiplot.parameter", metrics);
+        Assert.Contains("SINE", metrics);
+        // protobuf KeyValue: the key string is followed within a few bytes by its string value
+        Assert.Matches(new System.Text.RegularExpressions.Regex(@"multiplot\.plot\.action.{2,6}plot", System.Text.RegularExpressions.RegexOptions.Singleline), metrics);
+        Assert.Matches(new System.Text.RegularExpressions.Regex(@"multiplot\.plot\.action.{2,6}add", System.Text.RegularExpressions.RegexOptions.Singleline), metrics);
 
         string logs = collector.AllText("/v1/logs");
         Assert.Contains("Telemetry enabled", logs);

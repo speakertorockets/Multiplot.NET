@@ -73,6 +73,9 @@ internal sealed class TelemetryBootstrap : IDisposable
                 .SetResourceBuilder(resource)
                 .AddMeter(MultiplotTelemetry.SourceWildcard)
                 .AddMeter("System.Runtime") // built-in .NET runtime metrics (GC, JIT, thread pool, exceptions)
+                // per-file / per-parameter counters: room for many paths and names before the overflow series
+                .AddView("multiplot.data.opens", new MetricStreamConfiguration { CardinalityLimit = MultiplotTelemetry.DetailCardinalityLimit })
+                .AddView("multiplot.plot.parameters", new MetricStreamConfiguration { CardinalityLimit = MultiplotTelemetry.DetailCardinalityLimit })
                 .AddOtlpExporter((o, reader) =>
                 {
                     Otlp(o, "/v1/metrics");

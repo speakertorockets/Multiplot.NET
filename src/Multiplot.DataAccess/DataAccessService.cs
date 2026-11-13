@@ -115,7 +115,8 @@ public sealed class DataAccessService : IDisposable
         finally
         {
             string result = f != null ? "ok" : "error";
-            MultiplotTelemetry.FilesOpened.Add(1, new KeyValuePair<string, object?>("multiplot.provider", provider),
+            MultiplotTelemetry.FilesOpened.Add(1, new KeyValuePair<string, object?>("multiplot.file", fileName),
+                new KeyValuePair<string, object?>("multiplot.provider", provider),
                 new KeyValuePair<string, object?>("multiplot.result", result));
             if (act != null)
             {

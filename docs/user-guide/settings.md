@@ -156,7 +156,9 @@ is not on, the log line says why, for example that no collector is listening.
   text. There are also entries for opening data files (with the file path), loading parameters (with
   the parameter list and the number of points), exports, imports and real-time refresh cycles. A
   command that fails is marked as an error, together with its message.
-* **Metrics**: counts of commands, errors, file opens and loaded points; load, draw and refresh times;
+* **Metrics**: counts of commands, errors, file opens (with the file path) and loaded points; the
+  parameters added to plots (with the parameter name, its file, and whether it started a new plot or was
+  added with *Add Parameter*); load, draw and refresh times;
   .NET runtime figures (memory, garbage collection, threads).
 * **Logs**: every line written to the diagnostic log.
 * **Identity**: each Multiplot process has its own instance id. The process id, computer name, user
